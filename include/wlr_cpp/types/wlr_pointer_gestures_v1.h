@@ -18,9 +18,8 @@ extern "C" {
 
 struct wlr_pointer_gestures_v1 {
 	struct wl_global *global;
-	struct wl_list resources; // wl_resource_get_link
-	struct wl_list swipes;    // wl_resource_get_link
-	struct wl_list pinches;   // wl_resource_get_link
+	struct wl_list swipes; // wl_resource_get_link
+	struct wl_list pinches; // wl_resource_get_link
 
 	struct wl_listener display_destroy;
 
@@ -69,9 +68,6 @@ void wlr_pointer_gestures_v1_send_pinch_end(
 	struct wlr_seat *seat,
 	uint32_t time_msec,
 	bool cancelled);
-
-void wlr_pointer_gestures_v1_destroy(
-	struct wlr_pointer_gestures_v1 *pointer_gestures_v1);
 
 #endif
 #ifdef __cplusplus

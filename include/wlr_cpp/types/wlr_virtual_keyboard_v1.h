@@ -18,7 +18,6 @@ extern "C" {
 
 struct wlr_virtual_keyboard_manager_v1 {
 	struct wl_global *global;
-	struct wl_list resources; // struct wl_resource*
 	struct wl_list virtual_keyboards; // struct wlr_virtual_keyboard_v1*
 
 	struct wl_listener display_destroy;
@@ -44,8 +43,6 @@ struct wlr_virtual_keyboard_v1 {
 
 struct wlr_virtual_keyboard_manager_v1* wlr_virtual_keyboard_manager_v1_create(
 	struct wl_display *display);
-void wlr_virtual_keyboard_manager_v1_destroy(
-	struct wlr_virtual_keyboard_manager_v1 *manager);
 
 #endif
 #ifdef __cplusplus

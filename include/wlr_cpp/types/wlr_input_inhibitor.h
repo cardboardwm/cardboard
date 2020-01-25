@@ -31,8 +31,6 @@ struct wlr_input_inhibit_manager {
 
 struct wlr_input_inhibit_manager *wlr_input_inhibit_manager_create(
 		struct wl_display *display);
-void wlr_input_inhibit_manager_destroy(
-		struct wlr_input_inhibit_manager *manager);
 
 #endif
 #ifdef __cplusplus

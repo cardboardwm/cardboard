@@ -15,7 +15,6 @@ enum wlr_xdg_toplevel_decoration_v1_mode {
 
 struct wlr_xdg_decoration_manager_v1 {
 	struct wl_global *global;
-	struct wl_list resources;
 	struct wl_list decorations; // wlr_xdg_toplevel_decoration::link
 
 	struct wl_listener display_destroy;
@@ -62,8 +61,6 @@ struct wlr_xdg_toplevel_decoration_v1 {
 
 struct wlr_xdg_decoration_manager_v1 *
 	wlr_xdg_decoration_manager_v1_create(struct wl_display *display);
-void wlr_xdg_decoration_manager_v1_destroy(
-	struct wlr_xdg_decoration_manager_v1 *manager);
 
 uint32_t wlr_xdg_toplevel_decoration_v1_set_mode(
 	struct wlr_xdg_toplevel_decoration_v1 *decoration,

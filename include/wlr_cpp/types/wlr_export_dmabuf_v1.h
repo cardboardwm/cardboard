@@ -18,7 +18,6 @@ extern "C" {
 
 struct wlr_export_dmabuf_manager_v1 {
 	struct wl_global *global;
-	struct wl_list resources; // wl_resource_get_link
 	struct wl_list frames; // wlr_export_dmabuf_frame_v1::link
 
 	struct wl_listener display_destroy;
@@ -43,8 +42,6 @@ struct wlr_export_dmabuf_frame_v1 {
 
 struct wlr_export_dmabuf_manager_v1 *wlr_export_dmabuf_manager_v1_create(
 	struct wl_display *display);
-void wlr_export_dmabuf_manager_v1_destroy(
-	struct wlr_export_dmabuf_manager_v1 *manager);
 
 #endif
 #ifdef __cplusplus

@@ -12,8 +12,6 @@ extern "C" {
 #ifndef WLR_RENDER_WLR_TEXTURE_H
 #define WLR_RENDER_WLR_TEXTURE_H
 
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
 #include <stdint.h>
 #include <wayland-server-protocol.h>
 #include <wlr_cpp/render/dmabuf.h>

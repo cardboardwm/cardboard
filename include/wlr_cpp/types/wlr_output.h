@@ -52,11 +52,20 @@ struct wlr_output_cursor {
 enum wlr_output_state_field {
 	WLR_OUTPUT_STATE_BUFFER = 1 << 0,
 	WLR_OUTPUT_STATE_DAMAGE = 1 << 1,
+	WLR_OUTPUT_STATE_MODE = 1 << 2,
+	WLR_OUTPUT_STATE_ENABLED = 1 << 3,
+	WLR_OUTPUT_STATE_SCALE = 1 << 4,
+	WLR_OUTPUT_STATE_TRANSFORM = 1 << 5,
 };
 
 enum wlr_output_state_buffer_type {
 	WLR_OUTPUT_STATE_BUFFER_RENDER,
 	WLR_OUTPUT_STATE_BUFFER_SCANOUT,
+};
+
+enum wlr_output_state_mode_type {
+	WLR_OUTPUT_STATE_MODE_FIXED,
+	WLR_OUTPUT_STATE_MODE_CUSTOM,
 };
 
 /**
@@ -65,10 +74,21 @@ enum wlr_output_state_buffer_type {
 struct wlr_output_state {
 	uint32_t committed; // enum wlr_output_state_field
 	pixman_region32_t damage; // output-buffer-local coordinates
+	bool enabled;
+	float scale;
+	enum wl_output_transform transform;
 
 	// only valid if WLR_OUTPUT_STATE_BUFFER
 	enum wlr_output_state_buffer_type buffer_type;
 	struct wlr_buffer *buffer; // if WLR_OUTPUT_STATE_BUFFER_SCANOUT
+
+	// only valid if WLR_OUTPUT_STATE_MODE
+	enum wlr_output_state_mode_type mode_type;
+	struct wlr_output_mode *mode;
+	struct {
+		int32_t width, height;
+		int32_t refresh; // mHz, may be zero
+	} custom_mode;
 };
 
 struct wlr_output_impl;
@@ -93,6 +113,7 @@ struct wlr_output {
 	struct wl_list resources;
 
 	char name[24];
+	char *description; // may be NULL
 	char make[56];
 	char model[16];
 	char serial[16];
@@ -117,6 +138,9 @@ struct wlr_output {
 
 	struct wlr_output_state pending;
 
+	// Commit sequence number. Incremented on each commit, may overflow.
+	uint32_t commit_seq;
+
 	struct {
 		// Request to render a frame
 		struct wl_signal frame;
@@ -133,6 +157,7 @@ struct wlr_output {
 		struct wl_signal mode;
 		struct wl_signal scale;
 		struct wl_signal transform;
+		struct wl_signal description;
 		struct wl_signal destroy;
 	} events;
 
@@ -171,6 +196,9 @@ enum wlr_output_present_flag {
 
 struct wlr_output_event_present {
 	struct wlr_output *output;
+	// Frame submission for which this presentation event is for (see
+	// wlr_output.commit_seq).
+	uint32_t commit_seq;
 	// Time when the content update turned into light the first time.
 	struct timespec *when;
 	// Vertical retrace counter. Zero if unavailable.
@@ -186,8 +214,11 @@ struct wlr_surface;
 /**
  * Enables or disables the output. A disabled output is turned off and doesn't
  * emit `frame` events.
+ *
+ * Whether an output is enabled is double-buffered state, see
+ * `wlr_output_commit`.
  */
-bool wlr_output_enable(struct wlr_output *output, bool enable);
+void wlr_output_enable(struct wlr_output *output, bool enable);
 void wlr_output_create_global(struct wlr_output *output);
 void wlr_output_destroy_global(struct wlr_output *output);
 /**
@@ -196,21 +227,37 @@ void wlr_output_destroy_global(struct wlr_output *output);
  */
 struct wlr_output_mode *wlr_output_preferred_mode(struct wlr_output *output);
 /**
- * Sets the output mode. Enables the output if it's currently disabled.
+ * Sets the output mode. The output needs to be enabled.
+ *
+ * Mode is double-buffered state, see `wlr_output_commit`.
  */
-bool wlr_output_set_mode(struct wlr_output *output,
+void wlr_output_set_mode(struct wlr_output *output,
 	struct wlr_output_mode *mode);
 /**
  * Sets a custom mode on the output. If modes are available, they are preferred.
- * Setting `refresh` to zero lets the backend pick a preferred value.
+ * Setting `refresh` to zero lets the backend pick a preferred value. The
+ * output needs to be enabled.
+ *
+ * Custom mode is double-buffered state, see `wlr_output_commit`.
  */
-bool wlr_output_set_custom_mode(struct wlr_output *output, int32_t width,
+void wlr_output_set_custom_mode(struct wlr_output *output, int32_t width,
 	int32_t height, int32_t refresh);
+/**
+ * Sets a transform for the output.
+ *
+ * Transform is double-buffered state, see `wlr_output_commit`.
+ */
 void wlr_output_set_transform(struct wlr_output *output,
 	enum wl_output_transform transform);
+/**
+ * Sets a scale for the output.
+ *
+ * Scale is double-buffered state, see `wlr_output_commit`.
+ */
 void wlr_output_set_scale(struct wlr_output *output, float scale);
 void wlr_output_set_subpixel(struct wlr_output *output,
 	enum wl_output_subpixel subpixel);
+void wlr_output_set_description(struct wlr_output *output, const char *desc);
 /**
  * Schedule a done event.
  *
@@ -231,15 +278,19 @@ void wlr_output_effective_resolution(struct wlr_output *output,
 /**
  * Attach the renderer's buffer to the output. Compositors must call this
  * function before rendering. After they are done rendering, they should call
- * `wlr_output_commit` to submit the new frame.
+ * `wlr_output_commit` to submit the new frame. The output needs to be
+ * enabled.
  *
  * If non-NULL, `buffer_age` is set to the drawing buffer age in number of
  * frames or -1 if unknown. This is useful for damage tracking.
+ *
+ * If the compositor decides not to render after calling this function, it
+ * must call wlr_output_rollback.
  */
 bool wlr_output_attach_render(struct wlr_output *output, int *buffer_age);
 /**
  * Attach a buffer to the output. Compositors should call `wlr_output_commit`
- * to submit the new frame.
+ * to submit the new frame. The output needs to be enabled.
  */
 bool wlr_output_attach_buffer(struct wlr_output *output,
 	struct wlr_buffer *buffer);
@@ -265,11 +316,16 @@ void wlr_output_set_damage(struct wlr_output *output,
 	pixman_region32_t *damage);
 /**
  * Commit the pending output state. If `wlr_output_attach_render` has been
- * called, the pending frame will be submitted for display.
+ * called, the pending frame will be submitted for display and a `frame` event
+ * will be scheduled.
  *
- * This function schedules a `frame` event.
+ * On failure, the pending changes are rolled back.
  */
 bool wlr_output_commit(struct wlr_output *output);
+/**
+ * Discard the pending output state.
+ */
+void wlr_output_rollback(struct wlr_output *output);
 /**
  * Manually schedules a `frame` event. If a `frame` event is already pending,
  * it is a no-op.

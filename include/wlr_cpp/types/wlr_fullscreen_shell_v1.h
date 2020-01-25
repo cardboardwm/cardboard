@@ -17,7 +17,6 @@ extern "C" {
 
 struct wlr_fullscreen_shell_v1 {
 	struct wl_global *global;
-	struct wl_list resources;
 
 	struct {
 		struct wl_signal destroy;
@@ -39,7 +38,6 @@ struct wlr_fullscreen_shell_v1_present_surface_event {
 
 struct wlr_fullscreen_shell_v1 *wlr_fullscreen_shell_v1_create(
 	struct wl_display *display);
-void wlr_fullscreen_shell_v1_destroy(struct wlr_fullscreen_shell_v1 *shell);
 
 #endif
 #ifdef __cplusplus
