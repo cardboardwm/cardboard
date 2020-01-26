@@ -81,20 +81,20 @@ void Output::output_frame_handler(struct wl_listener* listener, [[maybe_unused]]
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    for (const auto& view : output->server->views) {
-        if (!view.mapped) {
+    for (auto view = output->server->views.rbegin(); view != output->server->views.rend(); view++) {
+        if (!view->mapped) {
             // don't render unmapped views
             continue;
         }
 
         RenderData rdata = {
             .output = output->wlr_output,
-            .view = &view,
+            .view = &(*view),
             .renderer = renderer,
             .when = &now
         };
 
-        wlr_xdg_surface_for_each_surface(view.xdg_surface, Output::render_surface, &rdata);
+        wlr_xdg_surface_for_each_surface(view->xdg_surface, Output::render_surface, &rdata);
     }
 
     // in case of software rendered cursor, render it

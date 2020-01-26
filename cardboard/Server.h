@@ -35,6 +35,7 @@ struct Server {
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);
     void process_cursor_motion(uint32_t time);
+    void focus_view(View* view);
 
     Server();
     Server(const Server&) = delete;

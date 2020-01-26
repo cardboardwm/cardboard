@@ -25,14 +25,22 @@ Keyboard::Keyboard(Server* server, struct wlr_input_device* device)
     wlr_seat_set_keyboard(server->seat, device);
 }
 
-void Keyboard::modifiers_handler(struct wl_listener* listener, void* data)
+void Keyboard::modifiers_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    (void)(listener);
-    (void)(data);
+    Keyboard* keyboard = wl_container_of(listener, keyboard, modifiers);
+    wlr_seat_set_keyboard(keyboard->server->seat, keyboard->device);
+    // send modifiers to the client
+    wlr_seat_keyboard_notify_modifiers(keyboard->server->seat, &keyboard->device->keyboard->modifiers);
 }
 
 void Keyboard::key_handler(struct wl_listener* listener, void* data)
 {
-    (void)(listener);
-    (void)(data);
+    Keyboard* keyboard = wl_container_of(listener, keyboard, key);
+    Server* server = keyboard->server;
+    auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
+
+    // TODO: handle compositor keybinds
+
+    wlr_seat_set_keyboard(server->seat, keyboard->device);
+    wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
 }

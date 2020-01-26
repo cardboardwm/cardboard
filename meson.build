@@ -8,6 +8,7 @@ project(
 	'cpp_std=gnu++17',
 	'warning_level=2',
 	'werror=true',
+	'default_library=static'
   ],
 )
 

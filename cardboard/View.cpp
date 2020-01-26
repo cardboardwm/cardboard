@@ -25,11 +25,11 @@ View::View(Server* server, struct wlr_xdg_surface* xdg_surface)
     wl_signal_add(&toplevel->events.request_resize, &request_resize);
 }
 
-void View::xdg_surface_map_handler(struct wl_listener* listener, void* data)
+void View::xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     View* view = wl_container_of(listener, view, map);
     view->mapped = true;
-    (void)(data);
+    view->server->focus_view(view);
 }
 void View::xdg_surface_unmap_handler(struct wl_listener* listener, void* data)
 {

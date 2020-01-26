@@ -77,6 +77,31 @@ void Server::process_cursor_motion(uint32_t time)
     wlr_xcursor_manager_set_cursor_image(cursor_manager, "left_ptr", cursor);
 }
 
+void Server::focus_view(View* view)
+{
+    if (view == nullptr) {
+        return;
+    }
+
+    auto* prev_surface = seat->keyboard_state.focused_surface;
+    if (prev_surface == view->xdg_surface->surface) {
+        return; // already focused
+    }
+    if (prev_surface) {
+        // deactivate previous surface
+        auto* prev_xdg_surface = wlr_xdg_surface_from_wlr_surface(seat->keyboard_state.focused_surface);
+        wlr_xdg_toplevel_set_activated(prev_xdg_surface, false);
+    }
+    auto* keyboard = wlr_seat_get_keyboard(seat);
+    // move the view to the front
+    views.splice(views.begin(), views, view->link);
+    view->link = views.begin();
+    // activate surface
+    wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
+    // the seat will send keyboard events to the view automatically
+    wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+}
+
 bool Server::run()
 {
     // add UNIX socket to the Wayland display
