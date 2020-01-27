@@ -32,16 +32,18 @@ struct Server {
 
     EventListeners listeners;
 
-    void new_keyboard(struct wlr_input_device* device);
-    void new_pointer(struct wlr_input_device* device);
-    void process_cursor_motion(uint32_t time);
-    void focus_view(View* view);
-
     Server();
     Server(const Server&) = delete;
 
     bool run();
     void stop();
+
+    void new_keyboard(struct wlr_input_device* device);
+    void new_pointer(struct wlr_input_device* device);
+    void process_cursor_motion(uint32_t time);
+    void focus_view(View* view, struct wlr_surface* surface);
+    // Returns the xdg surface leaf of the first view under the cursor
+    View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
 };
 
 #endif // __CARDBOARD_SERVER_H_

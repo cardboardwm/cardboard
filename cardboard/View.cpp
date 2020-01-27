@@ -25,23 +25,40 @@ View::View(Server* server, struct wlr_xdg_surface* xdg_surface)
     wl_signal_add(&toplevel->events.request_resize, &request_resize);
 }
 
+bool View::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
+{
+    double view_x = lx - x;
+    double view_y = ly - y;
+
+    double sx_, sy_;
+    struct wlr_surface* surface_ = nullptr;
+    surface_ = wlr_xdg_surface_surface_at(xdg_surface, view_x, view_y, &sx_, &sy_);
+
+    if (surface_ != nullptr) {
+        sx = sx_;
+        sy = sy_;
+        surface = surface_;
+        return true;
+    }
+
+    return false;
+}
+
 void View::xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     View* view = wl_container_of(listener, view, map);
     view->mapped = true;
-    view->server->focus_view(view);
+    view->server->focus_view(view, view->xdg_surface->surface);
 }
-void View::xdg_surface_unmap_handler(struct wl_listener* listener, void* data)
+void View::xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     View* view = wl_container_of(listener, view, unmap);
     view->mapped = false;
-    (void)(data);
 }
-void View::xdg_surface_destroy_handler(struct wl_listener* listener, void* data)
+void View::xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     View* view = wl_container_of(listener, view, destroy);
     view->server->views.erase(view->link);
-    (void)(data);
 }
 void View::xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data)
 {

@@ -64,18 +64,30 @@ void EventListeners::cursor_motion_absolute_handler(struct wl_listener* listener
 }
 void EventListeners::cursor_button_handler(struct wl_listener* listener, void* data)
 {
-    (void)(listener);
-    (void)(data);
+    EventListeners* listeners = wl_container_of(listener, listeners, cursor_button);
+    Server* server = listeners->server;
+    auto* event = static_cast<struct wlr_event_pointer_button*>(data);
+
+    wlr_seat_pointer_notify_button(listeners->server->seat, event->time_msec, event->button, event->state);
+    double sx, sy;
+    struct wlr_surface* surface;
+    View* view = server->get_surface_under_cursor(server->cursor->x, server->cursor->y, surface, sx, sy);
+    server->focus_view(view, surface);
 }
 void EventListeners::cursor_axis_handler(struct wl_listener* listener, void* data)
 {
-    (void)(listener);
-    (void)(data);
+    // this happens when you scroll
+    EventListeners* listeners = wl_container_of(listener, listeners, cursor_axis);
+    Server* server = listeners->server;
+    auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
+    wlr_seat_pointer_notify_axis(server->seat, event->time_msec, event->orientation, event->delta,
+            event->delta_discrete, event->source);
 }
-void EventListeners::cursor_frame_handler(struct wl_listener* listener, void* data)
+void EventListeners::cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    (void)(listener);
-    (void)(data);
+    EventListeners* listeners = wl_container_of(listener, listeners, cursor_frame);
+    Server* server = listeners->server;
+    wlr_seat_pointer_notify_frame(server->seat);
 }
 void EventListeners::new_input_handler(struct wl_listener* listener, void* data)
 {

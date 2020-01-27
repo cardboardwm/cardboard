@@ -73,18 +73,39 @@ void Server::new_pointer(struct wlr_input_device* device)
 
 void Server::process_cursor_motion(uint32_t time)
 {
-    (void)(time);
-    wlr_xcursor_manager_set_cursor_image(cursor_manager, "left_ptr", cursor);
+    double sx, sy;
+    struct wlr_surface* surface = nullptr;
+    const View* view = get_surface_under_cursor(cursor->x, cursor->y, surface, sx, sy);
+    if (!view && surface) {
+        wlr_log(WLR_DEBUG, "poopy");
+    }
+    if (!view) {
+        // set the cursor to default
+        wlr_xcursor_manager_set_cursor_image(cursor_manager, "left_ptr", cursor);
+    }
+    if (surface) {
+        bool focus_changed = seat->pointer_state.focused_surface != surface;
+        // Gives pointer focus when the cursor enters the surface
+        wlr_seat_pointer_notify_enter(seat, surface, sx, sy);
+        if (!focus_changed) {
+            // the enter event contains coordinates, so we notify on motion only
+            // if the focus did not change
+            wlr_seat_pointer_notify_motion(seat, time, sx, sy);
+        }
+    } else {
+        // Clear focus so pointer events are not sent to the last entered surface
+        wlr_seat_pointer_clear_focus(seat);
+    }
 }
 
-void Server::focus_view(View* view)
+void Server::focus_view(View* view, wlr_surface* surface)
 {
     if (view == nullptr) {
         return;
     }
 
     auto* prev_surface = seat->keyboard_state.focused_surface;
-    if (prev_surface == view->xdg_surface->surface) {
+    if (prev_surface == surface) {
         return; // already focused
     }
     if (prev_surface) {
@@ -100,6 +121,17 @@ void Server::focus_view(View* view)
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically
     wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+}
+
+View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
+{
+    for (auto& view : views) {
+        if (view.get_surface_under_coords(lx, ly, surface, sx, sy)) {
+            return &view;
+        }
+    }
+
+    return NULL;
 }
 
 bool Server::run()

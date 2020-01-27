@@ -2,5 +2,7 @@
 .idea
 *.log
 tmp/
+.ccls-cache/
+*.plist
 
 build
