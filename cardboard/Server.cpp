@@ -7,6 +7,8 @@
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/util/log.h>
 
+#include <cassert>
+
 #include "Server.h"
 
 Server::Server()
@@ -73,6 +75,14 @@ void Server::new_pointer(struct wlr_input_device* device)
 
 void Server::process_cursor_motion(uint32_t time)
 {
+    if (grab_state.has_value() && grab_state->mode == GrabState::Mode::MOVE) {
+        process_cursor_move();
+        return;
+    }
+    if (grab_state.has_value() && grab_state->mode == GrabState::Mode::RESIZE) {
+        process_cursor_resize();
+        return;
+    }
     double sx, sy;
     struct wlr_surface* surface = nullptr;
     const View* view = get_surface_under_cursor(cursor->x, cursor->y, surface, sx, sy);
@@ -96,6 +106,45 @@ void Server::process_cursor_motion(uint32_t time)
         // Clear focus so pointer events are not sent to the last entered surface
         wlr_seat_pointer_clear_focus(seat);
     }
+}
+
+void Server::process_cursor_move()
+{
+    assert(grab_state.has_value());
+    grab_state->view->x = cursor->x - grab_state->x;
+    grab_state->view->y = cursor->y - grab_state->y;
+}
+
+void Server::process_cursor_resize()
+{
+    assert(grab_state.has_value());
+    double dx = cursor->x - grab_state->x;
+    double dy = cursor->y - grab_state->y;
+    double x = grab_state->view->x;
+    double y = grab_state->view->y;
+    double width = grab_state->width;
+    double height = grab_state->height;
+    if (grab_state->resize_edges & WLR_EDGE_TOP) {
+        y = grab_state->y + dy;
+        height -= dy;
+        if (height < 1) {
+            y += height;
+        }
+    } else if (grab_state->resize_edges & WLR_EDGE_BOTTOM) {
+        height += dy;
+    }
+    if (grab_state->resize_edges & WLR_EDGE_LEFT) {
+        x = grab_state->x + dx;
+        width -= dx;
+        if (width < 1) {
+            x += width;
+        }
+    } else if (grab_state->resize_edges & WLR_EDGE_RIGHT) {
+        width += dx;
+    }
+    grab_state->view->x = x;
+    grab_state->view->y = y;
+    wlr_xdg_toplevel_set_size(grab_state->view->xdg_surface, width, height);
 }
 
 void Server::focus_view(View* view, wlr_surface* surface)
@@ -132,6 +181,28 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 
     return NULL;
+}
+
+void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)
+{
+    assert(grab_state == std::nullopt);
+    struct wlr_surface* focused_surface = seat->pointer_state.focused_surface;
+    if (view->xdg_surface->surface != focused_surface) {
+        // don't handle the request if the view is not in focus
+        return;
+    }
+    struct wlr_box geometry;
+    wlr_xdg_surface_get_geometry(view->xdg_surface, &geometry);
+
+    GrabState state = { mode, view, 0, 0, geometry.width, geometry.height, edges };
+    if (mode == GrabState::Mode::MOVE) {
+        state.x = cursor->x - view->x;
+        state.y = cursor->y - view->y;
+    } else {
+        state.x = cursor->x;
+        state.y = cursor->y;
+    }
+    grab_state = state;
 }
 
 bool Server::run()

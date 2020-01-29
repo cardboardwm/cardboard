@@ -72,7 +72,12 @@ void EventListeners::cursor_button_handler(struct wl_listener* listener, void* d
     double sx, sy;
     struct wlr_surface* surface;
     View* view = server->get_surface_under_cursor(server->cursor->x, server->cursor->y, surface, sx, sy);
-    server->focus_view(view, surface);
+    if (event->state == WLR_BUTTON_RELEASED) {
+        // end grabbing
+        server->grab_state = std::nullopt;
+    } else {
+        server->focus_view(view, surface);
+    }
 }
 void EventListeners::cursor_axis_handler(struct wl_listener* listener, void* data)
 {
@@ -80,8 +85,7 @@ void EventListeners::cursor_axis_handler(struct wl_listener* listener, void* dat
     EventListeners* listeners = wl_container_of(listener, listeners, cursor_axis);
     Server* server = listeners->server;
     auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
-    wlr_seat_pointer_notify_axis(server->seat, event->time_msec, event->orientation, event->delta,
-            event->delta_discrete, event->source);
+    wlr_seat_pointer_notify_axis(server->seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
 void EventListeners::cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {

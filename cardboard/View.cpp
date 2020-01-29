@@ -60,13 +60,14 @@ void View::xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unu
     View* view = wl_container_of(listener, view, destroy);
     view->server->views.erase(view->link);
 }
-void View::xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data)
+void View::xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    (void)(listener);
-    (void)(data);
+    View* view = wl_container_of(listener, view, request_move);
+    view->server->begin_interactive(view, Server::GrabState::Mode::MOVE, 0);
 }
 void View::xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data)
 {
-    (void)(listener);
-    (void)(data);
+    View* view = wl_container_of(listener, view, request_resize);
+    auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
+    view->server->begin_interactive(view, Server::GrabState::Mode::RESIZE, event->edges);
 }

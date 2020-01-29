@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <list>
+#include <optional>
 
 #include "EventListeners.h"
 #include "Keyboard.h"
@@ -10,6 +11,17 @@
 #include "View.h"
 
 struct Server {
+    struct GrabState {
+        enum class Mode {
+            MOVE,
+            RESIZE
+        } mode;
+        View* view;
+        double x, y;
+        int width, height;
+        uint32_t resize_edges;
+    };
+
     struct wl_display* wl_display;
     struct wlr_backend* backend;
     struct wlr_renderer* renderer;
@@ -22,10 +34,7 @@ struct Server {
 
     struct wlr_seat* seat;
     std::list<Keyboard> keyboards;
-    View* grabbed_view;
-    double grab_x, grab_y;
-    int grab_width, grab_height;
-    uint32_t resize_edges;
+    std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;
     std::list<Output> outputs;
@@ -41,9 +50,12 @@ struct Server {
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);
     void process_cursor_motion(uint32_t time);
+    void process_cursor_move();
+    void process_cursor_resize();
     void focus_view(View* view, struct wlr_surface* surface);
     // Returns the xdg surface leaf of the first view under the cursor
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
+    void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
 };
 
 #endif // __CARDBOARD_SERVER_H_
