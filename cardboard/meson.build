@@ -1,21 +1,15 @@
 wayland_server = dependency('wayland-server')
-wlroots = dependency('wlroots')
 xkbcommon = dependency('xkbcommon')
 
 wlroots_version = '>=0.10.0'
 wlroots_proj = subproject(
   'wlroots',
   default_options: ['examples=false'],
-  required: false,
+  required: true,
   version: wlroots_version,
 )
 
-if wlroots_proj.found()
-  wlroots = wlroots_proj.get_variable('wlroots')
-  # TODO: xwayland checks
-else
-  wlroots = dependency('wlroots', version: wlroots_version)
-endif
+wlroots = wlroots_proj.get_variable('wlroots')
 
 cardboard_deps = [
   wayland_server,

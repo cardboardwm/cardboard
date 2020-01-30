@@ -20,8 +20,6 @@ add_project_arguments(
 )
 
 inc = include_directories('include')
-wlroots = dependency('wlroots')
-wayland_server = dependency('wayland-server')
 
 subdir('protocols')
 subdir('cardboard')
