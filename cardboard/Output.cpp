@@ -89,8 +89,8 @@ void Output::output_frame_handler(struct wl_listener* listener, [[maybe_unused]]
 
         RenderData rdata = {
             .output = output->wlr_output,
-            .view = &(*view),
             .renderer = renderer,
+            .view = &(*view),
             .when = &now
         };
 
