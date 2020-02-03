@@ -9,6 +9,7 @@
 #include "Keyboard.h"
 #include "Output.h"
 #include "View.h"
+#include "Listener.h"
 
 struct Server {
     struct GrabState {
@@ -39,7 +40,7 @@ struct Server {
     struct wlr_output_layout* output_layout;
     std::list<Output> outputs;
 
-    EventListeners listeners;
+    ListenerList listeners;
 
     Server();
     Server(const Server&) = delete;
