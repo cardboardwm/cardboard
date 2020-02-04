@@ -1,35 +1,37 @@
 #include "Output.h"
 #include "Server.h"
+#include "Listener.h"
 
 #include <wayland-server.h>
 #include <wlr_cpp/backend.h>
 #include <wlr_cpp/render/wlr_renderer.h>
 #include <wlr_cpp/types/wlr_matrix.h>
-#include <wlr_cpp/types/wlr_output.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
 
 #include <array>
 #include <ctime>
+#include <wlr_cpp/types/wlr_output.h>
 
 struct RenderData {
     struct wlr_output* output;
     struct wlr_renderer* renderer;
     const View* view;
     const struct timespec* when;
+    Server* server;
 };
 
-Output::Output(Server* server, struct wlr_output* wlr_output)
-    : server(server)
-    , wlr_output(wlr_output)
+
+void register_output(Server* server, wlr_output* output)
 {
-    frame.notify = Output::output_frame_handler;
-    wl_signal_add(&wlr_output->events.frame, &frame);
+    server->outputs.emplace_back(output);
+    server->listeners.add_listener(&output->events.frame, Listener{output_frame_handler, server, output});
 }
 
-void Output::render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
+void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
 {
     auto* rdata = static_cast<RenderData*>(data);
     const View* view = rdata->view;
+    Server* server = rdata->server;
     struct wlr_output* output = rdata->output;
 
     struct wlr_texture* texture = wlr_surface_get_texture(surface);
@@ -39,7 +41,7 @@ void Output::render_surface(struct wlr_surface* surface, int sx, int sy, void* d
 
     // translate surface coordinates to output coordinates
     double ox = 0, oy = 0;
-    wlr_output_layout_output_coords(view->server->output_layout, output, &ox, &oy);
+    wlr_output_layout_output_coords(server->output_layout, output, &ox, &oy);
     ox += view->x + sx;
     oy += view->y + sy;
 
@@ -60,47 +62,50 @@ void Output::render_surface(struct wlr_surface* surface, int sx, int sy, void* d
     wlr_surface_send_frame_done(surface, rdata->when);
 }
 
-void Output::output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    Output* output = wl_container_of(listener, output, frame);
-    struct wlr_renderer* renderer = output->server->renderer;
+    //Output* output = wl_container_of(listener, output, frame);
+    Server* server = get_server(listener);
+    wlr_output* output = get_listener_data<wlr_output*>(listener);
+    struct wlr_renderer* renderer = server->renderer;
 
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
     // make the OpenGL context current
-    if (!wlr_output_attach_render(output->wlr_output, nullptr)) {
+    if (!wlr_output_attach_render(output, nullptr)) {
         return;
     }
 
     int width, height;
     // the effective resolution takes the rotation of outputs in account
-    wlr_output_effective_resolution(output->wlr_output, &width, &height);
+    wlr_output_effective_resolution(output, &width, &height);
     wlr_renderer_begin(renderer, width, height);
 
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    for (auto view = output->server->views.rbegin(); view != output->server->views.rend(); view++) {
+    for (auto view = server->views.rbegin(); view != server->views.rend(); view++) {
         if (!view->mapped) {
             // don't render unmapped views
             continue;
         }
 
         RenderData rdata = {
-            .output = output->wlr_output,
+            .output = output,
             .renderer = renderer,
             .view = &(*view),
-            .when = &now
+            .when = &now,
+            .server = server
         };
 
-        wlr_xdg_surface_for_each_surface(view->xdg_surface, Output::render_surface, &rdata);
+        wlr_xdg_surface_for_each_surface(view->xdg_surface, render_surface, &rdata);
     }
 
     // in case of software rendered cursor, render it
-    wlr_output_render_software_cursors(output->wlr_output, nullptr);
+    wlr_output_render_software_cursors(output, nullptr);
 
     // swap buffers and show frame
     wlr_renderer_end(renderer);
-    wlr_output_commit(output->wlr_output);
+    wlr_output_commit(output);
 }

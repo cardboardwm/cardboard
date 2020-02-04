@@ -166,8 +166,8 @@ void Server::focus_view(View* view, wlr_surface* surface)
     }
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
-    views.splice(views.begin(), views, view->link);
-    view->link = views.begin();
+    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(),
+        [view](auto& x) { return view == &x; }));
     // activate surface
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically

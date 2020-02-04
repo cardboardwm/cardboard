@@ -10,8 +10,6 @@
 struct Server;
 
 struct View {
-    std::list<View>::iterator link;
-
     struct wlr_xdg_surface* xdg_surface;
     bool mapped;
     int x, y;

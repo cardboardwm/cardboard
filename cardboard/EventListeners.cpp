@@ -13,26 +13,26 @@ void new_output_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
 
-    auto* wlr_output = static_cast<struct wlr_output*>(data);
+    auto* output = static_cast<struct wlr_output*>(data);
 
     // pick the monitor's preferred mode
-    if (!wl_list_empty(&wlr_output->modes)) {
-        struct wlr_output_mode* mode = wlr_output_preferred_mode(wlr_output);
-        wlr_output_set_mode(wlr_output, mode);
-        wlr_output_enable(wlr_output, true);
-        if (!wlr_output_commit(wlr_output)) {
+    if (!wl_list_empty(&output->modes)) {
+        struct wlr_output_mode* mode = wlr_output_preferred_mode(output);
+        wlr_output_set_mode(output, mode);
+        wlr_output_enable(output, true);
+        if (!wlr_output_commit(output)) {
             return;
         }
     }
 
-    server->outputs.emplace_back(server, wlr_output);
+    register_output(server, output);
 
     // add output to the layout. add_auto arranges outputs left-to-right
     // in the order they appear.
-    wlr_output_layout_add_auto(server->output_layout, wlr_output);
+    wlr_output_layout_add_auto(server->output_layout, output);
 
     // expose the output to the clients
-    wlr_output_create_global(wlr_output);
+    wlr_output_create_global(output);
 }
 
 void new_xdg_surface_handler(struct wl_listener* listener, void* data)
@@ -46,8 +46,7 @@ void new_xdg_surface_handler(struct wl_listener* listener, void* data)
         return;
     }
 
-    auto this_it = server->views.emplace(server->views.begin(), server, xdg_surface);
-    this_it->link = this_it;
+    create_view(server, {xdg_surface});
 }
 
 void cursor_motion_handler(struct wl_listener* listener, void* data)

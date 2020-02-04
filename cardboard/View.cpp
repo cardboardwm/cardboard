@@ -15,7 +15,7 @@ View::View(struct wlr_xdg_surface* xdg_surface):
 
 void create_view(Server* server, View&& view_)
 {
-    server->views.push_back(std::move(view_));
+    server->views.push_back(view_);
     View* view = &server->views.back();
 
     struct {
@@ -33,7 +33,7 @@ void create_view(Server* server, View&& view_)
     {
         server->listeners.add_listener(
             to_add_listener.signal,
-            Listener{to_add_listener.notify, this, view}
+            Listener{to_add_listener.notify, server, view}
         );
     }
 }
@@ -76,7 +76,9 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
     View* view = get_listener_data<View*>(listener);
     Server* server = get_server(listener);
 
-    server->views.erase(view->link);
+    server->views.remove_if([view](auto& x){
+        return view == &x;
+    });
 }
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {

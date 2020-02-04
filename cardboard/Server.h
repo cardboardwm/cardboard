@@ -28,7 +28,9 @@ struct Server {
     struct wlr_renderer* renderer;
 
     struct wlr_xdg_shell* xdg_shell;
-    std::list<View> views;
+    std::list<View> views;  // TODO: check if View's statefulness is needed
+                            // change to std::vector if it's not needed +
+                            // change in ListenerData from View* to View
 
     struct wlr_cursor* cursor;
     struct wlr_xcursor_manager* cursor_manager;
@@ -38,7 +40,7 @@ struct Server {
     std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;
-    std::list<Output> outputs;
+    std::vector<wlr_output*> outputs;
 
     ListenerList listeners;
 

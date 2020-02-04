@@ -13,7 +13,8 @@ struct Server;
 using ListenerData = std::variant<
         NoneT,
         wlr_output*,
-        View*
+        View*,
+        wlr_input_device*
     >;
 
 struct Listener
@@ -29,7 +30,7 @@ struct Listener
     {}
 };
 
-Server* get_server(wl_listener* listener)
+inline Server* get_server(wl_listener* listener)
 {
     Listener* l = wl_container_of(listener, l, listener);
     return l->server;
