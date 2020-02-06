@@ -36,7 +36,7 @@ struct Server {
     struct wlr_xcursor_manager* cursor_manager;
 
     struct wlr_seat* seat;
-    std::list<Keyboard> keyboards;
+    std::vector<wlr_input_device*> keyboards;
     std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;

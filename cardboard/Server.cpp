@@ -67,7 +67,8 @@ Server::Server()
 
 void Server::new_keyboard(struct wlr_input_device* device)
 {
-    keyboards.emplace_back(this, device);
+    keyboards.push_back(device);
+    create_keyboard(this, device);
 }
 
 void Server::new_pointer(struct wlr_input_device* device)
