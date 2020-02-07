@@ -46,7 +46,7 @@ void new_xdg_surface_handler(struct wl_listener* listener, void* data)
         return;
     }
 
-    create_view(server, {xdg_surface});
+    create_view(server, { xdg_surface });
 }
 
 void cursor_motion_handler(struct wl_listener* listener, void* data)
@@ -108,14 +108,14 @@ void new_input_handler(struct wl_listener* listener, void* data)
     auto* device = static_cast<struct wlr_input_device*>(data);
 
     switch (device->type) {
-        case WLR_INPUT_DEVICE_KEYBOARD:
-            server->new_keyboard(device);
-            break;
-        case WLR_INPUT_DEVICE_POINTER:
-            server->new_pointer(device);
-            break;
-        default:
-            break;
+    case WLR_INPUT_DEVICE_KEYBOARD:
+        server->new_keyboard(device);
+        break;
+    case WLR_INPUT_DEVICE_POINTER:
+        server->new_pointer(device);
+        break;
+    default:
+        break;
     }
 
     // set pointer capability even if there is no mouse attached

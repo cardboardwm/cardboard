@@ -1,6 +1,6 @@
 #include "Output.h"
-#include "Server.h"
 #include "Listener.h"
+#include "Server.h"
 
 #include <wayland-server.h>
 #include <wlr_cpp/backend.h>
@@ -20,11 +20,10 @@ struct RenderData {
     Server* server;
 };
 
-
 void register_output(Server* server, wlr_output* output)
 {
     server->outputs.emplace_back(output);
-    server->listeners.add_listener(&output->events.frame, Listener{output_frame_handler, server, output});
+    server->listeners.add_listener(&output->events.frame, Listener { output_frame_handler, server, output });
 }
 
 void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)

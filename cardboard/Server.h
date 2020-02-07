@@ -7,9 +7,9 @@
 
 #include "EventListeners.h"
 #include "Keyboard.h"
+#include "Listener.h"
 #include "Output.h"
 #include "View.h"
-#include "Listener.h"
 
 struct Server {
     struct GrabState {
@@ -28,9 +28,9 @@ struct Server {
     struct wlr_renderer* renderer;
 
     struct wlr_xdg_shell* xdg_shell;
-    std::list<View> views;  // TODO: check if View's statefulness is needed
-                            // change to std::vector if it's not needed +
-                            // change in ListenerData from View* to View
+    std::list<View> views; // TODO: check if View's statefulness is needed
+        // change to std::vector if it's not needed +
+        // change in ListenerData from View* to View
 
     struct wlr_cursor* cursor;
     struct wlr_xcursor_manager* cursor_manager;

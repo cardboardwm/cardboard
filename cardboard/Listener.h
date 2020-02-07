@@ -1,33 +1,33 @@
 #ifndef CARDBOARD_LISTENER_H
 #define CARDBOARD_LISTENER_H
 
-#include <wayland-server.h>
 #include "View.h"
+#include <wayland-server.h>
 
-#include <variant>
 #include <algorithm>
+#include <variant>
 
-struct NoneT {};
+struct NoneT {
+};
 struct Server;
 
 using ListenerData = std::variant<
-        NoneT,
-        wlr_output*,
-        View*,
-        wlr_input_device*
-    >;
+    NoneT,
+    wlr_output*,
+    View*,
+    wlr_input_device*>;
 
-struct Listener
-{
+struct Listener {
     wl_listener listener;
     Server* server;
     ListenerData listener_data;
 
-    Listener(wl_notify_func_t notify, Server* server, ListenerData listener_data):
-        listener {{}, notify},
-        server{server},
-        listener_data{ std::move(listener_data) }
-    {}
+    Listener(wl_notify_func_t notify, Server* server, ListenerData listener_data)
+        : listener { {}, notify }
+        , server { server }
+        , listener_data { std::move(listener_data) }
+    {
+    }
 };
 
 inline Server* get_server(wl_listener* listener)
@@ -43,13 +43,11 @@ T& get_listener_data(wl_listener* listener)
     return std::get<T>(l->listener_data);
 }
 
-class ListenerList
-{
+class ListenerList {
 public:
-
     ~ListenerList()
     {
-        for(auto& listener: listeners)
+        for (auto& listener : listeners)
             wl_list_remove(&listener.listener.link);
     }
 

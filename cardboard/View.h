@@ -6,7 +6,6 @@
 
 #include <list>
 
-
 struct Server;
 
 struct View {

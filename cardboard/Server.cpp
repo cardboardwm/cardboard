@@ -43,23 +43,21 @@ Server::Server()
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        {&cursor->events.motion, cursor_motion_handler},
-        {&cursor->events.motion_absolute, cursor_motion_absolute_handler},
-        {&cursor->events.button, cursor_button_handler},
-        {&cursor->events.axis, cursor_axis_handler},
-        {&cursor->events.frame, cursor_frame_handler},
-        {&backend->events.new_output, new_output_handler},
-        {&xdg_shell->events.new_surface, new_xdg_surface_handler},
-        {&backend->events.new_input, new_input_handler},
-        {&seat->events.request_set_cursor, seat_request_cursor_handler}
+        { &cursor->events.motion, cursor_motion_handler },
+        { &cursor->events.motion_absolute, cursor_motion_absolute_handler },
+        { &cursor->events.button, cursor_button_handler },
+        { &cursor->events.axis, cursor_axis_handler },
+        { &cursor->events.frame, cursor_frame_handler },
+        { &backend->events.new_output, new_output_handler },
+        { &xdg_shell->events.new_surface, new_xdg_surface_handler },
+        { &backend->events.new_input, new_input_handler },
+        { &seat->events.request_set_cursor, seat_request_cursor_handler }
     };
 
-    for(const auto& to_add_listener: to_add_listeners)
-    {
+    for (const auto& to_add_listener : to_add_listeners) {
         listeners.add_listener(
             to_add_listener.signal,
-            Listener{to_add_listener.notify, this, NoneT{}}
-        );
+            Listener { to_add_listener.notify, this, NoneT {} });
     }
 }
 
@@ -177,8 +175,7 @@ void Server::focus_view(View* view, wlr_surface* surface)
     }
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
-    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(),
-        [view](auto& x) { return view == &x; }));
+    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](auto& x) { return view == &x; }));
     // activate surface
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically
