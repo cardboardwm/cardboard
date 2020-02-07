@@ -13,8 +13,6 @@
 
 Server::Server()
 {
-    listeners.server = this;
-
     wl_display = wl_display_create();
     // let wlroots select the required hardware abstractions
     backend = wlr_backend_autocreate(wl_display, nullptr);
@@ -27,15 +25,10 @@ Server::Server()
 
     output_layout = wlr_output_layout_create();
 
-    listeners.new_output.notify = EventListeners::new_output_handler;
-    wl_signal_add(&backend->events.new_output, &listeners.new_output);
-
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement layer-shell
     // TODO: implement Xwayland
     xdg_shell = wlr_xdg_shell_create(wl_display);
-    listeners.new_xdg_surface.notify = EventListeners::new_xdg_surface_handler;
-    wl_signal_add(&xdg_shell->events.new_surface, &listeners.new_xdg_surface);
 
     cursor = wlr_cursor_create();
     wlr_cursor_attach_output_layout(cursor, output_layout);
@@ -44,28 +37,46 @@ Server::Server()
     cursor_manager = wlr_xcursor_manager_create(nullptr, 24);
     wlr_xcursor_manager_load(cursor_manager, 1);
 
-    // mouse cursor handlers
-    listeners.cursor_motion.notify = EventListeners::cursor_motion_handler;
-    listeners.cursor_motion_absolute.notify = EventListeners::cursor_motion_absolute_handler;
-    listeners.cursor_button.notify = EventListeners::cursor_button_handler;
-    listeners.cursor_axis.notify = EventListeners::cursor_axis_handler;
-    listeners.cursor_frame.notify = EventListeners::cursor_frame_handler;
-    wl_signal_add(&cursor->events.motion, &listeners.cursor_motion);
-    wl_signal_add(&cursor->events.motion_absolute, &listeners.cursor_motion_absolute);
-    wl_signal_add(&cursor->events.button, &listeners.cursor_button);
-    wl_signal_add(&cursor->events.axis, &listeners.cursor_axis);
-    wl_signal_add(&cursor->events.frame, &listeners.cursor_frame);
-
-    listeners.new_input.notify = EventListeners::new_input_handler;
-    wl_signal_add(&backend->events.new_input, &listeners.new_input);
     seat = wlr_seat_create(wl_display, "seat0");
-    listeners.request_cursor.notify = EventListeners::seat_request_cursor_handler;
-    wl_signal_add(&seat->events.request_set_cursor, &listeners.request_cursor);
+
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &cursor->events.motion, cursor_motion_handler },
+        { &cursor->events.motion_absolute, cursor_motion_absolute_handler },
+        { &cursor->events.button, cursor_button_handler },
+        { &cursor->events.axis, cursor_axis_handler },
+        { &cursor->events.frame, cursor_frame_handler },
+        { &backend->events.new_output, new_output_handler },
+        { &xdg_shell->events.new_surface, new_xdg_surface_handler },
+        { &backend->events.new_input, new_input_handler },
+        { &seat->events.request_set_cursor, seat_request_cursor_handler }
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        listeners.add_listener(
+            to_add_listener.signal,
+            Listener { to_add_listener.notify, this, NoneT {} });
+    }
 }
 
 void Server::new_keyboard(struct wlr_input_device* device)
 {
-    keyboards.emplace_back(this, device);
+    keyboards.push_back(device);
+
+    struct xkb_rule_names rules = {};
+    struct xkb_context* context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    struct xkb_keymap* keymap = xkb_map_new_from_names(context, &rules, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    wlr_keyboard_set_keymap(device->keyboard, keymap);
+    xkb_keymap_unref(keymap);
+    xkb_context_unref(context);
+    wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
+
+    listeners.add_listener(&device->keyboard->events.modifiers, Listener { modifiers_handler, this, device });
+    listeners.add_listener(&device->keyboard->events.key, Listener { key_handler, this, device });
+    wlr_seat_set_keyboard(seat, device);
 }
 
 void Server::new_pointer(struct wlr_input_device* device)
@@ -164,8 +175,7 @@ void Server::focus_view(View* view, wlr_surface* surface)
     }
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
-    views.splice(views.begin(), views, view->link);
-    view->link = views.begin();
+    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](auto& x) { return view == &x; }));
     // activate surface
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically

@@ -4,38 +4,41 @@
 #include <wlr_cpp/types/wlr_output.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
 
-#include "EventListeners.h"
+#include "Listener.h"
 #include "Server.h"
 
-void EventListeners::new_output_handler(struct wl_listener* listener, void* data)
+#include "EventListeners.h"
+
+void new_output_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, new_output);
-    Server* server = listeners->server;
-    auto* wlr_output = static_cast<struct wlr_output*>(data);
+    Server* server = get_server(listener);
+
+    auto* output = static_cast<struct wlr_output*>(data);
 
     // pick the monitor's preferred mode
-    if (!wl_list_empty(&wlr_output->modes)) {
-        struct wlr_output_mode* mode = wlr_output_preferred_mode(wlr_output);
-        wlr_output_set_mode(wlr_output, mode);
-        wlr_output_enable(wlr_output, true);
-        if (!wlr_output_commit(wlr_output)) {
+    if (!wl_list_empty(&output->modes)) {
+        struct wlr_output_mode* mode = wlr_output_preferred_mode(output);
+        wlr_output_set_mode(output, mode);
+        wlr_output_enable(output, true);
+        if (!wlr_output_commit(output)) {
             return;
         }
     }
 
-    server->outputs.emplace_back(server, wlr_output);
+    register_output(server, output);
 
     // add output to the layout. add_auto arranges outputs left-to-right
     // in the order they appear.
-    wlr_output_layout_add_auto(server->output_layout, wlr_output);
+    wlr_output_layout_add_auto(server->output_layout, output);
 
     // expose the output to the clients
-    wlr_output_create_global(wlr_output);
+    wlr_output_create_global(output);
 }
-void EventListeners::new_xdg_surface_handler(struct wl_listener* listener, void* data)
+
+void new_xdg_surface_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, new_xdg_surface);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* xdg_surface = static_cast<struct wlr_xdg_surface*>(data);
 
     // ignore popups TODO: don't ignore them
@@ -43,32 +46,34 @@ void EventListeners::new_xdg_surface_handler(struct wl_listener* listener, void*
         return;
     }
 
-    auto this_it = server->views.emplace(server->views.begin(), server, xdg_surface);
-    this_it->link = this_it;
+    create_view(server, { xdg_surface });
 }
-void EventListeners::cursor_motion_handler(struct wl_listener* listener, void* data)
+
+void cursor_motion_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, cursor_motion);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* event = static_cast<struct wlr_event_pointer_motion*>(data);
     wlr_cursor_move(server->cursor, event->device, event->delta_x, event->delta_y);
     server->process_cursor_motion(event->time_msec);
 }
-void EventListeners::cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
+
+void cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, cursor_motion_absolute);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* event = static_cast<struct wlr_event_pointer_motion_absolute*>(data);
     wlr_cursor_warp_absolute(server->cursor, event->device, event->x, event->y);
     server->process_cursor_motion(event->time_msec);
 }
-void EventListeners::cursor_button_handler(struct wl_listener* listener, void* data)
+
+void cursor_button_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, cursor_button);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* event = static_cast<struct wlr_event_pointer_button*>(data);
 
-    wlr_seat_pointer_notify_button(listeners->server->seat, event->time_msec, event->button, event->state);
+    wlr_seat_pointer_notify_button(server->seat, event->time_msec, event->button, event->state);
     double sx, sy;
     struct wlr_surface* surface;
     View* view = server->get_surface_under_cursor(server->cursor->x, server->cursor->y, surface, sx, sy);
@@ -79,24 +84,27 @@ void EventListeners::cursor_button_handler(struct wl_listener* listener, void* d
         server->focus_view(view, surface);
     }
 }
-void EventListeners::cursor_axis_handler(struct wl_listener* listener, void* data)
+
+void cursor_axis_handler(struct wl_listener* listener, void* data)
 {
     // this happens when you scroll
-    EventListeners* listeners = wl_container_of(listener, listeners, cursor_axis);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
     wlr_seat_pointer_notify_axis(server->seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
-void EventListeners::cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+
+void cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, cursor_frame);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     wlr_seat_pointer_notify_frame(server->seat);
 }
-void EventListeners::new_input_handler(struct wl_listener* listener, void* data)
+
+void new_input_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, new_input);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* device = static_cast<struct wlr_input_device*>(data);
 
     switch (device->type) {
@@ -117,10 +125,11 @@ void EventListeners::new_input_handler(struct wl_listener* listener, void* data)
     }
     wlr_seat_set_capabilities(server->seat, capabilities);
 }
-void EventListeners::seat_request_cursor_handler(struct wl_listener* listener, void* data)
+
+void seat_request_cursor_handler(struct wl_listener* listener, void* data)
 {
-    EventListeners* listeners = wl_container_of(listener, listeners, request_cursor);
-    Server* server = listeners->server;
+    Server* server = get_server(listener);
+
     auto* event = static_cast<wlr_seat_pointer_request_set_cursor_event*>(data);
     struct wlr_seat_client* focused_client = server->seat->pointer_state.focused_client;
 
