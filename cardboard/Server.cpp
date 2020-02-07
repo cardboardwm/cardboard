@@ -25,7 +25,6 @@ Server::Server()
 
     output_layout = wlr_output_layout_create();
 
-
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement layer-shell
     // TODO: implement Xwayland
@@ -37,7 +36,6 @@ Server::Server()
     // the cursor manager loads xcursor images for all scale factors
     cursor_manager = wlr_xcursor_manager_create(nullptr, 24);
     wlr_xcursor_manager_load(cursor_manager, 1);
-
 
     seat = wlr_seat_create(wl_display, "seat0");
 
@@ -68,7 +66,19 @@ Server::Server()
 void Server::new_keyboard(struct wlr_input_device* device)
 {
     keyboards.push_back(device);
-    create_keyboard(this, device);
+
+    struct xkb_rule_names rules = {};
+    struct xkb_context* context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    struct xkb_keymap* keymap = xkb_map_new_from_names(context, &rules, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    wlr_keyboard_set_keymap(device->keyboard, keymap);
+    xkb_keymap_unref(keymap);
+    xkb_context_unref(context);
+    wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
+
+    listeners.add_listener(&device->keyboard->events.modifiers, Listener { modifiers_handler, this, device });
+    listeners.add_listener(&device->keyboard->events.key, Listener { key_handler, this, device });
+    wlr_seat_set_keyboard(seat, device);
 }
 
 void Server::new_pointer(struct wlr_input_device* device)
