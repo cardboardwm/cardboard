@@ -2,6 +2,7 @@
 #define CARDBOARD_LISTENER_H
 
 #include "View.h"
+#include "Keyboard.h"
 #include <wayland-server.h>
 
 #include <algorithm>
@@ -15,7 +16,8 @@ using ListenerData = std::variant<
     NoneT,
     wlr_output*,
     View*,
-    wlr_input_device*>;
+    wlr_input_device*,
+    KeyHandleData>;
 
 struct Listener {
     wl_listener listener;

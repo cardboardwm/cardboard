@@ -75,7 +75,9 @@ void Server::new_keyboard(struct wlr_input_device* device)
     wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
 
     listeners.add_listener(&device->keyboard->events.modifiers, Listener { modifiers_handler, this, device });
-    listeners.add_listener(&device->keyboard->events.key, Listener { key_handler, this, device });
+    listeners.add_listener(
+        &device->keyboard->events.key,
+        Listener { key_handler, this, KeyHandleData{device, &keybindingsConfig}});
     wlr_seat_set_keyboard(seat, device);
 }
 
