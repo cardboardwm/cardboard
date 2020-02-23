@@ -97,9 +97,6 @@ void Server::process_cursor_motion(uint32_t time)
     double sx, sy;
     struct wlr_surface* surface = nullptr;
     const View* view = get_surface_under_cursor(cursor->x, cursor->y, surface, sx, sy);
-    if (!view && surface) {
-        wlr_log(WLR_DEBUG, "poopy");
-    }
     if (!view) {
         // set the cursor to default
         wlr_xcursor_manager_set_cursor_image(cursor_manager, "left_ptr", cursor);
