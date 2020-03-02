@@ -81,7 +81,7 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
         // end grabbing
         server->grab_state = std::nullopt;
     } else {
-        server->focus_view(view, surface);
+        server->focus_view(view);
     }
 }
 

@@ -24,6 +24,7 @@ cardboard_sources = files(
   'Output.cpp',
   'Keyboard.cpp',
   'View.cpp',
+  'Tiling.cpp',
   'main.cpp',
 )
 
