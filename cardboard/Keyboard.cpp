@@ -22,7 +22,7 @@ void key_handler(struct wl_listener* listener, void* data)
     auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
 
     uint32_t modifiers = wlr_keyboard_get_modifiers(handleData.device->keyboard);
-    if((modifiers & handleData.config->modifier) && event->state == WLR_KEY_PRESSED)
+    if (event->state == WLR_KEY_PRESSED)
     {
         const xkb_keysym_t* syms;
         int syms_number = xkb_state_key_get_syms(
@@ -30,10 +30,10 @@ void key_handler(struct wl_listener* listener, void* data)
             event->keycode + 8,
             &syms
         );
-        
+
         for(int i = 0; i < syms_number; i++)
         {
-            auto& map = handleData.config->map;
+            auto& map = handleData.config->map[modifiers];
             if(auto it = map.find(syms[i]); it != map.end())
                 it->second(server);
         }

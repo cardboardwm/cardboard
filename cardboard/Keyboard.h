@@ -12,8 +12,8 @@ using KeybindingCallback = void(*)(Server*);
 
 struct KeybindingsConfig
 {
-    uint32_t modifier;
-    std::unordered_map<xkb_keysym_t, KeybindingCallback> map;
+    static_assert(WLR_MODIFIER_COUNT <= 12, "too many modifiers");
+    std::unordered_map<xkb_keysym_t, KeybindingCallback> map[(1<<WLR_MODIFIER_COUNT) - 1];
 };
 
 struct KeyHandleData
