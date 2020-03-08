@@ -9,8 +9,8 @@
 #include "Keyboard.h"
 #include "Listener.h"
 #include "Output.h"
-#include "View.h"
 #include "Tiling.h"
+#include "View.h"
 
 struct Server {
     struct GrabState {

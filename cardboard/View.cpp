@@ -9,7 +9,7 @@
 View::View(struct wlr_xdg_surface* xdg_surface)
     : xdg_surface(xdg_surface)
     , mapped(false)
-    , geometry{0, 0, 0, 0}
+    , geometry { 0, 0, 0, 0 }
     , x(0)
     , y(0)
 {
@@ -101,12 +101,9 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
 
     struct wlr_box new_geo;
     wlr_xdg_surface_get_geometry(view->xdg_surface, &new_geo);
-    if (new_geo.width != view->geometry.width ||
-        new_geo.height != view->geometry.height) {
+    if (new_geo.width != view->geometry.width || new_geo.height != view->geometry.height) {
         // the view has set a new size
-        wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)",
-                view->geometry.width, view->geometry.height,
-                new_geo.width, new_geo.height);
+        wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
         server->tiles.arrange_tiles();

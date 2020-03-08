@@ -8,7 +8,7 @@
 // TODO: remove this
 const int TILE_WIDTH = 300;
 
-void TilingSequence::add_view(View *view, View* next_to)
+void TilingSequence::add_view(View* view, View* next_to)
 {
     auto it = std::find_if(tiles.begin(), tiles.end(), [next_to](auto& comp) {
         return comp.view == next_to;
@@ -18,8 +18,7 @@ void TilingSequence::add_view(View *view, View* next_to)
     }
     auto tile = tiles.insert(it, { view });
 
-    auto output = wlr_output_layout_output_at(output_layout, (double)view->x + view->geometry.width / 2.,
-                                              (double)view->y + view->geometry.height / 2.);
+    auto output = wlr_output_layout_output_at(output_layout, (double)view->x + view->geometry.width / 2., (double)view->y + view->geometry.height / 2.);
     int ow, oh;
     wlr_output_effective_resolution(output, &ow, &oh);
 
@@ -29,7 +28,7 @@ void TilingSequence::add_view(View *view, View* next_to)
     arrange_tiles();
 }
 
-void TilingSequence::remove_view(View *view)
+void TilingSequence::remove_view(View* view)
 {
     if (auto it = std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {
             return t.view == view;

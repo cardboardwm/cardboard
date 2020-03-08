@@ -26,7 +26,6 @@ void register_output(Server* server, wlr_output* output)
     server->listeners.add_listener(&output->events.frame, Listener { output_frame_handler, server, output });
 }
 
-
 void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
 {
     auto* rdata = static_cast<RenderData*>(data);
