@@ -1,8 +1,8 @@
 #ifndef CARDBOARD_LISTENER_H
 #define CARDBOARD_LISTENER_H
 
-#include "View.h"
 #include "Keyboard.h"
+#include "View.h"
 #include <wayland-server.h>
 
 #include <algorithm>

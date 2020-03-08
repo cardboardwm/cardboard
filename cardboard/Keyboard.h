@@ -8,16 +8,14 @@
 
 struct Server;
 
-using KeybindingCallback = void(*)(Server*);
+using KeybindingCallback = void (*)(Server*);
 
-struct KeybindingsConfig
-{
+struct KeybindingsConfig {
     static_assert(WLR_MODIFIER_COUNT <= 12, "too many modifiers");
-    std::unordered_map<xkb_keysym_t, KeybindingCallback> map[(1<<WLR_MODIFIER_COUNT) - 1];
+    std::unordered_map<xkb_keysym_t, KeybindingCallback> map[(1 << WLR_MODIFIER_COUNT) - 1];
 };
 
-struct KeyHandleData
-{
+struct KeyHandleData {
     wlr_input_device* device;
     KeybindingsConfig* config;
 };
