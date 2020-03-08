@@ -52,6 +52,7 @@ struct Server {
 
     bool run();
     void stop();
+    void teardown();
 
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);

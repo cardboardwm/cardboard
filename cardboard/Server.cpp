@@ -257,3 +257,8 @@ void Server::stop()
     wl_display_destroy_clients(wl_display);
     wl_display_destroy(wl_display);
 }
+
+void Server::teardown()
+{
+    wl_display_terminate(wl_display);
+}
