@@ -24,6 +24,7 @@ Server::Server()
     wlr_data_device_manager_create(wl_display); // for clipboard
 
     output_layout = wlr_output_layout_create();
+    tiles.set_output_layout(output_layout);
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement layer-shell
@@ -154,23 +155,25 @@ void Server::process_cursor_resize()
     }
     grab_state->view->x = x;
     grab_state->view->y = y;
-    wlr_xdg_toplevel_set_size(grab_state->view->xdg_surface, width, height);
+    grab_state->view->resize(width, height);
+
+    // TODO: fix resizing
+    tiles.arrange_tiles();
 }
 
-void Server::focus_view(View* view, wlr_surface* surface)
+void Server::focus_view(View* view)
 {
     if (view == nullptr) {
         return;
     }
 
-    auto* prev_surface = seat->keyboard_state.focused_surface;
-    if (prev_surface == surface) {
+    View* prev_view = get_focused_view();
+    if (prev_view == view) {
         return; // already focused
     }
-    if (prev_surface) {
+    if (prev_view) {
         // deactivate previous surface
-        auto* prev_xdg_surface = wlr_xdg_surface_from_wlr_surface(seat->keyboard_state.focused_surface);
-        wlr_xdg_toplevel_set_activated(prev_xdg_surface, false);
+        wlr_xdg_toplevel_set_activated(prev_view->xdg_surface, false);
     }
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
@@ -189,7 +192,18 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         }
     }
 
-    return NULL;
+    return nullptr;
+}
+
+View* Server::get_focused_view()
+{
+    for (auto& view : views) {
+        if (view.xdg_surface->surface == seat->keyboard_state.focused_surface) {
+            return &view;
+        }
+    }
+
+    return nullptr;
 }
 
 void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)

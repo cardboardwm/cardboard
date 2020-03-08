@@ -10,6 +10,7 @@
 #include "Listener.h"
 #include "Output.h"
 #include "View.h"
+#include "Tiling.h"
 
 struct Server {
     struct GrabState {
@@ -31,6 +32,7 @@ struct Server {
     std::list<View> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
+    TilingSequence tiles;
 
     struct wlr_cursor* cursor;
     struct wlr_xcursor_manager* cursor_manager;
@@ -56,9 +58,10 @@ struct Server {
     void process_cursor_motion(uint32_t time);
     void process_cursor_move();
     void process_cursor_resize();
-    void focus_view(View* view, struct wlr_surface* surface);
+    void focus_view(View* view);
     // Returns the xdg surface leaf of the first view under the cursor
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
+    View* get_focused_view();
     void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
 };
 

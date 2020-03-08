@@ -11,17 +11,21 @@ struct Server;
 struct View {
     struct wlr_xdg_surface* xdg_surface;
     bool mapped;
-    int x, y;
+    struct wlr_box geometry;
+    int x, y; // coordinates of the surface, relative to the screen layout
 
     View(struct wlr_xdg_surface* xdg_surface);
     // Gets the child xdg surface of this view's toplevel xdg surface sitting under the cursor, if exists.
     // sx and sy and the given output layout relative coordinates (lx and ly), relative to that surface
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+
+    void resize(int width, int height);
 };
 
 void xdg_surface_map_handler(struct wl_listener* listener, void* data);
 void xdg_surface_unmap_handler(struct wl_listener* listener, void* data);
 void xdg_surface_destroy_handler(struct wl_listener* listener, void* data);
+void xdg_surface_commit_handler(struct wl_listener* listener, void* data);
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data);
 void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data);
 
