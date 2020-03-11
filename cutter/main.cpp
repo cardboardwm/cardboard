@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
-#include <string>
+#include <cstdint>
+#include <vector>
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -45,13 +46,28 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::string cmd;
+    std::vector<uint8_t> cmd;
     for (int i = 1; i < argc; i++) {
-        cmd += argv[i];
-        cmd.push_back(' ');
+        size_t len = strlen(argv[i]);
+        if (len > 255) {
+            std::cerr << "Argument length is longer than 255" << std::endl;
+            close(sock_fd);
+            return EXIT_FAILURE;
+        }
+        cmd.reserve(cmd.size() + len + 1); // 1 for the length byte
+
+        cmd.push_back(len);
+        for (size_t j = 0; j < len; j++) {
+            cmd.push_back(argv[i][j]);
+        }
+    }
+    cmd.push_back(0);
+
+    for (uint8_t x : cmd) {
+        std::cout << (int)x << ' ';
     }
 
-    if (send(sock_fd, cmd.c_str(), cmd.size() + 1, 0) == -1) {
+    if (send(sock_fd, cmd.data(), cmd.size(), 0) == -1) {
         std::cerr << "Failed to send the command" << std::endl;
         close(sock_fd);
         return EXIT_FAILURE;
