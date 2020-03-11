@@ -19,18 +19,19 @@ cardboard_deps = [
 ]
 
 cardboard_sources = files(
-  'Server.cpp',
   'EventListeners.cpp',
-  'Output.cpp',
+  'IPC.cpp',
   'Keyboard.cpp',
-  'View.cpp',
+  'Output.cpp',
+  'Server.cpp',
   'Tiling.cpp',
+  'View.cpp',
   'main.cpp',
 )
 
 executable(
   'cardboard',
   cardboard_sources,
-  include_directories: [include_directories('../include'), include_directories('.')],
+  include_directories: [include_dir],
   dependencies: cardboard_deps,
 )

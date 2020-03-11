@@ -6,16 +6,23 @@
 #include <wlr_cpp/types/wlr_output_layout.h>
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/util/log.h>
+#include <cardboard_common/IPC.h>
+
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <cassert>
 
 #include "Server.h"
+#include "IPC.h"
 
 Server::Server()
 {
     wl_display = wl_display_create();
     // let wlroots select the required hardware abstractions
     backend = wlr_backend_autocreate(wl_display, nullptr);
+
+    event_loop = wl_display_get_event_loop(wl_display);
 
     renderer = wlr_backend_get_renderer(backend);
     wlr_renderer_init_wl_display(renderer, wl_display);
@@ -60,6 +67,50 @@ Server::Server()
             to_add_listener.signal,
             Listener { to_add_listener.notify, this, NoneT {} });
     }
+}
+
+bool Server::init_ipc()
+{
+    std::string socket_path;
+
+    char* env_path = getenv(IPC_SOCKET_ENV_VAR);
+    if (env_path != nullptr) {
+        socket_path = env_path;
+    } else {
+        std::string display = "wayland-0";
+        if (char* env_display = getenv("WAYLAND_DISPLAY")) {
+            display = env_display;
+        }
+        socket_path = "/tmp/cardboard-" + display;
+    }
+
+    ipc_sock_address.sun_family = AF_UNIX;
+    strncpy(ipc_sock_address.sun_path, socket_path.c_str(), sizeof(ipc_sock_address.sun_path));
+
+    ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (ipc_socket_fd == -1) {
+        wlr_log(WLR_ERROR, "Couldn't create the IPC socket.");
+        return false;
+    }
+
+    unlink(socket_path.c_str());
+
+    if (bind(ipc_socket_fd, reinterpret_cast<sockaddr*>(&ipc_sock_address), sizeof(ipc_sock_address)) == -1) {
+        wlr_log(WLR_ERROR, "Couldn't bind a name ('%s') to the IPC socket.", ipc_sock_address.sun_path);
+        return false;
+    }
+
+    if (listen(ipc_socket_fd, SOMAXCONN) == -1) {
+        wlr_log(WLR_ERROR, "Couldn't listen to the IPC socket '%s'.", ipc_sock_address.sun_path);
+        return false;
+    }
+
+    setenv(IPC_SOCKET_ENV_VAR, ipc_sock_address.sun_path, 0);
+    ipc_event_source = wl_event_loop_add_fd(event_loop, ipc_socket_fd, WL_EVENT_READABLE, ipc_read_command, this);
+
+    wlr_log(WLR_INFO, "Listening on socket %s", ipc_sock_address.sun_path);
+
+    return true;
 }
 
 void Server::new_keyboard(struct wlr_input_device* device)
@@ -230,6 +281,9 @@ void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)
 
 bool Server::run()
 {
+    if (!init_ipc()) {
+        return false;
+    }
     // add UNIX socket to the Wayland display
     const char* socket = wl_display_add_socket_auto(wl_display);
     if (!socket) {
@@ -256,6 +310,7 @@ void Server::stop()
     wlr_log(WLR_INFO, "Shutting down Cardboard");
     wl_display_destroy_clients(wl_display);
     wl_display_destroy(wl_display);
+    close(ipc_socket_fd);
 }
 
 void Server::teardown()

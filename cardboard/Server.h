@@ -1,6 +1,8 @@
 #ifndef __CARDBOARD_SERVER_H_
 #define __CARDBOARD_SERVER_H_
 
+#include <sys/un.h>
+
 #include <cstdint>
 #include <list>
 #include <optional>
@@ -11,6 +13,7 @@
 #include "Output.h"
 #include "Tiling.h"
 #include "View.h"
+#include "IPC.h"
 
 struct Server {
     struct GrabState {
@@ -27,6 +30,11 @@ struct Server {
     struct wl_display* wl_display;
     struct wlr_backend* backend;
     struct wlr_renderer* renderer;
+
+    sockaddr_un ipc_sock_address;
+    int ipc_socket_fd = -1;
+    wl_event_loop* event_loop;
+    wl_event_source* ipc_event_source;
 
     struct wlr_xdg_shell* xdg_shell;
     std::list<View> views; // TODO: check if View's statefulness is needed
@@ -54,6 +62,7 @@ struct Server {
     void stop();
     void teardown();
 
+    bool init_ipc();
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);
     void process_cursor_motion(uint32_t time);
