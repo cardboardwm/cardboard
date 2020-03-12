@@ -3,26 +3,50 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <cstdio>
 #include <vector>
 #include <optional>
+#include <string>
 
 #include "IPC.h"
 #include "Server.h"
 
 using ParsedCommand = std::vector<std::string>;
+using IPCCommandHandler = IPCCommandResult(ParsedCommand,Server*);
 
-static IPCCommandResult run_command(ParsedCommand cmd, [[maybe_unused]] Server* server)
+template <typename... T>
+constexpr auto make_array(T&&... values) -> std::array<typename std::decay<typename std::common_type<T...>::type>::type, sizeof...(T)>
+{
+    return std::array<typename std::decay<typename std::common_type<T...>::type>::type, sizeof...(T)> { std::forward<T>(values)... };
+}
+
+static IPCCommandResult command_quit([[maybe_unused]] ParsedCommand cmd, Server* server)
+{
+    server->teardown();
+    return {0, ""};
+}
+
+static auto table = make_array<std::pair<std::string_view, IPCCommandHandler*>>({"quit", command_quit});
+
+static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
 {
     std::string stringified;
     for (auto& arg : cmd) {
         stringified += arg + ' ';
     }
-    wlr_log(WLR_DEBUG, "got command %s", stringified.c_str());
-    return {0, ""};
+    wlr_log(WLR_DEBUG, "ipc: got command %s", stringified.c_str());
+
+    std::pair<std::string_view, IPCCommandHandler*> to_search = {std::string_view(cmd[0]), nullptr};
+    auto handler = std::lower_bound(table.begin(), table.end(), to_search);
+    if (handler == table.end() || handler->first != cmd[0]) {
+        return {1, "No such command.\n"};
+    }
+
+    return handler->second(cmd, server);
 }
 
 static std::optional<ParsedCommand> parse_command(uint8_t* cmd, ssize_t len)
@@ -72,7 +96,7 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
     std::optional<ParsedCommand> parsed = parse_command(cmd, len);
 
     if (!parsed) {
-        constexpr std::string_view error = "Malformed command";
+        constexpr std::string_view error = "Malformed command.\n";
         send(client_fd, error.data(), error.size(), 0);
         close(client_fd);
 

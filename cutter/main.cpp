@@ -19,7 +19,8 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    struct sockaddr_un sock_address = { .sun_family = AF_UNIX };
+    struct sockaddr_un sock_address = {};
+    sock_address.sun_family = AF_UNIX;
 
     int sock_fd = -1;
     if (sock_fd = socket(AF_UNIX, SOCK_STREAM, 0); sock_fd == -1) {
@@ -62,10 +63,6 @@ int main(int argc, char *argv[]) {
         }
     }
     cmd.push_back(0);
-
-    for (uint8_t x : cmd) {
-        std::cout << (int)x << ' ';
-    }
 
     if (send(sock_fd, cmd.data(), cmd.size(), 0) == -1) {
         std::cerr << "Failed to send the command" << std::endl;
