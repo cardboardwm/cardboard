@@ -27,7 +27,7 @@ constexpr auto make_array(T&&... values) -> std::array<typename std::decay<typen
 static IPCCommandResult command_quit([[maybe_unused]] ParsedCommand cmd, Server* server)
 {
     server->teardown();
-    return { 0, "" };
+    return { "" };
 }
 
 static auto table = make_array<std::pair<std::string_view, IPCCommandHandler*>>({ "quit", command_quit });
@@ -43,7 +43,7 @@ static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
     std::pair<std::string_view, IPCCommandHandler*> to_search = { std::string_view(cmd[0]), nullptr };
     auto handler = std::lower_bound(table.begin(), table.end(), to_search);
     if (handler == table.end() || handler->first != cmd[0]) {
-        return { 1, "No such command.\n" };
+        return { "No such command.\n" };
     }
 
     return handler->second(cmd, server);
@@ -109,5 +109,5 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
     }
     close(client_fd);
 
-    return result.code;
+    return 0;
 }

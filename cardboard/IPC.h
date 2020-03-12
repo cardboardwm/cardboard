@@ -5,7 +5,6 @@
 #include <string>
 
 struct IPCCommandResult {
-    int code;
     std::string message;
 };
 
