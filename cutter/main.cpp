@@ -1,6 +1,6 @@
-#include <iostream>
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
+#include <iostream>
 #include <vector>
 
 #include <sys/socket.h>
@@ -9,11 +9,13 @@
 
 #include <cardboard_common/IPC.h>
 
-void print_usage(char* argv0) {
+void print_usage(char* argv0)
+{
     std::cerr << "Usage: " << argv0 << " <command> [args...]" << std::endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
     if (argc < 2) {
         print_usage(argv[0]);
         return EXIT_FAILURE;

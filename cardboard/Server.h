@@ -8,12 +8,12 @@
 #include <optional>
 
 #include "EventListeners.h"
+#include "IPC.h"
 #include "Keyboard.h"
 #include "Listener.h"
 #include "Output.h"
 #include "Tiling.h"
 #include "View.h"
-#include "IPC.h"
 
 struct Server {
     struct GrabState {

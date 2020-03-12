@@ -6,17 +6,17 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstdint>
-#include <cstring>
 #include <cstdio>
-#include <vector>
+#include <cstring>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "IPC.h"
 #include "Server.h"
 
 using ParsedCommand = std::vector<std::string>;
-using IPCCommandHandler = IPCCommandResult(ParsedCommand,Server*);
+using IPCCommandHandler = IPCCommandResult(ParsedCommand, Server*);
 
 template <typename... T>
 constexpr auto make_array(T&&... values) -> std::array<typename std::decay<typename std::common_type<T...>::type>::type, sizeof...(T)>
@@ -27,10 +27,10 @@ constexpr auto make_array(T&&... values) -> std::array<typename std::decay<typen
 static IPCCommandResult command_quit([[maybe_unused]] ParsedCommand cmd, Server* server)
 {
     server->teardown();
-    return {0, ""};
+    return { 0, "" };
 }
 
-static auto table = make_array<std::pair<std::string_view, IPCCommandHandler*>>({"quit", command_quit});
+static auto table = make_array<std::pair<std::string_view, IPCCommandHandler*>>({ "quit", command_quit });
 
 static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
 {
@@ -40,10 +40,10 @@ static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
     }
     wlr_log(WLR_DEBUG, "ipc: got command %s", stringified.c_str());
 
-    std::pair<std::string_view, IPCCommandHandler*> to_search = {std::string_view(cmd[0]), nullptr};
+    std::pair<std::string_view, IPCCommandHandler*> to_search = { std::string_view(cmd[0]), nullptr };
     auto handler = std::lower_bound(table.begin(), table.end(), to_search);
     if (handler == table.end() || handler->first != cmd[0]) {
-        return {1, "No such command.\n"};
+        return { 1, "No such command.\n" };
     }
 
     return handler->second(cmd, server);

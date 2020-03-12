@@ -1,3 +1,4 @@
+#include <cardboard_common/IPC.h>
 #include <wayland-server.h>
 #include <wlr_cpp/backend.h>
 #include <wlr_cpp/types/wlr_compositor.h>
@@ -6,15 +7,14 @@
 #include <wlr_cpp/types/wlr_output_layout.h>
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/util/log.h>
-#include <cardboard_common/IPC.h>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <cassert>
 
-#include "Server.h"
 #include "IPC.h"
+#include "Server.h"
 
 Server::Server()
 {
