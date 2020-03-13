@@ -11,11 +11,11 @@ int main()
     wlr_log_init(WLR_DEBUG, nullptr);
     signal(SIGINT, [](int signo) {
         if (signo == SIGINT) {
-            server.teardown();
+            server.teardown(0);
         }
     });
 
     server.run();
     server.stop();
-    return 0;
+    return server.exit_code;
 }

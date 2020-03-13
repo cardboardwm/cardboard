@@ -2,6 +2,9 @@
 #include <wlr_cpp/types/wlr_xdg_shell.h>
 #include <wlr_cpp/util/log.h>
 
+#include <cassert>
+#include <limits>
+
 #include "Listener.h"
 #include "Server.h"
 #include "View.h"
@@ -58,6 +61,32 @@ bool View::get_surface_under_coords(double lx, double ly, struct wlr_surface*& s
     return false;
 }
 
+wlr_output* View::get_closest_output(wlr_output_layout* layout)
+{
+    wlr_output_layout_output* l_output;
+    wlr_output* result = nullptr;
+    double min_square_dist = std::numeric_limits<double>::max();
+    double centre_x = x + geometry.x + (double)geometry.width / 2;
+    double centre_y = y + geometry.y + (double)geometry.height / 2;
+
+    // TODO: make clang-format put the brace on the same line
+    wl_list_for_each(l_output, &layout->outputs, link)
+    {
+        auto* box = wlr_output_layout_get_box(layout, l_output->output);
+        double o_centre_x = box->x + (double)box->width / 2;
+        double o_centre_y = box->y + (double)box->height / 2;
+
+        double square_dist = (o_centre_x - centre_x) * (o_centre_x - centre_x) + (o_centre_y - centre_y) * (o_centre_y - centre_y);
+        if (square_dist < min_square_dist) {
+            min_square_dist = square_dist;
+            result = l_output->output;
+        }
+    }
+    assert(result != nullptr);
+
+    return result;
+}
+
 void View::resize(int width, int height)
 {
     wlr_xdg_toplevel_set_size(xdg_surface, width, height);
@@ -84,6 +113,15 @@ void xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] vo
 
     view->mapped = false;
     server->tiles.remove_view(view);
+
+    auto it = std::find(server->focused_views.begin(), server->focused_views.end(), view);
+    assert(it != server->focused_views.end());
+    server->focused_views.erase(it);
+
+    // focus last focused window
+    if (!server->focused_views.empty()) {
+        server->focus_view(server->focused_views.front());
+    }
 }
 void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {

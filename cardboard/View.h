@@ -2,6 +2,8 @@
 #define __CARDBOARD_VIEW_H_
 
 #include <wayland-server.h>
+#include <wlr_cpp/types/wlr_output.h>
+#include <wlr_cpp/types/wlr_output_layout.h>
 #include <wlr_cpp/types/wlr_xdg_shell.h>
 
 #include <list>
@@ -18,6 +20,8 @@ struct View {
     // Gets the child xdg surface of this view's toplevel xdg surface sitting under the cursor, if exists.
     // sx and sy and the given output layout relative coordinates (lx and ly), relative to that surface
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+
+    wlr_output* get_closest_output(wlr_output_layout* layout);
 
     void resize(int width, int height);
 };

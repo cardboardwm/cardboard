@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <optional>
 #include <string>
@@ -15,22 +16,12 @@
 #include "IPC.h"
 #include "Server.h"
 
-using ParsedCommand = std::vector<std::string>;
-using IPCCommandHandler = IPCCommandResult(ParsedCommand, Server*);
+#include "ipc_handlers/handlers.h"
 
-template <typename... T>
-constexpr auto make_array(T&&... values) -> std::array<typename std::decay<typename std::common_type<T...>::type>::type, sizeof...(T)>
-{
-    return std::array<typename std::decay<typename std::common_type<T...>::type>::type, sizeof...(T)> { std::forward<T>(values)... };
-}
-
-static IPCCommandResult command_quit([[maybe_unused]] ParsedCommand cmd, Server* server)
-{
-    server->teardown();
-    return { "" };
-}
-
-static auto table = make_array<std::pair<std::string_view, IPCCommandHandler*>>({ "quit", command_quit });
+// Keep this sorted!!!
+static std::array<std::pair<std::string_view, IPCCommandHandler*>, 3> table = { { { "focus_left", ipc_handlers::command_focus_left },
+                                                                                  { "focus_right", ipc_handlers::command_focus_right },
+                                                                                  { "quit", ipc_handlers::command_quit } } };
 
 static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
 {

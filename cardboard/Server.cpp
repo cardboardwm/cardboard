@@ -226,6 +226,13 @@ void Server::focus_view(View* view)
         // deactivate previous surface
         wlr_xdg_toplevel_set_activated(prev_view->xdg_surface, false);
     }
+
+    if (auto it = std::find(focused_views.begin(), focused_views.end(), view); it != focused_views.end()) {
+        focused_views.splice(focused_views.begin(), focused_views, it);
+    } else {
+        focused_views.push_front(view);
+    }
+
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](auto& x) { return view == &x; }));
@@ -233,6 +240,13 @@ void Server::focus_view(View* view)
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically
     wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+}
+
+void Server::focus_left()
+{
+    if (get_focused_view() == nullptr) {
+        return;
+    }
 }
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
@@ -313,7 +327,8 @@ void Server::stop()
     close(ipc_socket_fd);
 }
 
-void Server::teardown()
+void Server::teardown(int code)
 {
     wl_display_terminate(wl_display);
+    exit_code = code;
 }

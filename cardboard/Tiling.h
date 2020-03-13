@@ -1,6 +1,7 @@
 #ifndef __CARDBOARD_TILING_H_
 #define __CARDBOARD_TILING_H_
 
+#include <algorithm>
 #include <list>
 
 #include <wlr_cpp/types/wlr_output_layout.h>
@@ -22,9 +23,21 @@ struct TilingSequence {
         output_layout = ol;
     }
 
+    auto find_tile(View* view)
+    {
+        return std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {
+            return t.view == view;
+        });
+    }
+
     void add_view(View* view, View* next_to);
     void remove_view(View* view);
     void arrange_tiles();
+
+    void fit_view_on_screen(View* view);
+    // tx is the x coordinate relative to the tiling sequence.
+    // The first view is always tx = 0
+    int get_view_tx(View*);
 };
 
 #endif //  __CARDBOARD_TILING_H_

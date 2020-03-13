@@ -37,10 +37,12 @@ struct Server {
     wl_event_source* ipc_event_source;
 
     struct wlr_xdg_shell* xdg_shell;
+    // ordered in stacking order
     std::list<View> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
     TilingSequence tiles;
+    std::list<View*> focused_views;
 
     struct wlr_cursor* cursor;
     struct wlr_xcursor_manager* cursor_manager;
@@ -55,24 +57,33 @@ struct Server {
 
     ListenerList listeners;
 
+    int exit_code = 0;
+
     Server();
     Server(const Server&) = delete;
 
-    bool run();
-    void stop();
-    void teardown();
-
     bool init_ipc();
+
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);
+
     void process_cursor_motion(uint32_t time);
     void process_cursor_move();
     void process_cursor_resize();
+
     void focus_view(View* view);
+    void focus_left();
+    void focus_right();
+
     // Returns the xdg surface leaf of the first view under the cursor
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
     View* get_focused_view();
+
     void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
+
+    bool run();
+    void stop();
+    void teardown(int code);
 };
 
 #endif // __CARDBOARD_SERVER_H_
