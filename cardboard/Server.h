@@ -72,8 +72,9 @@ struct Server {
     void process_cursor_resize();
 
     void focus_view(View* view);
-    void focus_left();
-    void focus_right();
+    // Focus the offset-nth tiled window to the right (or to the left if negative) of the currently
+    // focused view.
+    void focus_by_offset(int offset);
 
     // Returns the xdg surface leaf of the first view under the cursor
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);

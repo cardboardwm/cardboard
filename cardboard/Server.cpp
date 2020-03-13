@@ -242,11 +242,21 @@ void Server::focus_view(View* view)
     wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
 }
 
-void Server::focus_left()
+void Server::focus_by_offset(int offset)
 {
-    if (get_focused_view() == nullptr) {
+    if (offset == 0 || get_focused_view() == nullptr) {
         return;
     }
+
+    auto it = tiles.find_tile(get_focused_view());
+    if (int index = std::distance(tiles.tiles.begin(), it) + offset; index < 0 || index >= (int)tiles.tiles.size()) {
+        // out of bounds
+        return;
+    }
+
+    std::advance(it, offset);
+    tiles.fit_view_on_screen(it->view);
+    focus_view(it->view);
 }
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
