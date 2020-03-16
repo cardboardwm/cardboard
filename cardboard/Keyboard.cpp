@@ -21,6 +21,7 @@ void key_handler(struct wl_listener* listener, void* data)
 
     auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
 
+    bool command_run = false;
     uint32_t modifiers = wlr_keyboard_get_modifiers(handleData.device->keyboard);
     if (event->state == WLR_KEY_PRESSED) {
         const xkb_keysym_t* syms;
@@ -31,11 +32,16 @@ void key_handler(struct wl_listener* listener, void* data)
 
         for (int i = 0; i < syms_number; i++) {
             auto& map = handleData.config->map[modifiers];
-            if (auto it = map.find(syms[i]); it != map.end())
-                it->second(server);
+            // as you can see below, keysyms are always stored lowercase
+            if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
+                ipc_run_command(it->second, server);
+                command_run = true;
+            }
         }
     }
 
-    wlr_seat_set_keyboard(server->seat, handleData.device);
-    wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
+    if (!command_run) {
+        wlr_seat_set_keyboard(server->seat, handleData.device);
+        wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
+    }
 }

@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
@@ -19,11 +20,12 @@
 #include "ipc_handlers/handlers.h"
 
 // Keep this sorted!!!
-static std::array<std::pair<std::string_view, IPCCommandHandler*>, 3> table = { { { "focus_left", ipc_handlers::command_focus_left },
+static std::array<std::pair<std::string_view, IPCCommandHandler*>, 4> table = { { { "bind", ipc_handlers::command_bind },
+                                                                                  { "focus_left", ipc_handlers::command_focus_left },
                                                                                   { "focus_right", ipc_handlers::command_focus_right },
                                                                                   { "quit", ipc_handlers::command_quit } } };
 
-static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
+IPCCommandResult ipc_run_command(IPCParsedCommand cmd, Server* server)
 {
     std::string stringified;
     for (auto& arg : cmd) {
@@ -40,12 +42,12 @@ static IPCCommandResult run_command(ParsedCommand cmd, Server* server)
     return handler->second(cmd, server);
 }
 
-static std::optional<ParsedCommand> parse_command(uint8_t* cmd, ssize_t len)
+static std::optional<IPCParsedCommand> parse_command(uint8_t* cmd, ssize_t len)
 {
     // The wire format is the following: commands are sent as words, the first word
     // being the command name, the others being the arguments. Each word is preceded
     // by its length in one byte. The final byte on the wire is 0.
-    ParsedCommand r;
+    IPCParsedCommand r;
     int i = 0;
     while (i < len && cmd[i] != 0) {
         uint8_t segment_size = cmd[i];
@@ -84,7 +86,7 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
 
     uint8_t cmd[BUFSIZ] = {};
     ssize_t len = recv(client_fd, cmd, sizeof(cmd) - 1, 0);
-    std::optional<ParsedCommand> parsed = parse_command(cmd, len);
+    std::optional<IPCParsedCommand> parsed = parse_command(cmd, len);
 
     if (!parsed) {
         constexpr std::string_view error = "Malformed command.\n";
@@ -94,7 +96,7 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         return 1;
     }
 
-    IPCCommandResult result = run_command(*parsed, server);
+    IPCCommandResult result = ipc_run_command(*parsed, server);
     if (!result.message.empty()) {
         send(client_fd, result.message.c_str(), result.message.size(), 0);
     }

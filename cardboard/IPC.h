@@ -2,6 +2,7 @@
 #define __CARDBOARD_IPC_H_
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,9 +12,10 @@ struct IPCCommandResult {
     std::string message;
 };
 
-using ParsedCommand = std::vector<std::string>;
-using IPCCommandHandler = IPCCommandResult(ParsedCommand, Server*);
+using IPCParsedCommand = std::vector<std::string>;
+using IPCCommandHandler = IPCCommandResult(IPCParsedCommand, Server*);
 
+IPCCommandResult ipc_run_command(IPCParsedCommand cmd, Server* server);
 int ipc_read_command(int fd, uint32_t mask, void* data);
 
 #endif // __CARDBOARD_IPC_H_

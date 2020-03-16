@@ -6,13 +6,17 @@
 
 #include <unordered_map>
 
+#include "IPC.h"
+
 struct Server;
 
 using KeybindingCallback = void (*)(Server*);
 
 struct KeybindingsConfig {
     static_assert(WLR_MODIFIER_COUNT <= 12, "too many modifiers");
-    std::unordered_map<xkb_keysym_t, KeybindingCallback> map[(1 << WLR_MODIFIER_COUNT) - 1];
+
+    // The keysym MUST be in lowercase form!
+    std::unordered_map<xkb_keysym_t, IPCParsedCommand> map[(1 << WLR_MODIFIER_COUNT) - 1];
 };
 
 struct KeyHandleData {
