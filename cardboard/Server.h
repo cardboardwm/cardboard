@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <list>
 #include <optional>
+#include <string>
 
 #include "EventListeners.h"
 #include "IPC.h"
@@ -14,6 +15,10 @@
 #include "Output.h"
 #include "Tiling.h"
 #include "View.h"
+
+constexpr std::string_view CARDBOARD_NAME = "cardboard";
+constexpr std::string_view CONFIG_NAME = "cardboardrc";
+constexpr std::string_view CONFIG_HOME_ENV = "XDG_CONFIG_HOME";
 
 struct Server {
     struct GrabState {
@@ -36,6 +41,8 @@ struct Server {
     wl_event_loop* event_loop;
     wl_event_source* ipc_event_source;
 
+    std::string config_path;
+
     struct wlr_xdg_shell* xdg_shell;
     // ordered in stacking order
     std::list<View> views; // TODO: check if View's statefulness is needed
@@ -57,12 +64,15 @@ struct Server {
 
     ListenerList listeners;
 
-    int exit_code = 0;
+    int exit_code = EXIT_SUCCESS;
 
-    Server();
+    Server() {}
     Server(const Server&) = delete;
 
-    bool init_ipc();
+    bool init();
+    bool init_ipc1();
+    void init_ipc2();
+    bool load_settings();
 
     void new_keyboard(struct wlr_input_device* device);
     void new_pointer(struct wlr_input_device* device);

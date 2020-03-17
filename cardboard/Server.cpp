@@ -8,7 +8,9 @@
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/util/log.h>
 
+#include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -16,7 +18,7 @@
 #include "IPC.h"
 #include "Server.h"
 
-Server::Server()
+bool Server::init()
 {
     wl_display = wl_display_create();
     // let wlroots select the required hardware abstractions
@@ -67,9 +69,11 @@ Server::Server()
             to_add_listener.signal,
             Listener { to_add_listener.notify, this, NoneT {} });
     }
+
+    return true;
 }
 
-bool Server::init_ipc()
+bool Server::init_ipc1()
 {
     std::string socket_path;
 
@@ -106,9 +110,63 @@ bool Server::init_ipc()
     }
 
     setenv(IPC_SOCKET_ENV_VAR, ipc_sock_address.sun_path, 0);
+
+    return true;
+}
+
+void Server::init_ipc2()
+{
     ipc_event_source = wl_event_loop_add_fd(event_loop, ipc_socket_fd, WL_EVENT_READABLE, ipc_read_command, this);
 
     wlr_log(WLR_INFO, "Listening on socket %s", ipc_sock_address.sun_path);
+}
+
+bool Server::load_settings()
+{
+    if (const char* config_home = getenv(CONFIG_HOME_ENV.data()); config_home != nullptr) {
+        // please std::format end my suffering
+        config_path += config_home;
+        config_path += '/';
+        config_path += CARDBOARD_NAME;
+        config_path += '/';
+        config_path += CONFIG_NAME;
+    } else {
+        const char* home = getenv("HOME");
+        if (home == nullptr) {
+            wlr_log(WLR_ERROR, "Couldn't get home directory");
+            return false;
+        }
+
+        config_path += home;
+        config_path += "/.config/";
+        config_path += CARDBOARD_NAME;
+        config_path += '/';
+        config_path += CONFIG_NAME;
+    }
+
+    wlr_log(WLR_DEBUG, "Running config file %s", config_path.c_str());
+
+    // credits: http://www.lubutu.com/code/spawning-in-unix
+    int fd[2];
+    pipe(fd);
+    if (fork() == 0) {
+        close(fd[0]);
+        fcntl(fd[1], F_SETFD, FD_CLOEXEC);
+
+        setsid();
+        execle(config_path.c_str(), config_path.c_str(), nullptr, environ);
+
+        write(fd[1], &errno, sizeof(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    close(fd[1]);
+    if (read(fd[0], &errno, sizeof(errno))) {
+        wlr_log(WLR_ERROR, "Couldn't execute the config file: %s", strerror(errno));
+        close(fd[0]);
+        return false;
+    }
+    close(fd[0]);
 
     return true;
 }
@@ -305,9 +363,6 @@ void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)
 
 bool Server::run()
 {
-    if (!init_ipc()) {
-        return false;
-    }
     // add UNIX socket to the Wayland display
     const char* socket = wl_display_add_socket_auto(wl_display);
     if (!socket) {
