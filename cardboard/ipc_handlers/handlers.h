@@ -84,7 +84,11 @@ static IPCCommandResult command_bind(IPCParsedCommand cmd, Server* server)
     }
 
     auto command = static_cast<IPCParsedCommand>(std::vector(std::next(cmd.begin(), 2), cmd.end()));
-    server->keybindingsConfig.map[modifier].insert({ sym, command });
+    auto handler = ipc_find_command_handler(command[0]);
+    if (!handler) {
+        return { "Invalid command.\n" };
+    }
+    server->keybindingsConfig.map[modifier].insert({ sym, { *handler, command } });
 
     return { "" };
 }

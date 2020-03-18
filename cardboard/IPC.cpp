@@ -25,7 +25,18 @@ static std::array<std::pair<std::string_view, IPCCommandHandler*>, 4> table = { 
                                                                                   { "focus_right", ipc_handlers::command_focus_right },
                                                                                   { "quit", ipc_handlers::command_quit } } };
 
-IPCCommandResult ipc_run_command(IPCParsedCommand cmd, Server* server)
+std::optional<IPCCommandHandler*> ipc_find_command_handler(std::string_view name)
+{
+    std::pair<std::string_view, IPCCommandHandler*> to_search = { name, nullptr };
+    auto handler = std::lower_bound(table.begin(), table.end(), to_search);
+    if (handler == table.end() || handler->first != name) {
+        return std::nullopt;
+    }
+
+    return handler->second;
+}
+
+IPCCommandResult run_command(IPCParsedCommand cmd, Server* server)
 {
     std::string stringified;
     for (auto& arg : cmd) {
@@ -33,13 +44,12 @@ IPCCommandResult ipc_run_command(IPCParsedCommand cmd, Server* server)
     }
     wlr_log(WLR_DEBUG, "ipc: got command %s", stringified.c_str());
 
-    std::pair<std::string_view, IPCCommandHandler*> to_search = { std::string_view(cmd[0]), nullptr };
-    auto handler = std::lower_bound(table.begin(), table.end(), to_search);
-    if (handler == table.end() || handler->first != cmd[0]) {
+    auto handler = ipc_find_command_handler(cmd[0]);
+    if (!handler) {
         return { "No such command.\n" };
     }
 
-    return handler->second(cmd, server);
+    return (*handler)(cmd, server);
 }
 
 static std::optional<IPCParsedCommand> parse_command(uint8_t* cmd, ssize_t len)
@@ -96,7 +106,7 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         return 1;
     }
 
-    IPCCommandResult result = ipc_run_command(*parsed, server);
+    IPCCommandResult result = run_command(*parsed, server);
     if (!result.message.empty()) {
         send(client_fd, result.message.c_str(), result.message.size(), 0);
     }

@@ -16,7 +16,7 @@ struct KeybindingsConfig {
     static_assert(WLR_MODIFIER_COUNT <= 12, "too many modifiers");
 
     // The keysym MUST be in lowercase form!
-    std::unordered_map<xkb_keysym_t, IPCParsedCommand> map[(1 << WLR_MODIFIER_COUNT) - 1];
+    std::unordered_map<xkb_keysym_t, std::pair<IPCCommandHandler*, IPCParsedCommand>> map[(1 << WLR_MODIFIER_COUNT) - 1];
 };
 
 struct KeyHandleData {
