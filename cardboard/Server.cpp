@@ -8,15 +8,13 @@
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/util/log.h>
 
-#include <fcntl.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #include <cassert>
 
 #include "IPC.h"
 #include "Server.h"
+#include "Spawn.h"
 
 bool Server::init()
 {
@@ -146,27 +144,15 @@ bool Server::load_settings()
 
     wlr_log(WLR_DEBUG, "Running config file %s", config_path.c_str());
 
-    // credits: http://www.lubutu.com/code/spawning-in-unix
-    int fd[2];
-    pipe(fd);
-    if (fork() == 0) {
-        close(fd[0]);
-        fcntl(fd[1], F_SETFD, FD_CLOEXEC);
-
-        setsid();
+    auto error_code = spawn([&]() {
         execle(config_path.c_str(), config_path.c_str(), nullptr, environ);
 
-        write(fd[1], &errno, sizeof(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    close(fd[1]);
-    if (read(fd[0], &errno, sizeof(errno))) {
-        wlr_log(WLR_ERROR, "Couldn't execute the config file: %s", strerror(errno));
-        close(fd[0]);
+        return EXIT_FAILURE;
+    });
+    if (error_code.value() != 0) {
+        wlr_log(WLR_ERROR, "Couldn't execute the config file: %s", error_code.message().c_str());
         return false;
     }
-    close(fd[0]);
 
     return true;
 }

@@ -1,6 +1,7 @@
 #ifndef __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
 #define __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
 
+#include <csignal>
 #include <cstdint>
 #include <locale>
 #include <string>
@@ -8,6 +9,9 @@
 
 #include "../IPC.h"
 #include "../Server.h"
+#include "../Spawn.h"
+
+extern char** environ;
 
 namespace ipc_handlers {
 
@@ -90,6 +94,21 @@ static IPCCommandResult command_bind(IPCParsedCommand cmd, Server* server)
     }
     server->keybindingsConfig.map[modifier].insert({ sym, { *handler, command } });
 
+    return { "" };
+}
+
+static IPCCommandResult command_exec(IPCParsedCommand cmd, [[maybe_unused]] Server* server)
+{
+    std::vector<char*> argv;
+    argv.reserve(cmd.size() - 1 + 1);
+    std::transform(std::next(cmd.begin()), cmd.end(), std::back_inserter(argv), [](auto& s) { return const_cast<char*>(s.c_str()); });
+    argv.push_back(nullptr);
+
+    if (fork() == 0) {
+        setsid();
+        execvpe(argv[0], argv.data(), environ);
+        exit(0);
+    }
     return { "" };
 }
 

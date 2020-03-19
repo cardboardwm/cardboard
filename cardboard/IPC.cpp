@@ -20,7 +20,8 @@
 #include "ipc_handlers/handlers.h"
 
 // Keep this sorted!!!
-static std::array<std::pair<std::string_view, IPCCommandHandler*>, 4> table = { { { "bind", ipc_handlers::command_bind },
+static std::array<std::pair<std::string_view, IPCCommandHandler*>, 5> table = { { { "bind", ipc_handlers::command_bind },
+                                                                                  { "exec", ipc_handlers::command_exec },
                                                                                   { "focus_left", ipc_handlers::command_focus_left },
                                                                                   { "focus_right", ipc_handlers::command_focus_right },
                                                                                   { "quit", ipc_handlers::command_quit } } };
@@ -91,7 +92,21 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
     const int client_fd = accept(fd, nullptr, nullptr);
     if (client_fd == -1) {
         wlr_log(WLR_ERROR, "Failed to accept on IPC socket %s: %s", server->ipc_sock_address.sun_path, strerror(errno));
-        return 1;
+        return 0;
+    }
+
+    int flags;
+    if ((flags = fcntl(client_fd, F_GETFD)) == -1
+        || fcntl(client_fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+        wlr_log(WLR_ERROR, "Unable to set CLOEXEC on IPC client socket: %s", strerror(errno));
+        close(client_fd);
+        return 0;
+    }
+    if ((flags = fcntl(client_fd, F_GETFL)) == -1
+        || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        wlr_log(WLR_ERROR, "Unable to set NONBLOCK on IPC client socket: %s", strerror(errno));
+        close(client_fd);
+        return 0;
     }
 
     uint8_t cmd[BUFSIZ] = {};
@@ -103,7 +118,7 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         send(client_fd, error.data(), error.size(), 0);
         close(client_fd);
 
-        return 1;
+        return 0;
     }
 
     IPCCommandResult result = run_command(*parsed, server);
