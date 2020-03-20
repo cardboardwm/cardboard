@@ -34,6 +34,9 @@ struct TilingSequence {
     void remove_view(View* view);
     void arrange_tiles();
 
+    // returns true if the sum of the tiles' widths are larger than the output's width
+    bool is_spanning(wlr_output* output);
+
     void fit_view_on_screen(View* view);
     // tx is the x coordinate relative to the tiling sequence.
     // The first view is always tx = 0

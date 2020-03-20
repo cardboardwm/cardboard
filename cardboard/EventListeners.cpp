@@ -80,8 +80,9 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
     if (event->state == WLR_BUTTON_RELEASED) {
         // end grabbing
         server->grab_state = std::nullopt;
-    } else {
+    } else if (view != server->get_focused_view()) {
         server->focus_view(view);
+        server->tiles.fit_view_on_screen(view);
     }
 }
 

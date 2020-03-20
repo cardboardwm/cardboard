@@ -299,8 +299,8 @@ void Server::focus_by_offset(int offset)
     }
 
     std::advance(it, offset);
-    tiles.fit_view_on_screen(it->view);
     focus_view(it->view);
+    tiles.fit_view_on_screen(it->view);
 }
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

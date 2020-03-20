@@ -82,7 +82,6 @@ wlr_output* View::get_closest_output(wlr_output_layout* layout)
             result = l_output->output;
         }
     }
-    assert(result != nullptr);
 
     return result;
 }
@@ -105,6 +104,7 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
 
     wlr_xdg_surface_get_geometry(view->xdg_surface, &view->geometry);
     server->tiles.add_view(view, prev_focused);
+    server->tiles.fit_view_on_screen(view);
 }
 void xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
@@ -121,6 +121,7 @@ void xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] vo
     // focus last focused window
     if (!server->focused_views.empty()) {
         server->focus_view(server->focused_views.front());
+        server->tiles.fit_view_on_screen(server->focused_views.front());
     }
 }
 void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -145,6 +146,8 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         view->geometry = new_geo;
 
         server->tiles.arrange_tiles();
+
+        server->tiles.fit_view_on_screen(server->get_focused_view());
     }
 }
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
