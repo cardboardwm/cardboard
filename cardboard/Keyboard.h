@@ -22,9 +22,15 @@ struct KeybindingsConfig {
 struct KeyHandleData {
     wlr_input_device* device;
     KeybindingsConfig* config;
+
+    bool operator==(KeyHandleData other)
+    {
+        return device == other.device && config == other.config;
+    }
 };
 
 void modifiers_handler(struct wl_listener* listener, void* data);
 void key_handler(struct wl_listener* listener, void* data);
+void keyboard_destroy_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_KEYBOARD_H_

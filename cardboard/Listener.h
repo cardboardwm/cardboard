@@ -6,6 +6,7 @@
 #include <wayland-server.h>
 
 #include <algorithm>
+#include <cassert>
 #include <variant>
 
 struct NoneT {
@@ -66,6 +67,28 @@ public:
         listeners.remove_if([raw_listener](auto& listener) {
             return raw_listener == &listener.listener;
         });
+    }
+
+    template <typename T>
+    void clear_listeners(T owner)
+    {
+        bool it_works = false;
+        auto next = listeners.end();
+        auto it = listeners.begin();
+        while (it != listeners.end()) {
+            next = std::next(it);
+
+            if (auto pval = std::get_if<T>(&it->listener_data)) {
+                if (*pval == owner) {
+                    remove_listener(&it->listener);
+                    it_works = true;
+                }
+            }
+
+            it = next;
+        }
+
+        assert(it_works && "this object doesn't have listeners");
     }
 
 private:

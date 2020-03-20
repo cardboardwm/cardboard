@@ -129,6 +129,8 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
     View* view = get_listener_data<View*>(listener);
     Server* server = get_server(listener);
 
+    server->listeners.clear_listeners(view);
+
     server->views.remove_if([view](auto& x) {
         return view == &x;
     });
