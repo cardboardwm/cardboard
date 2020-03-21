@@ -45,3 +45,12 @@ void key_handler(struct wl_listener* listener, void* data)
         wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
     }
 }
+
+void keyboard_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    Server* server = get_server(listener);
+    auto device = get_listener_data<wlr_input_device*>(listener);
+
+    server->listeners.clear_listeners(device);
+    server->listeners.clear_listeners(KeyHandleData { device, &server->keybindings_config });
+}

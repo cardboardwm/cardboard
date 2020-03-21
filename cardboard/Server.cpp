@@ -173,7 +173,8 @@ void Server::new_keyboard(struct wlr_input_device* device)
     listeners.add_listener(&device->keyboard->events.modifiers, Listener { modifiers_handler, this, device });
     listeners.add_listener(
         &device->keyboard->events.key,
-        Listener { key_handler, this, KeyHandleData { device, &keybindingsConfig } });
+        Listener { key_handler, this, KeyHandleData { device, &keybindings_config } });
+    listeners.add_listener(&device->keyboard->events.destroy, Listener { keyboard_destroy_handler, this, device });
     wlr_seat_set_keyboard(seat, device);
 }
 

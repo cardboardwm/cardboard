@@ -56,7 +56,7 @@ struct Server {
 
     struct wlr_seat* seat;
     std::vector<wlr_input_device*> keyboards;
-    KeybindingsConfig keybindingsConfig;
+    KeybindingsConfig keybindings_config;
     std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;

@@ -92,7 +92,7 @@ static IPCCommandResult command_bind(IPCParsedCommand cmd, Server* server)
     if (!handler) {
         return { "Invalid command.\n" };
     }
-    server->keybindingsConfig.map[modifier].insert({ sym, { *handler, command } });
+    server->keybindings_config.map[modifier].insert({ sym, { *handler, command } });
 
     return { "" };
 }
