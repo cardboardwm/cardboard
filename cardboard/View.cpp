@@ -89,8 +89,6 @@ wlr_output* View::get_closest_output(wlr_output_layout* layout)
 void View::resize(int width, int height)
 {
     wlr_xdg_toplevel_set_size(xdg_surface, width, height);
-    geometry.width = width;
-    geometry.height = height;
 }
 
 void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
