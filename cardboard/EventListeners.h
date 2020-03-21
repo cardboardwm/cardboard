@@ -4,6 +4,7 @@
 #include <wayland-server.h>
 
 void new_output_handler(struct wl_listener* listener, void* data);
+void output_layout_add_handler(struct wl_listener* listener, void* data);
 void new_xdg_surface_handler(struct wl_listener* listener, void* data);
 void cursor_motion_handler(struct wl_listener* listener, void* data);
 void cursor_motion_absolute_handler(struct wl_listener* listener, void* data);

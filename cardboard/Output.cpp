@@ -20,11 +20,11 @@ struct RenderData {
     Server* server;
 };
 
-void register_output(Server* server, wlr_output* output)
+void register_output(Server* server, wlr_output_layout_output* l_output)
 {
-    server->outputs.emplace_back(output);
-    server->listeners.add_listener(&output->events.frame, Listener { output_frame_handler, server, output });
-    server->listeners.add_listener(&output->events.destroy, Listener { output_destroy_handler, server, output });
+    server->outputs.emplace_back(l_output);
+    server->listeners.add_listener(&l_output->output->events.frame, Listener { output_frame_handler, server, l_output->output });
+    server->listeners.add_listener(&l_output->events.destroy, Listener { output_destroy_handler, server, l_output });
 }
 
 void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
@@ -112,7 +112,8 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
 void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
-    wlr_output* output = get_listener_data<wlr_output*>(listener);
+    wlr_output_layout_output* l_output = get_listener_data<wlr_output_layout_output*>(listener);
 
-    server->listeners.clear_listeners(output);
+    server->listeners.clear_listeners(l_output);
+    server->listeners.clear_listeners(l_output->output);
 }

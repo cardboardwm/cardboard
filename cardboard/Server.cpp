@@ -57,6 +57,7 @@ bool Server::init()
         { &cursor->events.axis, cursor_axis_handler },
         { &cursor->events.frame, cursor_frame_handler },
         { &backend->events.new_output, new_output_handler },
+        { &output_layout->events.add, output_layout_add_handler },
         { &xdg_shell->events.new_surface, new_xdg_surface_handler },
         { &backend->events.new_input, new_input_handler },
         { &seat->events.request_set_cursor, seat_request_cursor_handler }

@@ -13,8 +13,8 @@
 #include "Keyboard.h"
 #include "Listener.h"
 #include "Output.h"
-#include "Tiling.h"
 #include "View.h"
+#include "Workspace.h"
 
 constexpr std::string_view CARDBOARD_NAME = "cardboard";
 constexpr std::string_view CONFIG_NAME = "cardboardrc";
@@ -48,7 +48,7 @@ struct Server {
     std::list<View> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
-    TilingSequence tiles;
+    Workspace tiles;
     std::list<View*> focused_views;
 
     struct wlr_cursor* cursor;
@@ -60,7 +60,7 @@ struct Server {
     std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;
-    std::vector<wlr_output*> outputs;
+    std::vector<wlr_output_layout_output*> outputs;
 
     ListenerList listeners;
 

@@ -25,8 +25,8 @@ cardboard_sources = files(
   'Output.cpp',
   'Server.cpp',
   'Spawn.cpp',
-  'Tiling.cpp',
   'View.cpp',
+  'Workspace.cpp',
   'main.cpp',
 )
 

@@ -12,7 +12,6 @@
 void new_output_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
-
     auto* output = static_cast<struct wlr_output*>(data);
 
     // pick the monitor's preferred mode
@@ -25,14 +24,19 @@ void new_output_handler(struct wl_listener* listener, void* data)
         }
     }
 
-    register_output(server, output);
-
     // add output to the layout. add_auto arranges outputs left-to-right
     // in the order they appear.
     wlr_output_layout_add_auto(server->output_layout, output);
+}
 
+void output_layout_add_handler(struct wl_listener* listener, void* data)
+{
+    Server* server = get_server(listener);
+    auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
+
+    register_output(server, l_output);
     // expose the output to the clients
-    wlr_output_create_global(output);
+    wlr_output_create_global(l_output->output);
 }
 
 void new_xdg_surface_handler(struct wl_listener* listener, void* data)
