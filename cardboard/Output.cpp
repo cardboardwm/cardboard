@@ -85,46 +85,42 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     wlr_renderer_clear(renderer, color.data());
 
     View* focused_view = server->get_focused_view();
+    auto ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(),
+                            [output](const auto& other) { return *other.output == output; });
 
-    // render workspaces
-    for (const auto& ws : server->workspaces) {
-        if (!ws.output) {
+    struct wlr_box scissor_box = { .x = 0, .y = 0, .width = width, .height = height };
+
+    // confine rendering to the output
+    wlr_renderer_scissor(renderer, &scissor_box);
+    for (const auto& tile : ws.tiles) {
+        if (!tile.view->mapped || tile.view == focused_view) {
             continue;
         }
-        auto* box = wlr_output_layout_get_box(server->output_layout, *ws.output);
 
-        // confine rendering to the output
-        wlr_renderer_scissor(renderer, box);
-        for (const auto& tile : ws.tiles) {
-            if (!tile.view->mapped || tile.view == focused_view) {
-                continue;
-            }
+        RenderData rdata = {
+            .output = output,
+            .renderer = renderer,
+            .view = tile.view,
+            .when = &now,
+            .server = server
+        };
 
-            RenderData rdata = {
-                .output = output,
-                .renderer = renderer,
-                .view = tile.view,
-                .when = &now,
-                .server = server
-            };
-
-            wlr_xdg_surface_for_each_surface(tile.view->xdg_surface, render_surface, &rdata);
-        }
-
-        // render the focused view last
-        if (focused_view && focused_view->workspace_id == ws.index) {
-            RenderData rdata = {
-                .output = output,
-                .renderer = renderer,
-                .view = focused_view,
-                .when = &now,
-                .server = server
-            };
-
-            wlr_xdg_surface_for_each_surface(focused_view->xdg_surface, render_surface, &rdata);
-        }
-        wlr_renderer_scissor(renderer, nullptr);
+        wlr_xdg_surface_for_each_surface(tile.view->xdg_surface, render_surface, &rdata);
     }
+
+    // render the focused view last (only if it's tiled)
+    if (focused_view && focused_view->workspace_id == ws.index) {
+        RenderData rdata = {
+            .output = output,
+            .renderer = renderer,
+            .view = focused_view,
+            .when = &now,
+            .server = server
+        };
+
+        wlr_xdg_surface_for_each_surface(focused_view->xdg_surface, render_surface, &rdata);
+    }
+    wlr_renderer_scissor(renderer, nullptr);
 
     // render stacked windows
     for (auto view = server->views.rbegin(); view != server->views.rend(); view++) {
