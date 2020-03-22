@@ -16,9 +16,11 @@
 #include "View.h"
 #include "Workspace.h"
 
-constexpr std::string_view CARDBOARD_NAME = "cardboard";
-constexpr std::string_view CONFIG_NAME = "cardboardrc";
-constexpr std::string_view CONFIG_HOME_ENV = "XDG_CONFIG_HOME";
+const std::string_view CARDBOARD_NAME = "cardboard";
+const std::string_view CONFIG_NAME = "cardboardrc";
+const std::string_view CONFIG_HOME_ENV = "XDG_CONFIG_HOME";
+
+const int WORKSPACE_NR = 4;
 
 struct Server {
     struct GrabState {
@@ -48,8 +50,9 @@ struct Server {
     std::list<View> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
-    Workspace tiles;
     std::list<View*> focused_views;
+
+    std::vector<Workspace> workspaces;
 
     struct wlr_cursor* cursor;
     struct wlr_xcursor_manager* cursor_manager;
@@ -85,10 +88,15 @@ struct Server {
     // Focus the offset-nth tiled window to the right (or to the left if negative) of the currently
     // focused view.
     void focus_by_offset(int offset);
+    void hide_view(View* view);
 
     // Returns the xdg surface leaf of the first view under the cursor
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
     View* get_focused_view();
+
+    std::optional<std::reference_wrapper<Workspace>> get_views_workspace(View* view);
+    Workspace& get_focused_workspace();
+    Workspace& create_workspace();
 
     void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
 

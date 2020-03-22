@@ -8,6 +8,8 @@
 
 #include <list>
 
+#include "Workspace.h"
+
 struct Server;
 
 struct View {
@@ -15,6 +17,8 @@ struct View {
     bool mapped;
     struct wlr_box geometry;
     int x, y; // coordinates of the surface, relative to the screen layout
+
+    Workspace::IndexType workspace_id;
 
     View(struct wlr_xdg_surface* xdg_surface);
     // Gets the child xdg surface of this view's toplevel xdg surface sitting under the cursor, if exists.

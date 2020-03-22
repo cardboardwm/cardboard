@@ -2,9 +2,28 @@
 #include <wlr_cpp/util/log.h>
 
 #include <algorithm>
+#include <cassert>
 
 #include "View.h"
 #include "Workspace.h"
+
+Workspace::Workspace(IndexType index)
+    : index(index)
+    , scroll_x(0)
+{
+}
+
+void Workspace::set_output_layout(struct wlr_output_layout* ol)
+{
+    output_layout = ol;
+}
+
+std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
+{
+    return std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {
+        return t.view == view;
+    });
+}
 
 void Workspace::add_view(View* view, View* next_to)
 {
@@ -14,26 +33,22 @@ void Workspace::add_view(View* view, View* next_to)
     }
     auto tile = tiles.insert(it, { view });
 
-    auto output = view->get_closest_output(output_layout);
+    assert(output.has_value());
 
-    if (output != nullptr) {
-        int ow, oh;
-        wlr_output_effective_resolution(output, &ow, &oh);
+    int ow, oh;
+    wlr_output_effective_resolution(*output, &ow, &oh);
 
-        tile->view->resize(tile->view->geometry.width, oh);
-        wlr_log(WLR_DEBUG, "resizing to %d - %d", oh, view->geometry.y);
-    } else {
-        wlr_log(WLR_ERROR, "cannot resize view, it's off-screen!");
-    }
+    tile->view->workspace_id = index;
+    tile->view->resize(tile->view->geometry.width, oh);
+    wlr_log(WLR_DEBUG, "resizing to %d - %d", oh, view->geometry.y);
 
     arrange_tiles();
 }
 
 void Workspace::remove_view(View* view)
 {
-    if (auto it = find_tile(view); it != tiles.end()) {
-        tiles.erase(it);
-    }
+    tiles.remove_if([view](auto& other) { return other.view == view; });
+
     arrange_tiles();
 }
 
@@ -48,13 +63,19 @@ void Workspace::arrange_tiles()
     }
 }
 
-bool Workspace::is_spanning(wlr_output* output)
+bool Workspace::is_spanning()
 {
     if (tiles.empty()) {
         return false;
     }
 
-    const auto* output_box = wlr_output_layout_get_box(output_layout, output);
+    assert(output.has_value());
+
+    const auto* output_box = wlr_output_layout_get_box(output_layout, *output);
+    if (output_box == nullptr) {
+        return false;
+    }
+
     int acc_width = 0;
     for (const auto& tile : tiles) {
         acc_width += tile.view->geometry.width;
@@ -77,15 +98,16 @@ void Workspace::fit_view_on_screen(View* view)
         return;
     }
 
-    auto output = view->get_closest_output(output_layout);
-    if (output == nullptr) {
+    assert(output.has_value());
+
+    const auto* output_box = wlr_output_layout_get_box(output_layout, *output);
+    if (output_box == nullptr) {
         return;
     }
 
-    const auto* output_box = wlr_output_layout_get_box(output_layout, output);
     int vx = view->x + view->geometry.x;
 
-    bool spanning = is_spanning(output);
+    bool spanning = is_spanning();
     if (spanning && view == tiles.begin()->view) {
         // align first window to the display's left edge
         scroll_x += vx - output_box->x;
@@ -114,4 +136,9 @@ int Workspace::get_view_wx(View* view)
     }
 
     return acc_wx;
+}
+
+void Workspace::deactivate()
+{
+    output = std::nullopt;
 }

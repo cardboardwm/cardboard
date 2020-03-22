@@ -84,9 +84,52 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
+    View* focused_view = server->get_focused_view();
+
+    // render workspaces
+    for (const auto& ws : server->workspaces) {
+        if (!ws.output) {
+            continue;
+        }
+        auto* box = wlr_output_layout_get_box(server->output_layout, *ws.output);
+
+        // confine rendering to the output
+        wlr_renderer_scissor(renderer, box);
+        for (const auto& tile : ws.tiles) {
+            if (!tile.view->mapped || tile.view == focused_view) {
+                continue;
+            }
+
+            RenderData rdata = {
+                .output = output,
+                .renderer = renderer,
+                .view = tile.view,
+                .when = &now,
+                .server = server
+            };
+
+            wlr_xdg_surface_for_each_surface(tile.view->xdg_surface, render_surface, &rdata);
+        }
+
+        // render the focused view last
+        if (focused_view && focused_view->workspace_id == ws.index) {
+            RenderData rdata = {
+                .output = output,
+                .renderer = renderer,
+                .view = focused_view,
+                .when = &now,
+                .server = server
+            };
+
+            wlr_xdg_surface_for_each_surface(focused_view->xdg_surface, render_surface, &rdata);
+        }
+        wlr_renderer_scissor(renderer, nullptr);
+    }
+
+    // render stacked windows
     for (auto view = server->views.rbegin(); view != server->views.rend(); view++) {
-        if (!view->mapped) {
-            // don't render unmapped views
+        if (!view->mapped || view->workspace_id >= 0) {
+            // don't render unmapped views or views assigned to workspaces
             continue;
         }
 
@@ -114,6 +157,16 @@ void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void*
     Server* server = get_server(listener);
     wlr_output_layout_output* l_output = get_listener_data<wlr_output_layout_output*>(listener);
 
+    for (auto& ws : server->workspaces) {
+        if (ws.output && *ws.output == l_output->output) {
+            ws.deactivate();
+            break;
+        }
+    }
+
     server->listeners.clear_listeners(l_output);
     server->listeners.clear_listeners(l_output->output);
+    server->outputs.erase(std::remove_if(server->outputs.begin(), server->outputs.end(), [l_output](auto* other) {
+        return l_output == other;
+    }), server->outputs.end());
 }

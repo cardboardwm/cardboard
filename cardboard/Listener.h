@@ -69,9 +69,7 @@ public:
     {
         wl_list_remove(&raw_listener->link);
 
-        listeners.remove_if([raw_listener](auto& listener) {
-            return raw_listener == &listener.listener;
-        });
+        listeners.remove_if([raw_listener](auto& listener) { return raw_listener == &listener.listener; });
     }
 
     template <typename T>

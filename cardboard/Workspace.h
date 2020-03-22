@@ -4,9 +4,10 @@
 #include <algorithm>
 #include <list>
 
+#include <wlr_cpp/types/wlr_output.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
 
-#include "View.h"
+struct View;
 
 /**
  * \brief A Workspace is a group of tiled windows.
@@ -22,6 +23,7 @@
  * scrolling of the viewport is controlled by the \c scroll_x variable.
  */
 struct Workspace {
+    using IndexType = std::vector<Workspace>::size_type;
     struct Tile {
         View* view;
     };
@@ -30,21 +32,30 @@ struct Workspace {
     struct wlr_output_layout* output_layout;
 
     /**
+     * The output assigned to this workspace (or the output to which this workspace is assigned).
+     *
+     * It's equal to \c std::nullopt if this workspace isn't assigned.
+     */
+    std::optional<struct wlr_output*> output;
+
+    IndexType index;
+
+    /**
      * The offset of the viewport.
      */
     int scroll_x = 0;
 
-    void set_output_layout(struct wlr_output_layout* ol)
-    {
-        output_layout = ol;
-    }
+    Workspace(IndexType index);
 
-    auto find_tile(View* view)
-    {
-        return std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {
-            return t.view == view;
-        });
-    }
+    /**
+     * Sets the wlr_output_layout pointer to \a ol.
+     */
+    void set_output_layout(struct wlr_output_layout* ol);
+
+    /**
+     * Returns an iterator to the tile containing \a view.
+     */
+    std::list<Tile>::iterator find_tile(View* view);
 
     /**
     * Adds the \a view to the right of the \a next_to view and tiles it accordingly.
@@ -64,7 +75,7 @@ struct Workspace {
     /**
     * Returns \c true if the views of the workspace overflow the output \a output.
     */
-    bool is_spanning(wlr_output* output);
+    bool is_spanning();
 
     /**
     * Scrolls the viewport of the workspace just enough to make the
@@ -78,6 +89,11 @@ struct Workspace {
     * be it off-screen or not.
     */
     int get_view_wx(View*);
+
+    /**
+     * Marks the workspace as inactive: it is not assigned to any output.
+     */
+    void deactivate();
 };
 
 #endif //  __CARDBOARD_TILING_H_

@@ -15,6 +15,7 @@ View::View(struct wlr_xdg_surface* xdg_surface)
     , geometry { 0, 0, 0, 0 }
     , x(0)
     , y(0)
+    , workspace_id(-1)
 {
 }
 
@@ -98,29 +99,26 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
 
     view->mapped = true;
     auto* prev_focused = server->get_focused_view();
-    server->focus_view(view);
 
     wlr_xdg_surface_get_geometry(view->xdg_surface, &view->geometry);
-    server->tiles.add_view(view, prev_focused);
-    server->tiles.fit_view_on_screen(view);
+
+    Workspace& focused_workspace = server->get_focused_workspace();
+    focused_workspace.add_view(view, prev_focused);
+
+    server->focus_view(view);
 }
+
 void xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     View* view = get_listener_data<View*>(listener);
     Server* server = get_server(listener);
 
     view->mapped = false;
-    server->tiles.remove_view(view);
-
-    auto it = std::find(server->focused_views.begin(), server->focused_views.end(), view);
-    assert(it != server->focused_views.end());
-    server->focused_views.erase(it);
-
-    // focus last focused window
-    if (!server->focused_views.empty()) {
-        server->focus_view(server->focused_views.front());
-        server->tiles.fit_view_on_screen(server->focused_views.front());
+    if (auto ws = server->get_views_workspace(view)) {
+        ws->get().remove_view(view);
     }
+
+    server->hide_view(view);
 }
 void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
@@ -129,9 +127,12 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
 
     server->listeners.clear_listeners(view);
 
-    server->views.remove_if([view](auto& x) {
-        return view == &x;
-    });
+    // just in case
+    if (auto ws = server->get_views_workspace(view)) {
+        ws->get().remove_view(view);
+    }
+
+    server->views.remove_if([view](auto& x) { return view == &x; });
 }
 void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
@@ -145,9 +146,10 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
-        server->tiles.arrange_tiles();
-
-        server->tiles.fit_view_on_screen(server->get_focused_view());
+        if (auto workspace = server->get_views_workspace(view)) {
+            workspace->get().arrange_tiles();
+            workspace->get().fit_view_on_screen(server->get_focused_view());
+        }
     }
 }
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)

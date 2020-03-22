@@ -31,7 +31,6 @@ bool Server::init()
     wlr_data_device_manager_create(wl_display); // for clipboard
 
     output_layout = wlr_output_layout_create();
-    tiles.set_output_layout(output_layout);
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement layer-shell
@@ -46,6 +45,11 @@ bool Server::init()
     wlr_xcursor_manager_load(cursor_manager, 1);
 
     seat = wlr_seat_create(wl_display, "seat0");
+
+    for (int i = 0; i < WORKSPACE_NR; i++) {
+        workspaces.push_back(Workspace(i));
+        workspaces.back().set_output_layout(output_layout);
+    }
 
     struct {
         wl_signal* signal;
@@ -255,7 +259,9 @@ void Server::process_cursor_resize()
     grab_state->view->resize(width, height);
 
     // TODO: fix resizing
-    tiles.arrange_tiles();
+    if (auto ws = get_views_workspace(grab_state->view)) {
+        ws->get().arrange_tiles();
+    }
 }
 
 void Server::focus_view(View* view)
@@ -286,6 +292,10 @@ void Server::focus_view(View* view)
     wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
     // the seat will send keyboard events to the view automatically
     wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+
+    if (auto ws = get_views_workspace(view)) {
+        ws->get().fit_view_on_screen(view);
+    }
 }
 
 void Server::focus_by_offset(int offset)
@@ -294,15 +304,40 @@ void Server::focus_by_offset(int offset)
         return;
     }
 
-    auto it = tiles.find_tile(get_focused_view());
-    if (int index = std::distance(tiles.tiles.begin(), it) + offset; index < 0 || index >= (int)tiles.tiles.size()) {
+    auto* focused_view = get_focused_view();
+    auto ws = get_views_workspace(focused_view);
+    if (!ws) {
+        return;
+    }
+
+    auto it = ws->get().find_tile(focused_view);
+    if (int index = std::distance(ws->get().tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws->get().tiles.size())) {
         // out of bounds
         return;
     }
 
     std::advance(it, offset);
     focus_view(it->view);
-    tiles.fit_view_on_screen(it->view);
+}
+
+void Server::hide_view(View* view)
+{
+    focused_views.remove_if([view](auto other) { return other == view; });
+
+    // focus last focused window mapped to an active workspace
+    if (get_focused_view() == view && !focused_views.empty()) {
+        View* to_focus = nullptr;
+        for (View* v : focused_views) {
+            if (auto ws = get_views_workspace(v); ws && ws->get().output) {
+                to_focus = v;
+                break;
+            }
+        }
+
+        if (to_focus != nullptr) {
+            focus_view(to_focus);
+        }
+    }
 }
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
@@ -325,6 +360,32 @@ View* Server::get_focused_view()
     }
 
     return nullptr;
+}
+
+std::optional<std::reference_wrapper<Workspace>> Server::get_views_workspace(View* view)
+{
+    if (view->workspace_id < 0) {
+        return std::nullopt;
+    }
+
+    return std::ref(workspaces[view->workspace_id]);
+}
+
+Workspace& Server::get_focused_workspace()
+{
+    for (auto& ws : workspaces) {
+        if (ws.output && wlr_output_layout_contains_point(output_layout, *ws.output, cursor->x, cursor->y)) {
+            return ws;
+        }
+    }
+
+    assert(false);
+}
+
+Workspace& Server::create_workspace()
+{
+    workspaces.push_back(workspaces.size());
+    return workspaces.back();
 }
 
 void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)

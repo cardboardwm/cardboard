@@ -35,6 +35,21 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
     auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
 
     register_output(server, l_output);
+
+    Workspace* ws_to_assign;
+    for (auto& ws : server->workspaces) {
+        if (!ws.output) {
+            ws_to_assign = &ws;
+            break;
+        }
+    }
+
+    if (!ws_to_assign) {
+        ws_to_assign = &server->create_workspace();
+    }
+
+    ws_to_assign->output = l_output->output;
+
     // expose the output to the clients
     wlr_output_create_global(l_output->output);
 }
@@ -86,7 +101,6 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
         server->grab_state = std::nullopt;
     } else if (view != server->get_focused_view()) {
         server->focus_view(view);
-        server->tiles.fit_view_on_screen(view);
     }
 }
 
