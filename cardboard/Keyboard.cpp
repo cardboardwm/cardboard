@@ -55,6 +55,7 @@ void keyboard_destroy_handler(struct wl_listener* listener, [[maybe_unused]] voi
     server->listeners.clear_listeners(KeyHandleData { device, &server->keybindings_config });
 
     server->keyboards.erase(std::remove_if(server->keyboards.begin(), server->keyboards.end(), [device](auto* other) {
-        return device == other;
-    }), server->keyboards.end());
+                                return device == other;
+                            }),
+                            server->keyboards.end());
 }

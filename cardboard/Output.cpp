@@ -85,8 +85,7 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     wlr_renderer_clear(renderer, color.data());
 
     View* focused_view = server->get_focused_view();
-    auto ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(),
-                            [output](const auto& other) { return *other.output == output; });
+    auto ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return *other.output == output; });
 
     struct wlr_box scissor_box = { .x = 0, .y = 0, .width = width, .height = height };
 
@@ -163,6 +162,7 @@ void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void*
     server->listeners.clear_listeners(l_output);
     server->listeners.clear_listeners(l_output->output);
     server->outputs.erase(std::remove_if(server->outputs.begin(), server->outputs.end(), [l_output](auto* other) {
-        return l_output == other;
-    }), server->outputs.end());
+                              return l_output == other;
+                          }),
+                          server->outputs.end());
 }

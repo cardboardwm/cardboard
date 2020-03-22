@@ -342,8 +342,12 @@ void Server::hide_view(View* view)
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
+    auto output = wlr_output_layout_output_at(output_layout, lx, ly);
     for (auto& view : views) {
-        if (view.get_surface_under_coords(lx, ly, surface, sx, sy)) {
+        auto views_output = get_views_workspace(&view)->get().output;
+        // the view is either tiled in the output holding the cursor, or not tiled at all
+        if (((views_output && *views_output == output) || !views_output)
+            && view.get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return &view;
         }
     }
