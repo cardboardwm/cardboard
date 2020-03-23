@@ -17,6 +17,7 @@ struct NoneT {
 };
 struct Server;
 
+/// Constant data for many event listeners.
 using ListenerData = std::variant<
     NoneT,
     wlr_output*,
@@ -25,6 +26,11 @@ using ListenerData = std::variant<
     wlr_input_device*,
     KeyHandleData>;
 
+/**
+ * \brief The Listener is a wrapper around Wayland's \c wl_listener concept.
+ *
+ * It holds context information related to an event handler call.
+ */
 struct Listener {
     wl_listener listener;
     Server* server;
@@ -38,12 +44,19 @@ struct Listener {
     }
 };
 
+/**
+ * \brief Returns a pointer to the Server struct from within a \a listener
+ * given to a Wayland event handler function.
+ */
 inline Server* get_server(wl_listener* listener)
 {
     Listener* l = wl_container_of(listener, l, listener);
     return l->server;
 }
 
+/**
+ * \brief Returns the enclosed data from a \a listener.
+ */
 template <typename T>
 T& get_listener_data(wl_listener* listener)
 {
@@ -51,6 +64,10 @@ T& get_listener_data(wl_listener* listener)
     return std::get<T>(l->listener_data);
 }
 
+/**
+ * \brief Holds the event listeners and Listener objects for all the event handlers
+ * registered during the lifetime of the compositor.
+ */
 class ListenerList {
 public:
     ~ListenerList()
@@ -59,12 +76,14 @@ public:
             wl_list_remove(&listener.listener.link);
     }
 
+    /// Registers a \a listener for a given \a signal.
     void add_listener(wl_signal* signal, Listener&& listener)
     {
         listeners.push_back(std::move(listener));
         wl_signal_add(signal, &listeners.back().listener);
     }
 
+    /// Unregisters a Listener object associated with a ray Wayland \a raw_listener.
     void remove_listener(wl_listener* raw_listener)
     {
         wl_list_remove(&raw_listener->link);
@@ -72,6 +91,7 @@ public:
         listeners.remove_if([raw_listener](auto& listener) { return raw_listener == &listener.listener; });
     }
 
+    /// Unregisters all event listeners associated with \a owner (i.e. \a owner is the listener data).
     template <typename T>
     void clear_listeners(T owner)
     {

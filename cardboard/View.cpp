@@ -11,11 +11,11 @@
 
 View::View(struct wlr_xdg_surface* xdg_surface)
     : xdg_surface(xdg_surface)
-    , mapped(false)
     , geometry { 0, 0, 0, 0 }
+    , workspace_id(-1)
     , x(0)
     , y(0)
-    , workspace_id(-1)
+    , mapped(false)
 {
 }
 
@@ -60,31 +60,6 @@ bool View::get_surface_under_coords(double lx, double ly, struct wlr_surface*& s
     }
 
     return false;
-}
-
-wlr_output* View::get_closest_output(wlr_output_layout* layout)
-{
-    wlr_output_layout_output* l_output;
-    wlr_output* result = nullptr;
-    double min_square_dist = std::numeric_limits<double>::max();
-    double centre_x = x + geometry.x + (double)geometry.width / 2;
-    double centre_y = y + geometry.y + (double)geometry.height / 2;
-
-    // TODO: make clang-format put the brace on the same line
-    wl_list_for_each(l_output, &layout->outputs, link)
-    {
-        auto* box = wlr_output_layout_get_box(layout, l_output->output);
-        double o_centre_x = box->x + (double)box->width / 2;
-        double o_centre_y = box->y + (double)box->height / 2;
-
-        double square_dist = (o_centre_x - centre_x) * (o_centre_x - centre_x) + (o_centre_y - centre_y) * (o_centre_y - centre_y);
-        if (square_dist < min_square_dist) {
-            min_square_dist = square_dist;
-            result = l_output->output;
-        }
-    }
-
-    return result;
 }
 
 void View::resize(int width, int height)

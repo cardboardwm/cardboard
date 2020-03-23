@@ -20,7 +20,7 @@ struct View;
  *
  * This viewport can be moved on the horizontal axis of the plane, like a sliding window.
  * As a result, only a segment of these horizontally aligned views is shown on the screen. The
- * scrolling of the viewport is controlled by the \c scroll_x variable.
+ * scrolling of the viewport is controlled by the #scroll_x variable.
  */
 struct Workspace {
     using IndexType = std::vector<Workspace>::size_type;

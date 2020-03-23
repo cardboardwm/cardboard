@@ -134,6 +134,7 @@ void new_input_handler(struct wl_listener* listener, void* data)
         server->new_pointer(device);
         break;
     default:
+        // TODO: touchscreens and drawing tablets
         break;
     }
 
