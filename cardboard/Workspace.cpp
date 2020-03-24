@@ -126,10 +126,9 @@ void Workspace::fit_view_on_screen(View* view)
 int Workspace::get_view_wx(View* view)
 {
     int acc_wx = 0;
-    bool found = false;
+
     for (auto& tile : tiles) {
         if (tile.view == view) {
-            found = true;
             break;
         }
         acc_wx += tile.view->geometry.width;

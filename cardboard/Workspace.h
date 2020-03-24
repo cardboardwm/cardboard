@@ -23,7 +23,7 @@ struct View;
  * scrolling of the viewport is controlled by the #scroll_x variable.
  */
 struct Workspace {
-    using IndexType = std::vector<Workspace>::size_type;
+    using IndexType = ssize_t;
     struct Tile {
         View* view;
     };
