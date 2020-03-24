@@ -37,8 +37,9 @@ struct Server;
  * \sa <a href="https://drewdevault.com/2018/07/29/Wayland-shells.html">Writing a Wayland compositor with wlroots: shells</a>
  * by Drew DeVault
  */
-struct View {
-    struct wlr_xdg_surface* xdg_surface;
+class View {
+public:
+    virtual ~View() = default;
     /**
      * \brief The size and offset of the usable working area.
      *
@@ -67,12 +68,9 @@ struct View {
     int x, y; ///< Coordinates of the surface, relative to the output layout (root coordinates).
     bool mapped;
 
-    /**
-     * \brief Constructs the View struct from an \c xdg_surface.
-     *
-     * The struct is only initialized with data, it is not registered to the compositor by this constructor.
-     */
-    View(struct wlr_xdg_surface* xdg_surface);
+    /// Get the top level surface of this view.
+    virtual struct wlr_surface* get_surface() = 0;
+
     /**
      * \brief Gets the child sub-surface of this view's toplevel xdg surface sitting under a point, if exists.
      *
@@ -84,22 +82,31 @@ struct View {
      *
      * \returns \c true if there is a surface underneath the point, \c false if there isn't.
      */
-    //
-    // sx and sy and the given output layout relative coordinates (lx and ly), relative to that surface
-    bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+    virtual bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) = 0;
 
     /// Requests the resize to the client. Do not assume that the client is resized afterwards.
-    void resize(int width, int height);
+    virtual void resize(int width, int height) = 0;
+
+    /// Prepares the view before registering to the server by attaching some handlers and doing shell-specific stuff.
+    virtual void prepare(Server* server) = 0;
+
+    /// Set activated (focused) status to \a activated.
+    virtual void set_activated(bool activated) = 0;
+
+    virtual void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) = 0;
+
+protected:
+    View()
+        : geometry { 0, 0, 0, 0 }
+        , workspace_id(-1)
+        , x(0)
+        , y(0)
+        , mapped(false)
+    {
+    }
 };
 
-void xdg_surface_map_handler(struct wl_listener* listener, void* data);
-void xdg_surface_unmap_handler(struct wl_listener* listener, void* data);
-void xdg_surface_destroy_handler(struct wl_listener* listener, void* data);
-void xdg_surface_commit_handler(struct wl_listener* listener, void* data);
-void xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data);
-void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data);
-
 /// Registers a view to the server and attaches the event handlers.
-void create_view(Server* server, View&& view);
+void create_view(Server* server, View* view);
 
 #endif // __CARDBOARD_VIEW_H_

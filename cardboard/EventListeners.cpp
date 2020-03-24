@@ -65,7 +65,7 @@ void new_xdg_surface_handler(struct wl_listener* listener, void* data)
         return;
     }
 
-    create_view(server, { xdg_surface });
+    create_view(server, new XDGView(xdg_surface));
 }
 
 void cursor_motion_handler(struct wl_listener* listener, void* data)

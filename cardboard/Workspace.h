@@ -7,7 +7,7 @@
 #include <wlr_cpp/types/wlr_output.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
 
-struct View;
+class View;
 
 /**
  * \brief A Workspace is a group of tiled windows.

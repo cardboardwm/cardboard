@@ -104,7 +104,7 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
             .server = server
         };
 
-        wlr_xdg_surface_for_each_surface(tile.view->xdg_surface, render_surface, &rdata);
+        tile.view->for_each_surface(render_surface, &rdata);
     }
 
     // render the focused view last (only if it's tiled)
@@ -117,12 +117,13 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
             .server = server
         };
 
-        wlr_xdg_surface_for_each_surface(focused_view->xdg_surface, render_surface, &rdata);
+        focused_view->for_each_surface(render_surface, &rdata);
     }
     wlr_renderer_scissor(renderer, nullptr);
 
     // render stacked windows
-    for (auto view = server->views.rbegin(); view != server->views.rend(); view++) {
+    for (auto it = server->views.rbegin(); it != server->views.rend(); it++) {
+        auto view = *it;
         if (!view->mapped || view->workspace_id >= 0) {
             // don't render unmapped views or views assigned to workspaces
             continue;
@@ -136,7 +137,7 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
             .server = server
         };
 
-        wlr_xdg_surface_for_each_surface(view->xdg_surface, render_surface, &rdata);
+        view->for_each_surface(render_surface, &rdata);
     }
 
     // in case of software rendered cursor, render it

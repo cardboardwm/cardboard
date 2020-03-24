@@ -276,7 +276,7 @@ void Server::focus_view(View* view)
     }
     if (prev_view) {
         // deactivate previous surface
-        wlr_xdg_toplevel_set_activated(prev_view->xdg_surface, false);
+        prev_view->set_activated(false);
     }
 
     if (auto it = std::find(focused_views.begin(), focused_views.end(), view); it != focused_views.end()) {
@@ -287,11 +287,11 @@ void Server::focus_view(View* view)
 
     auto* keyboard = wlr_seat_get_keyboard(seat);
     // move the view to the front
-    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](auto& x) { return view == &x; }));
+    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](const auto x) { return view == x; }));
     // activate surface
-    wlr_xdg_toplevel_set_activated(view->xdg_surface, true);
+    view->set_activated(true);
     // the seat will send keyboard events to the view automatically
-    wlr_seat_keyboard_notify_enter(seat, view->xdg_surface->surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+    wlr_seat_keyboard_notify_enter(seat, view->get_surface(), keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
 
     if (auto ws = get_views_workspace(view)) {
         ws->get().fit_view_on_screen(view);
@@ -343,12 +343,12 @@ void Server::hide_view(View* view)
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
     auto output = wlr_output_layout_output_at(output_layout, lx, ly);
-    for (auto& view : views) {
-        auto views_output = get_views_workspace(&view)->get().output;
+    for (const auto view : views) {
+        auto views_output = get_views_workspace(view)->get().output;
         // the view is either tiled in the output holding the cursor, or not tiled at all
         if (((views_output && *views_output == output) || !views_output)
-            && view.get_surface_under_coords(lx, ly, surface, sx, sy)) {
-            return &view;
+            && view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+            return view;
         }
     }
 
@@ -357,13 +357,34 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
 
 View* Server::get_focused_view()
 {
-    for (auto& view : views) {
-        if (view.xdg_surface->surface == seat->keyboard_state.focused_surface) {
-            return &view;
+    for (const auto view : views) {
+        if (view->get_surface() == seat->keyboard_state.focused_surface) {
+            return view;
         }
     }
 
     return nullptr;
+}
+
+void Server::map_view(View* view)
+{
+    view->mapped = true;
+
+    auto* prev_focused = get_focused_view();
+
+    Workspace& focused_workspace = get_focused_workspace();
+    focused_workspace.add_view(view, prev_focused);
+    focus_view(view);
+}
+
+void Server::unmap_view(View* view)
+{
+    view->mapped = false;
+    if (auto ws = get_views_workspace(view)) {
+        ws->get().remove_view(view);
+    }
+
+    hide_view(view);
 }
 
 std::optional<std::reference_wrapper<Workspace>> Server::get_views_workspace(View* view)
@@ -396,12 +417,11 @@ void Server::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = seat->pointer_state.focused_surface;
-    if (view->xdg_surface->surface != focused_surface) {
+    if (view->get_surface() != focused_surface) {
         // don't handle the request if the view is not in focus
         return;
     }
-    struct wlr_box geometry;
-    wlr_xdg_surface_get_geometry(view->xdg_surface, &geometry);
+    struct wlr_box geometry = view->geometry;
 
     GrabState state = { mode, view, 0, 0, geometry.width, geometry.height, edges };
     if (mode == GrabState::Mode::MOVE) {

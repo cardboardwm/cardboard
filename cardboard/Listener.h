@@ -11,7 +11,7 @@
 #include <variant>
 
 #include "Keyboard.h"
-#include "View.h"
+#include "XDGView.h"
 
 struct NoneT {
 };
@@ -22,7 +22,7 @@ using ListenerData = std::variant<
     NoneT,
     wlr_output*,
     wlr_output_layout_output*,
-    View*,
+    XDGView*,
     wlr_input_device*,
     KeyHandleData>;
 
@@ -77,10 +77,12 @@ public:
     }
 
     /// Registers a \a listener for a given \a signal.
-    void add_listener(wl_signal* signal, Listener&& listener)
+    wl_listener* add_listener(wl_signal* signal, Listener&& listener)
     {
         listeners.push_back(std::move(listener));
         wl_signal_add(signal, &listeners.back().listener);
+
+        return &listeners.back().listener;
     }
 
     /// Unregisters a Listener object associated with a ray Wayland \a raw_listener.

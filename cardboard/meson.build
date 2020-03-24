@@ -27,6 +27,7 @@ cardboard_sources = files(
   'Spawn.cpp',
   'View.cpp',
   'Workspace.cpp',
+  'XDGView.cpp',
   'main.cpp',
 )
 

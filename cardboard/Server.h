@@ -57,7 +57,7 @@ struct Server {
 
     struct wlr_xdg_shell* xdg_shell;
     /// Holds the active views, ordered by the stacking order.
-    std::list<View> views; // TODO: check if View's statefulness is needed
+    std::list<View*> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
     std::list<View*> focused_views; ///< Views ordered by the time they were focused, from most recent.
@@ -122,6 +122,10 @@ struct Server {
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
     /// Returns the currently focused View. It is defined as the View currently holding keyboard focus.
     View* get_focused_view();
+    /// Common mapping procedure for views regardless of their underlying shell.
+    void map_view(View* view);
+    /// Common unmapping procedure for views regardless of their underlying shell.
+    void unmap_view(View* view);
 
     /// Returns the workspace in which the given \a view resides, if any.
     std::optional<std::reference_wrapper<Workspace>> get_views_workspace(View* view);
