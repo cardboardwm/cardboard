@@ -1,4 +1,6 @@
 #include <wayland-server.h>
+#include <wlr_cpp/backend.h>
+#include <wlr_cpp/backend/multi.h>
 #include <wlr_cpp/types/wlr_input_device.h>
 
 #include "Keyboard.h"
@@ -21,7 +23,7 @@ void key_handler(struct wl_listener* listener, void* data)
 
     auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
 
-    bool command_run = false;
+    bool handled = false;
     uint32_t modifiers = wlr_keyboard_get_modifiers(handleData.device->keyboard);
     if (event->state == WLR_KEY_PRESSED) {
         const xkb_keysym_t* syms;
@@ -35,12 +37,26 @@ void key_handler(struct wl_listener* listener, void* data)
             // as you can see below, keysyms are always stored lowercase
             if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
                 (it->second.first)(it->second.second, server);
-                command_run = true;
+                handled = true;
+            }
+        }
+
+        if (!handled) {
+            for (int i = 0; i < syms_number; i++) {
+                if (syms[i] >= XKB_KEY_XF86Switch_VT_1 && syms[i] <= XKB_KEY_XF86Switch_VT_12) {
+                    if (wlr_backend_is_multi(server->backend)) {
+                        if (auto* session = wlr_backend_get_session(server->backend); session) {
+                            auto vt = syms[i] - XKB_KEY_XF86Switch_VT_1 + 1;
+                            wlr_session_change_vt(session, vt);
+                        }
+                    }
+                    handled = true;
+                }
             }
         }
     }
 
-    if (!command_run) {
+    if (!handled) {
         wlr_seat_set_keyboard(server->seat, handleData.device);
         wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
     }
