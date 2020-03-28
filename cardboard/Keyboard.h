@@ -6,7 +6,7 @@
 
 #include <unordered_map>
 
-#include "IPC.h"
+#include "Command.h"
 
 /**
  * \file
@@ -54,7 +54,7 @@ struct KeybindingsConfig {
      * map[WLR_MODIFIER_LOGO | WLR_MODIFIER_SHIFT][XKB_KEY_x] // notice the lowercase `x`
      * \endcode
      */
-    std::unordered_map<xkb_keysym_t, std::pair<IPCCommandHandler*, IPCParsedCommand>> map[(1 << WLR_MODIFIER_COUNT) - 1];
+    std::unordered_map<xkb_keysym_t, Command> map[(1 << WLR_MODIFIER_COUNT) - 1];
 };
 
 /**

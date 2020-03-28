@@ -34,7 +34,7 @@ void key_handler(struct wl_listener* listener, void* data)
             auto& map = handleData.config->map[modifiers];
             // as you can see below, keysyms are always stored lowercase
             if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
-                (it->second.first)(it->second.second, server);
+                (it->second)(server);
                 command_run = true;
             }
         }
