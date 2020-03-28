@@ -10,34 +10,25 @@
 #include "../IPC.h"
 #include "../Server.h"
 #include "../Spawn.h"
+#include "../Command.h"
 
 extern char** environ;
 
-namespace ipc_handlers {
+namespace commands {
 
-static IPCCommandResult command_quit(IPCParsedCommand cmd, Server* server)
+inline CommandResult focus(Server* server, int focus_direction)
 {
-    int exit = 0;
-    if (cmd.size() >= 2) {
-        exit = std::atoi(cmd[1].c_str());
-    }
-    server->teardown(exit);
+    server->focus_by_offset(focus_direction);
+    return {""};
+}
+
+inline CommandResult quit(Server* server)
+{
+    server->teardown(0);
     return { "" };
 }
 
-static IPCCommandResult command_focus_left([[maybe_unused]] IPCParsedCommand cmd, Server* server)
-{
-    server->focus_by_offset(-1);
-    return { "" };
-}
-
-static IPCCommandResult command_focus_right([[maybe_unused]] IPCParsedCommand cmd, Server* server)
-{
-    server->focus_by_offset(+1);
-    return { "" };
-}
-
-static std::array<std::pair<std::string_view, uint32_t>, 8> mod_table = { { { "shift", WLR_MODIFIER_SHIFT },
+[[maybe_unused]] static std::array<std::pair<std::string_view, uint32_t>, 8> mod_table = { { { "shift", WLR_MODIFIER_SHIFT },
                                                                             { "ctrl", WLR_MODIFIER_CTRL },
                                                                             { "alt", WLR_MODIFIER_ALT },
                                                                             { "super", WLR_MODIFIER_LOGO },
@@ -46,9 +37,11 @@ static std::array<std::pair<std::string_view, uint32_t>, 8> mod_table = { { { "s
                                                                             { "mod3", WLR_MODIFIER_MOD3 },
                                                                             { "mod5", WLR_MODIFIER_MOD5 } } };
 
-static IPCCommandResult command_bind(IPCParsedCommand cmd, Server* server)
+
+inline CommandResult bind(Server* /*server*/, std::string /*key_binding*/, Command /*command*/)
 {
-    uint32_t modifier = 0;
+    /*
+         uint32_t modifier = 0;
     xkb_keysym_t sym = XKB_KEY_NoSymbol;
     std::string::size_type pos = 0;
     auto locale = std::locale("");
@@ -93,13 +86,14 @@ static IPCCommandResult command_bind(IPCParsedCommand cmd, Server* server)
         return { "Invalid command.\n" };
     }
     server->keybindings_config.map[modifier].insert({ sym, { *handler, command } });
-
+*/
     return { "" };
 }
 
-static IPCCommandResult command_exec(IPCParsedCommand cmd, [[maybe_unused]] Server* server)
+inline CommandResult exec(Server* /*server*/, std::string /*command*/)
 {
-    std::vector<char*> argv;
+    /*
+         std::vector<char*> argv;
     argv.reserve(cmd.size() - 1 + 1);
     std::transform(std::next(cmd.begin()), cmd.end(), std::back_inserter(argv), [](auto& s) { return const_cast<char*>(s.c_str()); });
     argv.push_back(nullptr);
@@ -108,10 +102,11 @@ static IPCCommandResult command_exec(IPCParsedCommand cmd, [[maybe_unused]] Serv
         setsid();
         execvpe(argv[0], argv.data(), environ);
         exit(0);
-    }
+    }*/
     return { "" };
 }
 
 };
+
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
