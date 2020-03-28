@@ -7,9 +7,10 @@ sources = files(
 
 install_headers('include/command_protocol.h')
 
-library(
+command_protocol = library(
     'command_protocol',
     sources,
     include_directories: inc,
-    install: true
+    install: true,
+    link_args: '-lcapnp -lkj'
 )
