@@ -22,5 +22,6 @@ add_project_arguments(
 include_dir = include_directories('include')
 
 subdir('protocols')
+subdir('libcommand_protocol')
 subdir('cardboard')
 subdir('cutter')
