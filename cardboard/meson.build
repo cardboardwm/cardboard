@@ -29,7 +29,7 @@ cardboard_sources = files(
   'Workspace.cpp',
   'XDGView.cpp',
   'main.cpp',
-  'ipc_handlers/dispatch_command.cpp'
+  'commands/dispatch_command.cpp'
 )
 
 executable(
