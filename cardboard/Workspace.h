@@ -8,6 +8,7 @@
 #include <wlr_cpp/types/wlr_output_layout.h>
 
 class View;
+struct Output;
 
 /**
  * \brief A Workspace is a group of tiled windows.
@@ -36,7 +37,7 @@ struct Workspace {
      *
      * It's equal to \c std::nullopt if this workspace isn't assigned.
      */
-    std::optional<struct wlr_output*> output;
+    std::optional<Output*> output;
 
     IndexType index;
 

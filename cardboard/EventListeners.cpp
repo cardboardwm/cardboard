@@ -3,7 +3,13 @@
 #include <wlr_cpp/types/wlr_cursor.h>
 #include <wlr_cpp/types/wlr_output.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
+#include <wlr_cpp/types/wlr_xdg_shell.h>
+#include <wlr_cpp/util/log.h>
 
+// keep empty line above to avoid header sorting for this little guy
+#include <layer_shell_v1.h>
+
+#include "Layers.h"
 #include "Listener.h"
 #include "Server.h"
 
@@ -34,7 +40,12 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
     Server* server = get_server(listener);
     auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
 
-    register_output(server, l_output);
+    auto output_ = Output {};
+    output_.wlr_output = l_output->output;
+    wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
+    register_output(server, std::move(output_));
+
+    auto& output = server->outputs.back();
 
     Workspace* ws_to_assign;
     for (auto& ws : server->workspaces) {
@@ -48,10 +59,10 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
         ws_to_assign = &server->create_workspace();
     }
 
-    ws_to_assign->output = l_output->output;
+    ws_to_assign->output = &output;
 
     // expose the output to the clients
-    wlr_output_create_global(l_output->output);
+    wlr_output_create_global(output.wlr_output);
 }
 
 void new_xdg_surface_handler(struct wl_listener* listener, void* data)
@@ -66,6 +77,45 @@ void new_xdg_surface_handler(struct wl_listener* listener, void* data)
     }
 
     create_view(server, new XDGView(xdg_surface));
+}
+
+void new_layer_surface_handler(struct wl_listener* listener, void* data)
+{
+    Server* server = get_server(listener);
+    auto* layer_surface = static_cast<struct wlr_layer_surface_v1*>(data);
+    wlr_log(WLR_DEBUG,
+            "new layer surface: namespace %s layer %d anchor %d "
+            "size %dx%d margin %d,%d,%d,%d",
+            layer_surface->namespace_,
+            layer_surface->client_pending.layer,
+            layer_surface->client_pending.anchor,
+            layer_surface->client_pending.desired_width,
+            layer_surface->client_pending.desired_height,
+            layer_surface->client_pending.margin.top,
+            layer_surface->client_pending.margin.right,
+            layer_surface->client_pending.margin.bottom,
+            layer_surface->client_pending.margin.left);
+
+    if (!layer_surface->output) {
+        // Assigns output of the focused workspace
+        Output* output = nullptr;
+        if (auto focused_workspace = server->get_focused_workspace(); focused_workspace && focused_workspace->get().output) {
+            output = *focused_workspace->get().output;
+        }
+        if (!output) {
+            if (server->outputs.empty()) {
+                wlr_log(WLR_ERROR, "no output to auto-assign layer surface '%s' to", layer_surface->namespace_);
+                wlr_layer_surface_v1_close(layer_surface);
+                return;
+            }
+            output = &server->outputs.front();
+        }
+        layer_surface->output = output->wlr_output;
+    }
+
+    LayerSurface ls;
+    ls.surface = layer_surface;
+    create_layer(server, std::move(ls));
 }
 
 void cursor_motion_handler(struct wl_listener* listener, void* data)

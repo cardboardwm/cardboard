@@ -31,12 +31,20 @@ void new_output_handler(struct wl_listener* listener, void* data);
 void output_layout_add_handler(struct wl_listener* listener, void* data);
 
 /**
- * \brief Called when a new \c xdg-surface is created by a client.
+ * \brief Called when a new \c xdg_surface is created by a client.
  *
  * An \c xdg-surface is a type of surface exposed by the \c xdg-shell.
  * This handler creates a View based on it.
  */
 void new_xdg_surface_handler(struct wl_listener* listener, void* data);
+
+/**
+ * \brief Called when a new \c layer_surface is created by a client.
+ *
+ * A \c layer_surface is a type of surface exposed by the \c layer-shell.
+ * This handler does NOT create Views based on it.
+ */
+void new_layer_surface_handler(struct wl_listener* listener, void* data);
 
 /**
  * \brief Called when the cursor (mouse) is moved.

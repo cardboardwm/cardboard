@@ -1,16 +1,30 @@
 #ifndef __CARDBOARD_SERVER_H_
 #define __CARDBOARD_SERVER_H_
 
+#include <wayland-server.h>
+#include <wlr_cpp/backend.h>
+#include <wlr_cpp/types/wlr_compositor.h>
+#include <wlr_cpp/types/wlr_cursor.h>
+#include <wlr_cpp/types/wlr_data_device.h>
+#include <wlr_cpp/types/wlr_output_layout.h>
+#include <wlr_cpp/types/wlr_xcursor_manager.h>
+#include <wlr_cpp/types/wlr_xdg_shell.h>
+
+#include <layer_shell_v1.h>
+
 #include <sys/un.h>
 
 #include <cstdint>
 #include <list>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "EventListeners.h"
 #include "IPC.h"
 #include "Keyboard.h"
+#include "Layers.h"
 #include "Listener.h"
 #include "Output.h"
 #include "View.h"
@@ -56,6 +70,8 @@ struct Server {
     std::string config_path;
 
     struct wlr_xdg_shell* xdg_shell;
+    struct wlr_layer_shell_v1* layer_shell;
+
     /// Holds the active views, ordered by the stacking order.
     std::list<View*> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
@@ -73,7 +89,7 @@ struct Server {
     std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;
-    std::vector<wlr_output_layout_output*> outputs;
+    std::list<Output> outputs;
 
     ListenerList listeners;
 
@@ -130,7 +146,7 @@ struct Server {
     /// Returns the workspace in which the given \a view resides, if any.
     std::optional<std::reference_wrapper<Workspace>> get_views_workspace(View* view);
     /// Returns the workspace under the cursor.
-    Workspace& get_focused_workspace();
+    std::optional<std::reference_wrapper<Workspace>> get_focused_workspace();
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
 

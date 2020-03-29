@@ -22,6 +22,7 @@ cardboard_sources = files(
   'EventListeners.cpp',
   'IPC.cpp',
   'Keyboard.cpp',
+  'Layers.cpp',
   'Output.cpp',
   'Server.cpp',
   'Spawn.cpp',

@@ -1,9 +1,13 @@
 #ifndef __CARDBOARD_OUTPUT_H_
 #define __CARDBOARD_OUTPUT_H_
 
-#include "Server.h"
+#include <array>
+
 #include <wayland-server.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
+
+#include "Layers.h"
+#include "Server.h"
 
 /**
  * \file
@@ -12,12 +16,19 @@
  * Outputs are displays.
  */
 
+struct Output {
+    struct wlr_output* wlr_output;
+
+    LayerArray layers;
+    struct wlr_box usable_area;
+};
+
 /// Executed for each frame render per output.
 void output_frame_handler(struct wl_listener* listener, void* data);
 /// Executed when the output is detached.
 void output_destroy_handler(struct wl_listener* listener, void* data);
 
 /// Registers event listeners and does bookkeeping for a newly added output.
-void register_output(Server* server, wlr_output_layout_output*);
+void register_output(Server* server, Output&& output);
 
 #endif // __CARDBOARD_OUTPUT_H_

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 
+#include "Output.h"
 #include "View.h"
 #include "Workspace.h"
 
@@ -35,12 +36,7 @@ void Workspace::add_view(View* view, View* next_to)
 
     assert(output.has_value());
 
-    int ow, oh;
-    wlr_output_effective_resolution(*output, &ow, &oh);
-
     tile->view->workspace_id = index;
-    tile->view->resize(tile->view->geometry.width, oh);
-    wlr_log(WLR_DEBUG, "resizing to %d - %d", oh, view->geometry.y);
 
     arrange_tiles();
 }
@@ -55,9 +51,15 @@ void Workspace::remove_view(View* view)
 void Workspace::arrange_tiles()
 {
     int acc_width = 0;
+    const auto& usable_area = (*output)->usable_area;
+    wlr_log(WLR_DEBUG, "usable area is %d %d %d %d", usable_area.x, usable_area.y, usable_area.width, usable_area.height);
     for (auto& tile : tiles) {
-        tile.view->x = acc_width - tile.view->geometry.x - scroll_x;
-        tile.view->y = -tile.view->geometry.y;
+        tile.view->x = usable_area.x + acc_width - tile.view->geometry.x - scroll_x;
+        tile.view->y = usable_area.y - tile.view->geometry.y;
+        wlr_log(WLR_DEBUG, "positioned window to %d %d", tile.view->x, tile.view->y);
+        if (output) {
+            tile.view->resize(tile.view->geometry.width, usable_area.height);
+        }
 
         acc_width += tile.view->geometry.width;
     }
@@ -71,15 +73,12 @@ bool Workspace::is_spanning()
 
     assert(output.has_value());
 
-    const auto* output_box = wlr_output_layout_get_box(output_layout, *output);
-    if (output_box == nullptr) {
-        return false;
-    }
+    const auto& usable_area = (*output)->usable_area;
 
     int acc_width = 0;
     for (const auto& tile : tiles) {
         acc_width += tile.view->geometry.width;
-        if (acc_width >= output_box->width) {
+        if (acc_width >= usable_area.width) {
             return true;
         }
     }
@@ -100,11 +99,12 @@ void Workspace::fit_view_on_screen(View* view)
 
     assert(output.has_value());
 
-    const auto* output_box = wlr_output_layout_get_box(output_layout, *output);
+    const auto* output_box = wlr_output_layout_get_box(output_layout, (*output)->wlr_output);
     if (output_box == nullptr) {
         return;
     }
 
+    // TODO: consider usable area
     int vx = view->x + view->geometry.x;
 
     bool spanning = is_spanning();

@@ -6,7 +6,10 @@
 #include <wlr_cpp/types/wlr_data_device.h>
 #include <wlr_cpp/types/wlr_output_layout.h>
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
+#include <wlr_cpp/types/wlr_xdg_shell.h>
 #include <wlr_cpp/util/log.h>
+
+#include <layer_shell_v1.h>
 
 #include <sys/socket.h>
 
@@ -33,9 +36,9 @@ bool Server::init()
     output_layout = wlr_output_layout_create();
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
-    // TODO: implement layer-shell
     // TODO: implement Xwayland
     xdg_shell = wlr_xdg_shell_create(wl_display);
+    layer_shell = wlr_layer_shell_v1_create(wl_display);
 
     cursor = wlr_cursor_create();
     wlr_cursor_attach_output_layout(cursor, output_layout);
@@ -60,9 +63,13 @@ bool Server::init()
         { &cursor->events.button, cursor_button_handler },
         { &cursor->events.axis, cursor_axis_handler },
         { &cursor->events.frame, cursor_frame_handler },
+
         { &backend->events.new_output, new_output_handler },
         { &output_layout->events.add, output_layout_add_handler },
+
         { &xdg_shell->events.new_surface, new_xdg_surface_handler },
+        { &layer_shell->events.new_surface, new_layer_surface_handler },
+
         { &backend->events.new_input, new_input_handler },
         { &seat->events.request_set_cursor, seat_request_cursor_handler }
     };
@@ -342,11 +349,11 @@ void Server::hide_view(View* view)
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
-    auto output = wlr_output_layout_output_at(output_layout, lx, ly);
+    auto wlr_output = wlr_output_layout_output_at(output_layout, lx, ly);
     for (const auto view : views) {
         auto views_output = get_views_workspace(view)->get().output;
         // the view is either tiled in the output holding the cursor, or not tiled at all
-        if (((views_output && *views_output == output) || !views_output)
+        if (((views_output && (*views_output)->wlr_output == wlr_output) || !views_output)
             && view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return view;
         }
@@ -372,8 +379,9 @@ void Server::map_view(View* view)
 
     auto* prev_focused = get_focused_view();
 
-    Workspace& focused_workspace = get_focused_workspace();
-    focused_workspace.add_view(view, prev_focused);
+    if (auto focused_workspace = get_focused_workspace(); focused_workspace) {
+        focused_workspace->get().add_view(view, prev_focused);
+    }
     focus_view(view);
 }
 
@@ -396,15 +404,15 @@ std::optional<std::reference_wrapper<Workspace>> Server::get_views_workspace(Vie
     return std::ref(workspaces[view->workspace_id]);
 }
 
-Workspace& Server::get_focused_workspace()
+std::optional<std::reference_wrapper<Workspace>> Server::get_focused_workspace()
 {
     for (auto& ws : workspaces) {
-        if (ws.output && wlr_output_layout_contains_point(output_layout, *ws.output, cursor->x, cursor->y)) {
+        if (ws.output && wlr_output_layout_contains_point(output_layout, (*ws.output)->wlr_output, cursor->x, cursor->y)) {
             return ws;
         }
     }
 
-    assert(false);
+    return std::nullopt;
 }
 
 Workspace& Server::create_workspace()

@@ -11,6 +11,7 @@
 #include <variant>
 
 #include "Keyboard.h"
+#include "Layers.h"
 #include "XDGView.h"
 
 struct NoneT {
@@ -20,11 +21,11 @@ struct Server;
 /// Constant data for many event listeners.
 using ListenerData = std::variant<
     NoneT,
-    wlr_output*,
-    wlr_output_layout_output*,
-    XDGView*,
+    KeyHandleData,
+    LayerSurface*,
+    Output*,
     wlr_input_device*,
-    KeyHandleData>;
+    XDGView*>;
 
 /**
  * \brief The Listener is a wrapper around Wayland's \c wl_listener concept.
