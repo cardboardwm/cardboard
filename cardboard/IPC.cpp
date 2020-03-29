@@ -1,6 +1,7 @@
 #include <wlr_cpp/util/log.h>
 
 #include <sys/socket.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -11,7 +12,6 @@
 #include "IPC.h"
 #include "Server.h"
 
-#include "ipc_handlers/commands.h"
 #include <command_protocol.h>
 
 
