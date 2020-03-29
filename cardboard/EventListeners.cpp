@@ -99,12 +99,12 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
     if (!layer_surface->output) {
         // Assigns output of the focused workspace
         Output* output = nullptr;
-        if (auto focused_workspace = server->get_focused_workspace(); focused_workspace && focused_workspace->get().output) {
+        auto focused_workspace = server->get_focused_workspace();
+        if (focused_workspace && focused_workspace->get().output) {
             output = *focused_workspace->get().output;
         }
         if (!output) {
             if (server->outputs.empty()) {
-                wlr_log(WLR_ERROR, "no output to auto-assign layer surface '%s' to", layer_surface->namespace_);
                 wlr_layer_surface_v1_close(layer_surface);
                 return;
             }

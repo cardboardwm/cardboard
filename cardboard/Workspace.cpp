@@ -57,12 +57,10 @@ void Workspace::arrange_tiles()
     int acc_width = 0;
     const auto* output_box = wlr_output_layout_get_box(output_layout, (*output)->wlr_output);
     struct wlr_box usable_area = (*output)->usable_area;
-    usable_area.x = output_box->x;
-    usable_area.y = output_box->y;
 
     for (auto& tile : tiles) {
-        tile.view->x = usable_area.x + acc_width - tile.view->geometry.x - scroll_x;
-        tile.view->y = usable_area.y - tile.view->geometry.y;
+        tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
+        tile.view->y = output_box->y + usable_area.y - tile.view->geometry.y;
         tile.view->resize(tile.view->geometry.width, usable_area.height);
 
         acc_width += tile.view->geometry.width;
@@ -79,10 +77,11 @@ bool Workspace::is_spanning()
 
     const auto& usable_area = (*output)->usable_area;
 
-    int acc_width = 0;
     for (const auto& tile : tiles) {
-        acc_width += tile.view->geometry.width;
-        if (acc_width >= usable_area.width) {
+        double ox = tile.view->x + tile.view->geometry.x, oy = tile.view->y + tile.view->geometry.y;
+        wlr_output_layout_output_coords(output_layout, (*output)->wlr_output, &ox, &oy);
+
+        if (ox < usable_area.x || ox + tile.view->geometry.width > usable_area.x + usable_area.width) {
             return true;
         }
     }
@@ -96,8 +95,7 @@ void Workspace::fit_view_on_screen(View* view)
         return;
     }
 
-    auto it = find_tile(view);
-    if (it == tiles.end()) {
+    if (find_tile(view) == tiles.end()) {
         return;
     }
 
@@ -107,21 +105,21 @@ void Workspace::fit_view_on_screen(View* view)
     if (output_box == nullptr) {
         return;
     }
-
-    // TODO: consider usable area
+    const auto usable_area = (*output)->usable_area;
+    int wx = get_view_wx(view);
     int vx = view->x + view->geometry.x;
 
     bool spanning = is_spanning();
-    if (spanning && view == tiles.begin()->view) {
+    if (view == tiles.begin()->view) {
         // align first window to the display's left edge
-        scroll_x += vx - output_box->x;
+        scroll_x = -usable_area.x;
     } else if (spanning && view == tiles.rbegin()->view) {
         // align last window to the display's right edge
-        scroll_x += vx + view->geometry.width - output_box->x - output_box->width;
-    } else if (vx < output_box->x) {
-        scroll_x += vx - output_box->x;
-    } else if (vx + view->geometry.width >= output_box->x + output_box->width) {
-        scroll_x += vx + view->geometry.width - output_box->x - output_box->width;
+        scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
+    } else if (vx < output_box->x + usable_area.x) {
+        scroll_x = wx - usable_area.x;
+    } else if (vx + view->geometry.width >= output_box->x + usable_area.x + usable_area.width) {
+        scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
     }
 
     arrange_tiles();

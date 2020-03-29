@@ -122,12 +122,13 @@ static void render_floating(Server* server, struct wlr_output* wlr_output, struc
 
 static void render_layer(Server* server, LayerArray::value_type& surfaces, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
+    auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
     for (const auto& surface : surfaces) {
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = surface.geometry.x,
-            .oy = surface.geometry.y,
+            .ox = surface.geometry.x + output_box->x,
+            .oy = surface.geometry.y + output_box->y,
             .when = now,
             .server = server
         };
@@ -164,8 +165,10 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
 
+    wlr_renderer_scissor(renderer, &(*ws.output)->usable_area);
     render_workspace(server, ws, wlr_output, renderer, &now);
     render_floating(server, wlr_output, renderer, &now);
+    wlr_renderer_scissor(renderer, nullptr);
 
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
