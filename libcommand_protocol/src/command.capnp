@@ -24,7 +24,7 @@ struct Command {
     command @0 :Commands;
     arguments :union {
         focusDirection @1 :FocusDirection;
-        execCommand @2 :Text;
+        execCommand @2 :List(Text);
         bind @3 :Bind;
     }
 }

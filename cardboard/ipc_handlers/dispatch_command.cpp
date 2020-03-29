@@ -34,7 +34,7 @@ Command dispatch_command(const CommandData& command_data)
         },
         [](CommandArguments::exec exec_data) -> Command {
             return [exec_data](Server* server) {
-                return commands::exec(server, exec_data.command);
+                return commands::exec(server, exec_data.argv);
             };
         },
     }, command_data);

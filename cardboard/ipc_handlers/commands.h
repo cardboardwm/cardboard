@@ -90,7 +90,7 @@ inline CommandResult bind(Server* /*server*/, std::string /*key_binding*/, Comma
     return { "" };
 }
 
-inline CommandResult exec(Server* /*server*/, std::string /*command*/)
+inline CommandResult exec(Server* /*server*/, std::vector<std::string> /*command*/)
 {
     /*
          std::vector<char*> argv;

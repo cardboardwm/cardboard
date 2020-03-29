@@ -20,10 +20,13 @@ static CommandData deserialize(const generated::Command::Reader& reader)
             std::make_unique<CommandData>(deserialize(reader.getArguments().getBind().getCommand()))
         };
     case generated::Command::Commands::EXEC:
-        return CommandArguments::exec{
-            reader.getArguments().getExecCommand().cStr()
-        };
+        std::vector<std::string> argv;
+        for(auto arg: reader.getArguments().getExecCommand())
+            argv.emplace_back(arg.cStr());
+        return CommandArguments::exec{std::move(argv)};
     }
+
+    return {};
 }
 
 CommandData read_command_data(int fd)
@@ -57,7 +60,10 @@ static void serialize(generated::Command::Builder& builder, const CommandData& c
         },
         [&builder](const CommandArguments::exec& exec_data)  {
             builder.setCommand(generated::Command::Commands::EXEC);
-            builder.initArguments().setExecCommand(exec_data.command);
+            auto argv = builder.initArguments().initExecCommand(exec_data.argv.size());
+
+            for(size_t i = 0; i < exec_data.argv.size(); i++)
+                argv.set(i, exec_data.argv[i]);
         },
     }, command_data);
 }

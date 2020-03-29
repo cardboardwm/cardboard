@@ -5,6 +5,7 @@
 #include <variant>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace CommandArguments
 {
@@ -23,7 +24,7 @@ namespace CommandArguments
 
     struct exec
     {
-        std::string command;
+        std::vector<std::string> argv;
     };
 }
 

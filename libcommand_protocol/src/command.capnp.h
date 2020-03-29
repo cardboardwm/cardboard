@@ -292,7 +292,7 @@ public:
 
   inline bool isExecCommand() const;
   inline bool hasExecCommand() const;
-  inline  ::capnp::Text::Reader getExecCommand() const;
+  inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Reader getExecCommand() const;
 
   inline bool isBind() const;
   inline bool hasBind() const;
@@ -333,11 +333,12 @@ public:
 
   inline bool isExecCommand();
   inline bool hasExecCommand();
-  inline  ::capnp::Text::Builder getExecCommand();
-  inline void setExecCommand( ::capnp::Text::Reader value);
-  inline  ::capnp::Text::Builder initExecCommand(unsigned int size);
-  inline void adoptExecCommand(::capnp::Orphan< ::capnp::Text>&& value);
-  inline ::capnp::Orphan< ::capnp::Text> disownExecCommand();
+  inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Builder getExecCommand();
+  inline void setExecCommand( ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Reader value);
+  inline void setExecCommand(::kj::ArrayPtr<const  ::capnp::Text::Reader> value);
+  inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Builder initExecCommand(unsigned int size);
+  inline void adoptExecCommand(::capnp::Orphan< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>&& value);
+  inline ::capnp::Orphan< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>> disownExecCommand();
 
   inline bool isBind();
   inline bool hasBind();
@@ -530,41 +531,47 @@ inline bool Command::Arguments::Builder::hasExecCommand() {
   return !_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS).isNull();
 }
-inline  ::capnp::Text::Reader Command::Arguments::Reader::getExecCommand() const {
+inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Reader Command::Arguments::Reader::getExecCommand() const {
   KJ_IREQUIRE((which() == Command::Arguments::EXEC_COMMAND),
               "Must check which() before get()ing a union member.");
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_reader.getPointerField(
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::get(_reader.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline  ::capnp::Text::Builder Command::Arguments::Builder::getExecCommand() {
+inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Builder Command::Arguments::Builder::getExecCommand() {
   KJ_IREQUIRE((which() == Command::Arguments::EXEC_COMMAND),
               "Must check which() before get()ing a union member.");
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::get(_builder.getPointerField(
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::get(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
-inline void Command::Arguments::Builder::setExecCommand( ::capnp::Text::Reader value) {
+inline void Command::Arguments::Builder::setExecCommand( ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Reader value) {
   _builder.setDataField<Command::Arguments::Which>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, Command::Arguments::EXEC_COMMAND);
-  ::capnp::_::PointerHelpers< ::capnp::Text>::set(_builder.getPointerField(
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::set(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), value);
 }
-inline  ::capnp::Text::Builder Command::Arguments::Builder::initExecCommand(unsigned int size) {
+inline void Command::Arguments::Builder::setExecCommand(::kj::ArrayPtr<const  ::capnp::Text::Reader> value) {
   _builder.setDataField<Command::Arguments::Which>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, Command::Arguments::EXEC_COMMAND);
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::init(_builder.getPointerField(
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::set(_builder.getPointerField(
+      ::capnp::bounded<0>() * ::capnp::POINTERS), value);
+}
+inline  ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>::Builder Command::Arguments::Builder::initExecCommand(unsigned int size) {
+  _builder.setDataField<Command::Arguments::Which>(
+      ::capnp::bounded<2>() * ::capnp::ELEMENTS, Command::Arguments::EXEC_COMMAND);
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::init(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), size);
 }
 inline void Command::Arguments::Builder::adoptExecCommand(
-    ::capnp::Orphan< ::capnp::Text>&& value) {
+    ::capnp::Orphan< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>&& value) {
   _builder.setDataField<Command::Arguments::Which>(
       ::capnp::bounded<2>() * ::capnp::ELEMENTS, Command::Arguments::EXEC_COMMAND);
-  ::capnp::_::PointerHelpers< ::capnp::Text>::adopt(_builder.getPointerField(
+  ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::adopt(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS), kj::mv(value));
 }
-inline ::capnp::Orphan< ::capnp::Text> Command::Arguments::Builder::disownExecCommand() {
+inline ::capnp::Orphan< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>> Command::Arguments::Builder::disownExecCommand() {
   KJ_IREQUIRE((which() == Command::Arguments::EXEC_COMMAND),
               "Must check which() before get()ing a union member.");
-  return ::capnp::_::PointerHelpers< ::capnp::Text>::disown(_builder.getPointerField(
+  return ::capnp::_::PointerHelpers< ::capnp::List< ::capnp::Text,  ::capnp::Kind::BLOB>>::disown(_builder.getPointerField(
       ::capnp::bounded<0>() * ::capnp::POINTERS));
 }
 
