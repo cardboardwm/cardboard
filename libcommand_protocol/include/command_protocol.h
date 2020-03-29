@@ -39,7 +39,8 @@ namespace CommandArguments
 {
     struct bind
     {
-        std::string key_binding;
+        std::vector<std::string> modifiers;
+        std::string key;
         std::unique_ptr<CommandData> command;
     };
 }

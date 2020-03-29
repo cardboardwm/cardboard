@@ -29,7 +29,7 @@ Command dispatch_command(const CommandData& command_data)
             std::string key_binding;
             Command command = dispatch_command(*(bind_data.command));
             return [key_binding, command](Server* server) {
-                return commands::bind(server, key_binding, command);
+                return commands::bind(server, {}, {}, command);
             };
         },
         [](CommandArguments::exec exec_data) -> Command {

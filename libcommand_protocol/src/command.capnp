@@ -17,8 +17,9 @@ struct Command {
     }
 
     struct Bind{
-        keyBinding @0 :Text;
-        command @1 :Command;
+        modifiers @0 :List(Text);
+        key @1 :Text;
+        command @2 :Command;
     }
 
     command @0 :Commands;

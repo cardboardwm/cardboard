@@ -15,10 +15,16 @@ static CommandData deserialize(const generated::Command::Reader& reader)
                 CommandArguments::focus::Direction::Left : CommandArguments::focus::Direction::Right
         };
     case generated::Command::Commands::BIND:
+    {
+        std::vector<std::string> modifiers;
+        for(auto modifier: reader.getArguments().getBind().getModifiers())
+            modifiers.emplace_back(modifier.cStr());
         return CommandArguments::bind{
-            reader.getArguments().getBind().getKeyBinding().cStr(),
+            std::move(modifiers),
+            reader.getArguments().getBind().getKey().cStr(),
             std::make_unique<CommandData>(deserialize(reader.getArguments().getBind().getCommand()))
         };
+    }
     case generated::Command::Commands::EXEC:
         std::vector<std::string> argv;
         for(auto arg: reader.getArguments().getExecCommand())
@@ -54,7 +60,10 @@ static void serialize(generated::Command::Builder& builder, const CommandData& c
         [&builder](const CommandArguments::bind& bind_data) {
             builder.setCommand(generated::Command::Commands::BIND);
             auto bind_builder = builder.initArguments().initBind();
-            bind_builder.setKeyBinding(bind_data.key_binding);
+            auto modifiers = bind_builder.initModifiers(bind_data.modifiers.size());
+            for(size_t i = 0; i < bind_data.modifiers.size(); i++)
+                modifiers.set(i, bind_data.modifiers[i]);
+            bind_builder.setKey(bind_data.key);
             auto command_builder = bind_builder.initCommand();
             serialize(command_builder, *(bind_data.command.get()));
         },
