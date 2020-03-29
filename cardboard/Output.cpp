@@ -41,10 +41,8 @@ void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
     }
 
     // translate surface coordinates to output coordinates
-    double ox = 0, oy = 0;
+    double ox = rdata->ox + sx, oy = rdata->oy + sy;
     wlr_output_layout_output_coords(server->output_layout, output, &ox, &oy);
-    ox += rdata->ox + sx;
-    oy += rdata->oy + sy;
 
     // apply scale factor for HiDPI outputs
     struct wlr_box box = {
@@ -170,6 +168,7 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     render_floating(server, wlr_output, renderer, &now);
 
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
+    render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
 
     // in case of software rendered cursor, render it
     wlr_output_render_software_cursors(wlr_output, nullptr);

@@ -50,16 +50,20 @@ void Workspace::remove_view(View* view)
 
 void Workspace::arrange_tiles()
 {
+    if (!output) {
+        return;
+    }
+
     int acc_width = 0;
-    const auto& usable_area = (*output)->usable_area;
-    wlr_log(WLR_DEBUG, "usable area is %d %d %d %d", usable_area.x, usable_area.y, usable_area.width, usable_area.height);
+    const auto* output_box = wlr_output_layout_get_box(output_layout, (*output)->wlr_output);
+    struct wlr_box usable_area = (*output)->usable_area;
+    usable_area.x = output_box->x;
+    usable_area.y = output_box->y;
+
     for (auto& tile : tiles) {
         tile.view->x = usable_area.x + acc_width - tile.view->geometry.x - scroll_x;
         tile.view->y = usable_area.y - tile.view->geometry.y;
-        wlr_log(WLR_DEBUG, "positioned window to %d %d", tile.view->x, tile.view->y);
-        if (output) {
-            tile.view->resize(tile.view->geometry.width, usable_area.height);
-        }
+        tile.view->resize(tile.view->geometry.width, usable_area.height);
 
         acc_width += tile.view->geometry.width;
     }

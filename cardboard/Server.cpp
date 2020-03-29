@@ -264,11 +264,6 @@ void Server::process_cursor_resize()
     grab_state->view->x = x;
     grab_state->view->y = y;
     grab_state->view->resize(width, height);
-
-    // TODO: fix resizing
-    if (auto ws = get_views_workspace(grab_state->view)) {
-        ws->get().arrange_tiles();
-    }
 }
 
 void Server::focus_view(View* view)
