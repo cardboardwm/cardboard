@@ -1,13 +1,14 @@
-#include <cstdint>
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 #include <cardboard_common/IPC.h>
+#include <command_protocol.h>
+
+#include "parse_arguments.h"
 
 void print_usage(char* argv0)
 {
@@ -49,28 +50,15 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    std::vector<uint8_t> cmd;
-    for (int i = 1; i < argc; i++) {
-        size_t len = strlen(argv[i]);
-        if (len > 255) {
-            std::cerr << "Argument length is longer than 255" << std::endl;
-            close(sock_fd);
-            return EXIT_FAILURE;
-        }
-        cmd.reserve(cmd.size() + len + 1); // 1 for the length byte
+    std::optional<CommandData> command_data = parse_arguments(argc, argv);
 
-        cmd.push_back(len);
-        for (size_t j = 0; j < len; j++) {
-            cmd.push_back(argv[i][j]);
-        }
-    }
-    cmd.push_back(0);
-
-    if (send(sock_fd, cmd.data(), cmd.size(), 0) == -1) {
-        std::cerr << "Failed to send the command" << std::endl;
+    if(!command_data.has_value()) {
+        std::cerr << "Unable to parse data" << std::endl;
         close(sock_fd);
         return EXIT_FAILURE;
     }
+
+    write_command_data(sock_fd, *command_data);
 
     char answer[BUFSIZ];
     if (recv(sock_fd, answer, sizeof(answer), 0) > 0) {
