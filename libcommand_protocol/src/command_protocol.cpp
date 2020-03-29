@@ -22,7 +22,7 @@ static CommandData deserialize(const generated::Command::Reader& reader)
         return CommandArguments::bind{
             std::move(modifiers),
             reader.getArguments().getBind().getKey().cStr(),
-            std::make_unique<CommandData>(deserialize(reader.getArguments().getBind().getCommand()))
+            deserialize(reader.getArguments().getBind().getCommand())
         };
     }
     case generated::Command::Commands::EXEC:

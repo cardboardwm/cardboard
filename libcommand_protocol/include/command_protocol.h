@@ -42,6 +42,22 @@ namespace CommandArguments
         std::vector<std::string> modifiers;
         std::string key;
         std::unique_ptr<CommandData> command;
+
+        bind() = default;
+
+        bind(std::vector<std::string> modifiers, std::string key, CommandData command):
+            modifiers{std::move(modifiers)},
+            key{std::move(key)},
+            command{std::make_unique<CommandData>(std::move(command))}
+        {}
+
+        bind(const bind& other):
+            modifiers{other.modifiers},
+            key{other.key},
+            command{std::make_unique<CommandData>(*other.command)}
+        {}
+
+        bind(bind&&) = default;
     };
 }
 
