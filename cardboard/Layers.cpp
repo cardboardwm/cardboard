@@ -15,6 +15,7 @@ void create_layer([[maybe_unused]] Server* server, LayerSurface&& layer_surface_
     auto* output = static_cast<Output*>(layer_surface_.surface->output->data);
     output->layers[layer].push_back(layer_surface_);
     auto& layer_surface = output->layers[layer].back();
+    layer_surface.layer = layer;
 
     struct {
         wl_signal* signal;

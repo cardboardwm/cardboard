@@ -8,6 +8,7 @@
 #include <wlr_cpp/types/wlr_xcursor_manager.h>
 #include <wlr_cpp/types/wlr_xdg_shell.h>
 #include <wlr_cpp/util/log.h>
+#include <wlr_cpp/types/wlr_xdg_output_v1.h>
 
 #include <layer_shell_v1.h>
 
@@ -39,6 +40,8 @@ bool Server::init()
     // TODO: implement Xwayland
     xdg_shell = wlr_xdg_shell_create(wl_display);
     layer_shell = wlr_layer_shell_v1_create(wl_display);
+
+    wlr_xdg_output_manager_v1_create(wl_display, output_layout);
 
     cursor = wlr_cursor_create();
     wlr_cursor_attach_output_layout(cursor, output_layout);
