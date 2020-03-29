@@ -1,5 +1,8 @@
 inc = include_directories('include')
 
+capnp = dependency('capnp')
+kj = dependency('kj')
+
 sources = files(
     'src/command.capnp.c++',
     'src/command_protocol.cpp'
@@ -12,5 +15,5 @@ command_protocol = library(
     sources,
     include_directories: inc,
     install: true,
-    link_args: '-lcapnp -lkj'
+    dependencies: [capnp, kj]
 )
