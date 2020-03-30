@@ -35,10 +35,17 @@ static CommandData deserialize(const generated::Command::Reader& reader)
     return {};
 }
 
-CommandData read_command_data(int fd)
+std::optional<CommandData> read_command_data(int fd)
 {
-    ::capnp::PackedFdMessageReader message{fd};
-    return deserialize(message.getRoot<generated::Command>());
+    try
+    {
+        ::capnp::PackedFdMessageReader message{fd};
+        return deserialize(message.getRoot<generated::Command>());
+    }
+    catch(const kj::Exception&)
+    {
+        return std::nullopt;
+    }
 }
 
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -77,11 +84,19 @@ static void serialize(generated::Command::Builder& builder, const CommandData& c
     }, command_data);
 }
 
-void write_command_data(int fd, const CommandData& command_data)
+bool write_command_data(int fd, const CommandData& command_data)
 {
-    ::capnp::MallocMessageBuilder message;
-    auto command = message.initRoot<generated::Command>();
-    serialize(command, command_data);
+    try
+    {
+        ::capnp::MallocMessageBuilder message;
+        auto command = message.initRoot<generated::Command>();
+        serialize(command, command_data);
 
-    writePackedMessageToFd(fd, message);
+        writePackedMessageToFd(fd, message);
+        return true;
+    }
+    catch(const kj::Exception&)
+    {
+        return false;
+    }
 }

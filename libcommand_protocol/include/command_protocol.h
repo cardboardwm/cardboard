@@ -61,7 +61,7 @@ namespace CommandArguments
     };
 }
 
-CommandData read_command_data(int fd);
-void write_command_data(int fd, const CommandData&);
+std::optional<CommandData> read_command_data(int fd);
+bool write_command_data(int fd, const CommandData&);
 
 #endif //BUILD_LIBCOMMAND_PROTOCOL_COMMAND_H

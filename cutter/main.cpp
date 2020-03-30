@@ -58,7 +58,14 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    write_command_data(sock_fd, *command_data);
+    bool written = write_command_data(sock_fd, *command_data);
+
+    if(!written)
+    {
+        std::cerr << "Failed to write data" << std::endl;
+        close(sock_fd);
+        return EXIT_FAILURE;
+    }
 
     char answer[BUFSIZ];
     if (recv(sock_fd, answer, sizeof(answer), 0) > 0) {

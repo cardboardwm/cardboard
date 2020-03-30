@@ -39,13 +39,22 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         return 0;
     }
 
-    CommandData command_data = read_command_data(client_fd);
+    std::optional<CommandData> command_data = read_command_data(client_fd);
 
-    CommandResult result = dispatch_command(command_data)(server);
-    if (!result.message.empty()) {
-        send(client_fd, result.message.c_str(), result.message.size(), 0);
+    if(!command_data)
+    {
+        static const std::string message = "Unable to receive data";
+        send(client_fd, message.data(), message.size(), 0);
+        close(client_fd);
     }
-    close(client_fd);
+    else
+    {
+        CommandResult result = dispatch_command(*command_data)(server);
+        if (!result.message.empty()) {
+            send(client_fd, result.message.c_str(), result.message.size(), 0);
+        }
+        close(client_fd);
+    }
 
     return 0;
 }
