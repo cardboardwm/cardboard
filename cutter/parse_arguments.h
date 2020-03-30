@@ -88,6 +88,7 @@ namespace detail {
         {"quit", parse_quit},
         {"focus", parse_focus},
         {"exec", parse_exec},
+        {"bind", parse_bind},
     };
 
     std::optional<CommandData> parse_arguments(std::vector<std::string> arguments)
@@ -95,10 +96,11 @@ namespace detail {
         if(arguments.empty())
             return std::nullopt;
 
-        arguments.erase(arguments.begin());
-
         if(auto it = detail::parse_table.find(arguments[0]); it != detail::parse_table.end())
+        {
+            arguments.erase(arguments.begin());
             return (*it->second)(arguments);
+        }
 
         return std::nullopt;
     }
