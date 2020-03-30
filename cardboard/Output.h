@@ -27,8 +27,16 @@ struct Output {
 void output_frame_handler(struct wl_listener* listener, void* data);
 /// Executed when the output is detached.
 void output_destroy_handler(struct wl_listener* listener, void* data);
+/// Executed when the output changes its mode (resolution, color depth and/or refresh rate).
+void output_mode_handler(struct wl_listener* listener, void* data);
+/// Executed when the output is transformed.
+void output_transform_handler(struct wl_listener* listener, void* data);
+/// Executed when the output is scaled.
+void output_scale_handler(struct wl_listener* listener, void* data);
 
 /// Registers event listeners and does bookkeeping for a newly added output.
 void register_output(Server* server, Output&& output);
+/// Arrange the workspace associated with \a output.
+void arrange_output(Server* server, Output* output);
 
 #endif // __CARDBOARD_OUTPUT_H_

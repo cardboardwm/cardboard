@@ -25,8 +25,32 @@ void register_output(Server* server, Output&& output_)
     server->outputs.emplace_back(output_);
     auto& output = server->outputs.back();
     output.wlr_output->data = &output;
-    server->listeners.add_listener(&output.wlr_output->events.frame, Listener { output_frame_handler, server, &output });
-    server->listeners.add_listener(&output.wlr_output->events.destroy, Listener { output_destroy_handler, server, &output });
+
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &output.wlr_output->events.frame, output_frame_handler },
+        { &output.wlr_output->events.mode, output_mode_handler },
+        { &output.wlr_output->events.transform, output_transform_handler },
+        { &output.wlr_output->events.scale, output_scale_handler },
+        { &output.wlr_output->events.destroy, output_destroy_handler }
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        server->listeners.add_listener(
+            to_add_listener.signal,
+            Listener { to_add_listener.notify, server, &output });
+    }
+}
+
+void arrange_output(Server* server, Output* output)
+{
+    auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && *other.output == output; });
+    if (ws_it == server->workspaces.end()) {
+        return;
+    }
+    ws_it->arrange_tiles();
 }
 
 void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
@@ -195,4 +219,31 @@ void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void*
 
     server->listeners.clear_listeners(output);
     server->outputs.remove_if([output](auto& other) { return &other == output; });
+}
+
+void output_mode_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* output = get_listener_data<Output*>(listener);
+
+    arrange_layers(server, output);
+    arrange_output(server, output);
+}
+
+void output_transform_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* output = get_listener_data<Output*>(listener);
+
+    arrange_layers(server, output);
+    arrange_output(server, output);
+}
+
+void output_scale_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* output = get_listener_data<Output*>(listener);
+
+    arrange_layers(server, output);
+    arrange_output(server, output);
 }
