@@ -70,7 +70,7 @@ namespace detail {
                 pos = plus_index + 1;
         }
 
-        auto sub_command_args = std::vector(args.begin() + 2, args.end());
+        auto sub_command_args = std::vector(args.begin() + 1, args.end());
         auto command_data = parse_arguments(sub_command_args);
 
         if(!command_data.has_value())
