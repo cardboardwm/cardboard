@@ -32,12 +32,6 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         close(client_fd);
         return 0;
     }
-    if ((flags = fcntl(client_fd, F_GETFL)) == -1
-        || fcntl(client_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        wlr_log(WLR_ERROR, "Unable to set NONBLOCK on IPC client socket: %s", strerror(errno));
-        close(client_fd);
-        return 0;
-    }
 
     std::optional<CommandData> command_data = read_command_data(client_fd);
 
