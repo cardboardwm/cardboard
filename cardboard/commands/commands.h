@@ -39,21 +39,23 @@ inline CommandResult bind(Server* server, uint32_t modifiers, xkb_keysym_t sym, 
 
 inline CommandResult exec(Server*, std::vector<std::string> arguments)
 {
-    std::vector<char*> argv;
-    argv.reserve(arguments.size() - 1 + 1);
-    std::transform(
-        std::next(arguments.begin()),
-        arguments.end(),
-        std::back_inserter(argv),
-        [](auto& s) { return const_cast<char*>(s.c_str());
-    });
-    argv.push_back(nullptr);
+    spawn([&arguments](){
+        std::vector<char*> argv;
+        argv.reserve(arguments.size());
+        for(const auto& arg: arguments)
+            strcpy(
+                argv.emplace_back(static_cast<char*>(malloc(arg.size() + 1))),
+                arg.c_str()
+            );
+        argv.push_back(nullptr);
 
-    if (fork() == 0) {
-        setsid();
-        execvpe(argv[0], argv.data(), environ);
-        exit(0);
-    }
+        int err_code = execvpe(argv[0], argv.data(), environ);
+
+        for(auto p: argv)
+            free(p);
+
+        return err_code;
+    });
 
     return { "" };
 }
