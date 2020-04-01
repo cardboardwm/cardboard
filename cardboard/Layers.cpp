@@ -204,7 +204,31 @@ void arrange_layers(Server* server, Output* output)
     arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, false);
     arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, false);
     arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, false);
-    // TODO: handle keyboard interactiveness
+
+    // finds top-most layer surface, if it exists
+
+    // layers above the views, ordered from closest to the top to least close
+    uint32_t layers_above_shell[] = {
+        ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY,
+        ZWLR_LAYER_SHELL_V1_LAYER_TOP
+    };
+    LayerSurface* topmost = nullptr;
+    for (const auto layer : layers_above_shell) {
+        for (auto& layer_surface : output->layers[layer]) {
+            if (layer_surface.surface->current.keyboard_interactive &&
+                layer_surface.surface->mapped) {
+                topmost = &layer_surface;
+                break;
+            }
+        }
+        if (topmost != nullptr) {
+            break;
+        }
+    }
+
+    if (topmost != nullptr) {
+        wlr_log(WLR_DEBUG, "topmost with keyboard interactivity is %s", topmost->surface->namespace_);
+    }
 }
 
 void layer_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -248,8 +272,11 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     }
 }
 
-void layer_surface_map_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* layer_surface = get_listener_data<LayerSurface*>(listener);
+
+    wlr_surface_send_enter(layer_surface->surface->surface, layer_surface->surface->output);
 }
 
 void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)

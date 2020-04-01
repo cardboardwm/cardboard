@@ -148,6 +148,10 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
 {
     auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
     for (const auto& surface : surfaces) {
+        if (!surface.surface->mapped) {
+            continue;
+        }
+
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
