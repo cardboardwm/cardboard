@@ -27,13 +27,13 @@ static IPCCommandResult command_quit(IPCParsedCommand cmd, Server* server)
 
 static IPCCommandResult command_focus_left([[maybe_unused]] IPCParsedCommand cmd, Server* server)
 {
-    server->focus_by_offset(-1);
+    server->seat.focus_by_offset(server, -1);
     return { "" };
 }
 
 static IPCCommandResult command_focus_right([[maybe_unused]] IPCParsedCommand cmd, Server* server)
 {
-    server->focus_by_offset(+1);
+    server->seat.focus_by_offset(server, +1);
     return { "" };
 }
 

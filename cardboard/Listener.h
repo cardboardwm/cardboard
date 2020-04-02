@@ -10,6 +10,7 @@
 #include <cassert>
 #include <variant>
 
+#include "Cursor.h"
 #include "Keyboard.h"
 #include "Layers.h"
 #include "XDGView.h"
@@ -24,7 +25,9 @@ using ListenerData = std::variant<
     KeyHandleData,
     LayerSurface*,
     Output*,
-    wlr_input_device*,
+    Keyboard*,
+    SeatCursor*,
+    Seat*,
     XDGView*>;
 
 /**

@@ -8,32 +8,31 @@
 
 void modifiers_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    Server* server = get_server(listener);
-    auto device = get_listener_data<wlr_input_device*>(listener);
+    auto* keyboard = get_listener_data<Keyboard*>(listener);
 
-    wlr_seat_set_keyboard(server->seat, device);
+    wlr_seat_set_keyboard(keyboard->seat->wlr_seat, keyboard->device);
     // send modifiers to the client
-    wlr_seat_keyboard_notify_modifiers(server->seat, &device->keyboard->modifiers);
+    wlr_seat_keyboard_notify_modifiers(keyboard->seat->wlr_seat, &keyboard->device->keyboard->modifiers);
 }
 
 void key_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
-    auto handleData = get_listener_data<KeyHandleData>(listener);
+    auto handle_data = get_listener_data<KeyHandleData>(listener);
 
     auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
 
     bool handled = false;
-    uint32_t modifiers = wlr_keyboard_get_modifiers(handleData.device->keyboard);
+    uint32_t modifiers = wlr_keyboard_get_modifiers(handle_data.keyboard->device->keyboard);
     if (event->state == WLR_KEY_PRESSED) {
         const xkb_keysym_t* syms;
         int syms_number = xkb_state_key_get_syms(
-            handleData.device->keyboard->xkb_state,
+            handle_data.keyboard->device->keyboard->xkb_state,
             event->keycode + 8,
             &syms);
 
         for (int i = 0; i < syms_number; i++) {
-            auto& map = handleData.config->map[modifiers];
+            auto& map = handle_data.config->map[modifiers];
             // as you can see below, keysyms are always stored lowercase
             if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
                 (it->second.first)(it->second.second, server);
@@ -57,21 +56,23 @@ void key_handler(struct wl_listener* listener, void* data)
     }
 
     if (!handled) {
-        wlr_seat_set_keyboard(server->seat, handleData.device);
-        wlr_seat_keyboard_notify_key(server->seat, event->time_msec, event->keycode, event->state);
+        wlr_seat_set_keyboard(handle_data.keyboard->seat->wlr_seat, handle_data.keyboard->device);
+        wlr_seat_keyboard_notify_key(handle_data.keyboard->seat->wlr_seat, event->time_msec, event->keycode, event->state);
     }
 }
 
 void keyboard_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
-    auto device = get_listener_data<wlr_input_device*>(listener);
+    auto* keyboard = get_listener_data<Keyboard*>(listener);
 
-    server->listeners.clear_listeners(device);
-    server->listeners.clear_listeners(KeyHandleData { device, &server->keybindings_config });
+    auto* seat = keyboard->seat;
 
-    server->keyboards.erase(std::remove_if(server->keyboards.begin(), server->keyboards.end(), [device](auto* other) {
-                                return device == other;
-                            }),
-                            server->keyboards.end());
+    server->listeners.clear_listeners(keyboard);
+    server->listeners.clear_listeners(KeyHandleData { keyboard, &server->keybindings_config });
+
+    seat->keyboards.erase(std::remove_if(seat->keyboards.begin(), seat->keyboards.end(), [keyboard](const auto& other) {
+                              return keyboard == &other;
+                          }),
+                          server->seat.keyboards.end());
 }

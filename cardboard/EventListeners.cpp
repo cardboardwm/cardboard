@@ -99,7 +99,7 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
     if (!layer_surface->output) {
         // Assigns output of the focused workspace
         Output* output = nullptr;
-        auto focused_workspace = server->get_focused_workspace();
+        auto focused_workspace = server->seat.get_focused_workspace(server);
         if (focused_workspace && focused_workspace->get().output) {
             output = *focused_workspace->get().output;
         }
@@ -118,92 +118,11 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
     create_layer(server, std::move(ls));
 }
 
-void cursor_motion_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-
-    auto* event = static_cast<struct wlr_event_pointer_motion*>(data);
-    wlr_cursor_move(server->cursor, event->device, event->delta_x, event->delta_y);
-    server->process_cursor_motion(event->time_msec);
-}
-
-void cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-
-    auto* event = static_cast<struct wlr_event_pointer_motion_absolute*>(data);
-    wlr_cursor_warp_absolute(server->cursor, event->device, event->x, event->y);
-    server->process_cursor_motion(event->time_msec);
-}
-
-void cursor_button_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-
-    auto* event = static_cast<struct wlr_event_pointer_button*>(data);
-
-    wlr_seat_pointer_notify_button(server->seat, event->time_msec, event->button, event->state);
-    double sx, sy;
-    struct wlr_surface* surface;
-    View* view = server->get_surface_under_cursor(server->cursor->x, server->cursor->y, surface, sx, sy);
-    if (event->state == WLR_BUTTON_RELEASED) {
-        // end grabbing
-        server->grab_state = std::nullopt;
-    } else if (view != server->get_focused_view()) {
-        server->focus_view(view);
-    }
-}
-
-void cursor_axis_handler(struct wl_listener* listener, void* data)
-{
-    // this happens when you scroll
-    Server* server = get_server(listener);
-
-    auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
-    wlr_seat_pointer_notify_axis(server->seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
-}
-
-void cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
-{
-    Server* server = get_server(listener);
-
-    wlr_seat_pointer_notify_frame(server->seat);
-}
-
 void new_input_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
 
     auto* device = static_cast<struct wlr_input_device*>(data);
 
-    switch (device->type) {
-    case WLR_INPUT_DEVICE_KEYBOARD:
-        server->new_keyboard(device);
-        break;
-    case WLR_INPUT_DEVICE_POINTER:
-        server->new_pointer(device);
-        break;
-    default:
-        // TODO: touchscreens and drawing tablets
-        break;
-    }
-
-    // set pointer capability even if there is no mouse attached
-    uint32_t capabilities = WL_SEAT_CAPABILITY_POINTER;
-    if (!server->keyboards.empty()) {
-        capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
-    }
-    wlr_seat_set_capabilities(server->seat, capabilities);
-}
-
-void seat_request_cursor_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-
-    auto* event = static_cast<wlr_seat_pointer_request_set_cursor_event*>(data);
-    struct wlr_seat_client* focused_client = server->seat->pointer_state.focused_client;
-
-    if (focused_client == event->seat_client) {
-        wlr_cursor_set_surface(server->cursor, event->surface, event->hotspot_x, event->hotspot_y);
-    }
+    server->seat.add_input_device(server, device);
 }

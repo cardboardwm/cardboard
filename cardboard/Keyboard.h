@@ -15,6 +15,8 @@
  */
 
 struct Server;
+struct Seat;
+struct Keyboard;
 
 /**
  * \brief This structure holds the configured key bindings.
@@ -61,13 +63,19 @@ struct KeybindingsConfig {
  * \brief Object that is passed to \c key_handler for context.
  */
 struct KeyHandleData {
-    wlr_input_device* device; ///< The device from which the key handling event arised
+    Keyboard* keyboard; ///< The device from which the key handling event arised
     KeybindingsConfig* config; ///< Pointer to the global key binding configuration
 
     bool operator==(KeyHandleData other)
     {
-        return device == other.device && config == other.config;
+        return keyboard == other.keyboard && config == other.config;
     }
+};
+
+/// A keyboard device, managed by a seat.
+struct Keyboard {
+    Seat* seat; ///< The seat that manages this keyboard.
+    struct wlr_input_device* device;
 };
 
 /// Notifies the currently focused surface about the pressed state of the modifier keys.

@@ -27,6 +27,7 @@
 #include "Layers.h"
 #include "Listener.h"
 #include "Output.h"
+#include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
 
@@ -43,17 +44,6 @@ const int WORKSPACE_NR = 4; ///< Default number of pre-initialized workspaces.
  * Its methods also implement most of the basic functionality not related to other structures.
  */
 struct Server {
-    struct GrabState {
-        enum class Mode {
-            MOVE,
-            RESIZE
-        } mode;
-        View* view;
-        double x, y;
-        int width, height;
-        uint32_t resize_edges;
-    };
-
     struct wl_display* wl_display;
     struct wlr_backend* backend;
     struct wlr_renderer* renderer;
@@ -76,22 +66,16 @@ struct Server {
     std::list<View*> views; // TODO: check if View's statefulness is needed
         // change to std::vector if it's not needed +
         // change in ListenerData from View* to View
-    std::list<View*> focused_views; ///< Views ordered by the time they were focused, from most recent.
 
     std::vector<Workspace> workspaces;
-
-    struct wlr_cursor* cursor;
-    struct wlr_xcursor_manager* cursor_manager;
-
-    struct wlr_seat* seat;
-    std::vector<wlr_input_device*> keyboards;
-    KeybindingsConfig keybindings_config;
-    std::optional<GrabState> grab_state;
 
     struct wlr_output_layout* output_layout;
     std::list<Output> outputs;
 
     ListenerList listeners;
+    KeybindingsConfig keybindings_config;
+
+    Seat seat;
 
     int exit_code = EXIT_SUCCESS;
 
@@ -107,25 +91,6 @@ struct Server {
     /// Runs the config script in background. Executed before Server::init_ipc2.
     bool load_settings();
 
-    /// Sets up a new keyboard device, with events and keymap.
-    void new_keyboard(struct wlr_input_device* device);
-    /// Attaches a new pointer device (e.g. mouse) to the cursor.
-    void new_pointer(struct wlr_input_device* device);
-
-    void process_cursor_motion(uint32_t time);
-    void process_cursor_move();
-    void process_cursor_resize();
-
-    /// Sets the focus state on \a view. Auto-scrolls the Workspace if it's tiled.
-    void focus_view(View* view);
-    /**
-     * \brief Focus the <em>offset</em>-nth tiled window to the right (or to the left if negative) of the currently
-     * focused view.
-     */
-    void focus_by_offset(int offset);
-    /// Hides the window from the screen but without unmapping. Happends when a Workspace is deactivated.
-    void hide_view(View* view);
-
     /**
      * \brief Returns the xdg surface leaf of the first view under the cursor.
      *
@@ -136,21 +101,17 @@ struct Server {
      * \param[out] sy The y coordinate of the found surface in root coordinates.
      */
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
-    /// Returns the currently focused View. It is defined as the View currently holding keyboard focus.
-    View* get_focused_view();
     /// Common mapping procedure for views regardless of their underlying shell.
     void map_view(View* view);
     /// Common unmapping procedure for views regardless of their underlying shell.
     void unmap_view(View* view);
+    /// Puts the \a view on top.
+    void move_view_to_front(View* view);
 
     /// Returns the workspace in which the given \a view resides, if any.
     std::optional<std::reference_wrapper<Workspace>> get_views_workspace(View* view);
-    /// Returns the workspace under the cursor.
-    std::optional<std::reference_wrapper<Workspace>> get_focused_workspace();
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
-
-    void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
 
     /// Runs the event loop.
     bool run();

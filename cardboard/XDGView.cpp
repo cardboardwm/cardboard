@@ -120,6 +120,7 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
         ws->get().remove_view(view);
     }
 
+    server->seat.remove_from_focus_stack(view);
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;
 }
@@ -137,7 +138,7 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
 
         if (auto workspace = server->get_views_workspace(view)) {
             workspace->get().arrange_tiles();
-            workspace->get().fit_view_on_screen(server->get_focused_view());
+            workspace->get().fit_view_on_screen(server->seat.get_focused_view());
         }
     }
 }
@@ -146,7 +147,7 @@ void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unu
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
 
-    server->begin_interactive(view, Server::GrabState::Mode::MOVE, 0);
+    server->seat.begin_interactive(view, Seat::GrabState::Mode::MOVE, 0);
 }
 void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data)
 {
@@ -154,5 +155,5 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
     auto* server = get_server(listener);
 
     auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
-    server->begin_interactive(view, Server::GrabState::Mode::RESIZE, event->edges);
+    server->seat.begin_interactive(view, Seat::GrabState::Mode::RESIZE, event->edges);
 }

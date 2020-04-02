@@ -87,7 +87,7 @@ void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
 
 static void render_workspace(Server* server, Workspace& ws, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    View* focused_view = server->get_focused_view();
+    View* focused_view = server->seat.get_focused_view();
 
     for (const auto& tile : ws.tiles) {
         if (!tile.view->mapped || tile.view == focused_view) {

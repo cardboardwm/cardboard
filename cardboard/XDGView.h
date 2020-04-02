@@ -8,6 +8,7 @@
 class XDGView : public View {
 public:
     struct wlr_xdg_surface* xdg_surface;
+    /// Stores listeners that are active only when the view is mapped. They are removed when unmapping.
     std::array<struct wl_listener*, 3> map_unmap_listeners;
 
     XDGView(struct wlr_xdg_surface* xdg_surface);

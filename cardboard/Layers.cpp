@@ -192,7 +192,7 @@ void arrange_layers(Server* server, Output* output)
         auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && *other.output == output; });
         assert(ws_it != server->workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
-        if (auto focused_view = server->get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
+        if (auto focused_view = server->seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
             ws_it->fit_view_on_screen(focused_view);
         } else {
             ws_it->arrange_tiles();
@@ -215,8 +215,7 @@ void arrange_layers(Server* server, Output* output)
     LayerSurface* topmost = nullptr;
     for (const auto layer : layers_above_shell) {
         for (auto& layer_surface : output->layers[layer]) {
-            if (layer_surface.surface->current.keyboard_interactive &&
-                layer_surface.surface->mapped) {
+            if (layer_surface.surface->current.keyboard_interactive && layer_surface.surface->mapped) {
                 topmost = &layer_surface;
                 break;
             }
