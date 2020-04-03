@@ -47,7 +47,7 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
 
     auto& output = server->outputs.back();
 
-    Workspace* ws_to_assign;
+    Workspace* ws_to_assign = nullptr;
     for (auto& ws : server->workspaces) {
         if (!ws.output) {
             ws_to_assign = &ws;

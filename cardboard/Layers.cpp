@@ -75,9 +75,9 @@ static void apply_exclusive_zone(struct wlr_box* usable_area, const wlr_layer_su
     }
 
     struct {
-        uint32_t anchors;
         int* positive_axis;
         int* negative_axis;
+        uint32_t anchors;
         int margin;
     } edges[] = {
         {
