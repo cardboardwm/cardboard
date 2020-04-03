@@ -1,19 +1,17 @@
 #include <wlr_cpp/util/log.h>
 
-#include <sys/socket.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
 
-
 #include "IPC.h"
 #include "Server.h"
 
 #include <command_protocol.h>
-
 
 // This function implements wl_event_loop_fd_func_t
 int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
@@ -35,14 +33,11 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
 
     std::optional<CommandData> command_data = read_command_data(client_fd);
 
-    if(!command_data)
-    {
+    if (!command_data) {
         static const std::string message = "Unable to receive data";
         send(client_fd, message.data(), message.size(), 0);
         close(client_fd);
-    }
-    else
-    {
+    } else {
         CommandResult result = dispatch_command(*command_data)(server);
         if (!result.message.empty()) {
             send(client_fd, result.message.c_str(), result.message.size(), 0);

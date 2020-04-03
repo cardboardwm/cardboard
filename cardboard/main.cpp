@@ -22,7 +22,6 @@ int main()
 {
     wlr_log_init(WLR_DEBUG, nullptr);
 
-
     signal(SIGINT, sig_handler);
     signal(SIGHUP, sig_handler);
     signal(SIGTERM, sig_handler);

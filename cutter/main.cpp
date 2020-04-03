@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 
     std::optional<CommandData> command_data = parse_arguments(argc, argv);
 
-    if(!command_data.has_value()) {
+    if (!command_data.has_value()) {
         std::cerr << "Unable to parse data" << std::endl;
         close(sock_fd);
         return EXIT_FAILURE;
@@ -60,8 +60,7 @@ int main(int argc, char* argv[])
 
     bool written = write_command_data(sock_fd, *command_data);
 
-    if(!written)
-    {
+    if (!written) {
         std::cerr << "Failed to write data" << std::endl;
         close(sock_fd);
         return EXIT_FAILURE;

@@ -447,7 +447,7 @@ bool Server::run()
 
     setenv("WAYLAND_DISPLAY", socket, true);
 
-    if(!init_ipc() || !load_settings()){
+    if (!init_ipc() || !load_settings()) {
         return false;
     }
 

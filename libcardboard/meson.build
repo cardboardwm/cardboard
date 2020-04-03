@@ -10,7 +10,7 @@ sources = files(
 
 install_headers('include/command_protocol.h')
 
-command_protocol = library(
+libcardboard = library(
     'command_protocol',
     sources,
     include_directories: inc,

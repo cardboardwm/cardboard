@@ -35,7 +35,7 @@ cardboard_sources = files(
 executable(
   'cardboard',
   cardboard_sources,
-  include_directories: [include_dir, '../libcommand_protocol/include'],
+  include_directories: [include_dir, '../libcardboard/include'],
   dependencies: cardboard_deps,
-  link_with: command_protocol
+  link_with: libcardboard
 )
