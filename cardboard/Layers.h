@@ -20,6 +20,8 @@ struct LayerSurface {
     struct wlr_layer_surface_v1* surface;
     struct wlr_box geometry;
     enum zwlr_layer_shell_v1_layer layer;
+
+    bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
 };
 
 using LayerArray = std::array<std::list<LayerSurface>, 4>;

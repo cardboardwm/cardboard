@@ -43,6 +43,25 @@ void create_layer([[maybe_unused]] Server* server, LayerSurface&& layer_surface_
     layer_surface.surface->current = old_state;
 }
 
+bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const
+{
+    double layer_x = lx - geometry.x;
+    double layer_y = ly - geometry.y;
+
+    double sx_, sy_;
+    struct wlr_surface* surface_ = nullptr;
+    surface_ = wlr_layer_surface_v1_surface_at(this->surface, layer_x, layer_y, &sx_, &sy_);
+
+    if (surface_ != nullptr) {
+        sx = sx_;
+        sy = sy_;
+        surface = surface_;
+        return true;
+    }
+
+    return false;
+}
+
 static void apply_exclusive_zone(struct wlr_box* usable_area, const wlr_layer_surface_v1_state* state)
 {
     uint32_t anchor = state->anchor;
@@ -226,7 +245,9 @@ void arrange_layers(Server* server, Output* output)
     }
 
     if (topmost != nullptr) {
-        wlr_log(WLR_DEBUG, "topmost with keyboard interactivity is %s", topmost->surface->namespace_);
+        server->seat.focus_layer(server, topmost->surface);
+    } else if (server->seat.focused_layer && !(*server->seat.focused_layer)->current.keyboard_interactive) {
+        server->seat.focus_layer(server, nullptr);
     }
 }
 
@@ -280,6 +301,12 @@ void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] vo
 
 void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
+    auto* layer_surface = get_listener_data<LayerSurface*>(listener);
+
+    if (server->seat.focused_layer == layer_surface->surface) {
+        server->seat.focus_layer(server, nullptr);
+    }
 }
 
 void layer_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)

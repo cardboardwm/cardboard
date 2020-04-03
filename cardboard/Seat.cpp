@@ -1,3 +1,5 @@
+#include <wlr_cpp/util/log.h>
+
 #include <functional>
 #include <memory>
 #include <optional>
@@ -71,6 +73,9 @@ void Seat::add_pointer([[maybe_unused]] Server* server, struct wlr_input_device*
 
 View* Seat::get_focused_view()
 {
+    if (wlr_seat->keyboard_state.focused_surface == nullptr) {
+        return nullptr;
+    }
     if (focus_stack.empty()) {
         return nullptr;
     }
@@ -94,18 +99,21 @@ void Seat::hide_view(Server* server, View* view)
             }
         }
 
-        if (to_focus != nullptr) {
-            focus_view(server, to_focus);
-        }
+        focus_view(server, to_focus);
     }
 }
 
 void Seat::focus_view(Server* server, View* view)
 {
-    if (view == nullptr) {
+    if (focused_layer) {
+        auto* layer = *focused_layer;
+        // this is to exchange the keyboard focus
+        focus_layer(server, nullptr);
+        focus_view(server, view);
+        focus_layer(server, layer);
         return;
     }
-
+    // unfocus the currently focused view
     View* prev_view = get_focused_view();
     if (prev_view == view) {
         return; // already focused
@@ -113,6 +121,13 @@ void Seat::focus_view(Server* server, View* view)
     if (prev_view) {
         // deactivate previous surface
         prev_view->set_activated(false);
+        wlr_seat_keyboard_clear_focus(wlr_seat);
+    }
+
+    // if the view is null, then focus_view will only
+    // unfocus the previously focused one
+    if (view == nullptr) {
+        return;
     }
 
     // put view at the beginning of the focus stack
@@ -122,16 +137,36 @@ void Seat::focus_view(Server* server, View* view)
         focus_stack.push_front(view);
     }
 
-    auto* keyboard = wlr_seat_get_keyboard(wlr_seat);
     // move the view to the front
     server->move_view_to_front(view);
     // activate surface
     view->set_activated(true);
     // the seat will send keyboard events to the view automatically
-    wlr_seat_keyboard_notify_enter(wlr_seat, view->get_surface(), keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+    keyboard_notify_enter(view->get_surface());
 
     if (auto ws = server->get_views_workspace(view)) {
         ws->get().fit_view_on_screen(view);
+    }
+}
+
+void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
+{
+    if (!layer && focused_layer) {
+        focused_layer = std::nullopt;
+        auto* focused_view = get_focused_view();
+        if (focused_view) {
+            focus_view(server, nullptr); // to clear focus on the layer
+            focus_view(server, focused_view);
+        }
+        return;
+    } else if (!layer || focused_layer == layer) {
+        return;
+    }
+    assert(layer->mapped);
+
+    keyboard_notify_enter(layer->surface);
+    if (layer->current.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
+        focused_layer = layer;
     }
 }
 
@@ -142,6 +177,9 @@ void Seat::focus_by_offset(Server* server, int offset)
     }
 
     auto* focused_view = get_focused_view();
+    if (focused_view == nullptr) {
+        return;
+    }
     auto ws = server->get_views_workspace(focused_view);
     if (!ws) {
         return;
@@ -268,6 +306,17 @@ std::optional<std::reference_wrapper<Workspace>> Seat::get_focused_workspace(Ser
     }
 
     return std::nullopt;
+}
+
+void Seat::keyboard_notify_enter(struct wlr_surface* surface)
+{
+    auto* keyboard = wlr_seat_get_keyboard(wlr_seat);
+    if (!keyboard) {
+        wlr_seat_keyboard_notify_enter(wlr_seat, surface, nullptr, 0, nullptr);
+        return;
+    }
+
+    wlr_seat_keyboard_notify_enter(wlr_seat, surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
 }
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)

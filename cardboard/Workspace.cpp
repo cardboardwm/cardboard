@@ -28,6 +28,7 @@ std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
 
 void Workspace::add_view(View* view, View* next_to)
 {
+    // if next_to is null, view will be added at the end of the list
     auto it = find_tile(next_to);
     if (it != tiles.end()) {
         std::advance(it, 1);

@@ -5,7 +5,7 @@
 
 #include "View.h"
 
-class XDGView : public View {
+class XDGView final : public View {
 public:
     struct wlr_xdg_surface* xdg_surface;
     /// Stores listeners that are active only when the view is mapped. They are removed when unmapping.

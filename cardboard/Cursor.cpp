@@ -65,7 +65,7 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
     if (event->state == WLR_BUTTON_RELEASED) {
         // end grabbing
         cursor->seat->end_interactive();
-    } else if (view != cursor->seat->get_focused_view()) {
+    } else if (view != cursor->seat->get_focused_view() && view != nullptr) {
         cursor->seat->focus_view(server, view);
     }
 }

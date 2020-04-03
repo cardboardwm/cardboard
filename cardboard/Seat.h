@@ -5,6 +5,8 @@
 #include <wlr_cpp/types/wlr_input_device.h>
 #include <wlr_cpp/types/wlr_seat.h>
 
+#include <layer_shell_v1.h>
+
 #include <functional>
 #include <list>
 #include <optional>
@@ -38,6 +40,8 @@ struct Seat {
     std::list<Keyboard> keyboards;
     std::list<View*> focus_stack; ///< Views ordered by the time they were focused, from most recent.
 
+    std::optional<wlr_layer_surface_v1*> focused_layer;
+
     /// Sets up a newly attached input device.
     void add_input_device(Server* server, struct wlr_input_device* device);
     /// Sets up a new keyboard device, with events and keymap.
@@ -49,8 +53,14 @@ struct Seat {
     View* get_focused_view();
     /// Hides the \a view from the screen without unmapping. Happens when a Workspace is deactivated.
     void hide_view(Server* server, View* view);
-    /// Sets the focus state on \a view. Auto-scrolls the Workspace if it's tiled.
+    /**
+     * \brief Sets the focus state on \a view. Auto-scrolls the Workspace if it's tiled.
+     *
+     * If \a view is null, the previously focused view will be unfocused and no other view will be focused.
+     */
     void focus_view(Server* server, View* view);
+    /// Marks the layer as receiving keyboard focus from this seat.
+    void focus_layer(Server* server, struct wlr_layer_surface_v1* layer);
     /**
      * \brief Focus the <em>offset</em>-nth tiled window to the right (or to the left if negative) of the currently
      * focused view.
@@ -67,6 +77,10 @@ struct Seat {
 
     /// Returns the workspace under the cursor.
     std::optional<std::reference_wrapper<Workspace>> get_focused_workspace(Server* server);
+
+private:
+    /// Sets keyboard focus on a \a surface.
+    void keyboard_notify_enter(struct wlr_surface* surface);
 };
 
 void init_seat(Server* server, Seat* seat, const char* name);
