@@ -73,7 +73,7 @@ bool Server::init()
     return true;
 }
 
-bool Server::init_ipc1()
+bool Server::init_ipc()
 {
     std::string socket_path;
 
@@ -110,15 +110,11 @@ bool Server::init_ipc1()
     }
 
     setenv(IPC_SOCKET_ENV_VAR, ipc_sock_address.sun_path, 0);
-
-    return true;
-}
-
-void Server::init_ipc2()
-{
     ipc_event_source = wl_event_loop_add_fd(event_loop, ipc_socket_fd, WL_EVENT_READABLE, ipc_read_command, this);
 
     wlr_log(WLR_INFO, "Listening on socket %s", ipc_sock_address.sun_path);
+
+    return true;
 }
 
 bool Server::load_settings()
@@ -264,6 +260,10 @@ bool Server::run()
     }
 
     setenv("WAYLAND_DISPLAY", socket, true);
+
+    if (!init_ipc() || !load_settings()) {
+        return false;
+    }
 
     wlr_log(WLR_INFO, "Running Cardboard on WAYLAND_DISPLAY=%s", socket);
     wl_display_run(wl_display);

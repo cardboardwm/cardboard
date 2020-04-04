@@ -84,10 +84,8 @@ struct Server {
 
     /// Initializes the Wayland compositor.
     bool init();
-    /// Connects to the IPC socket before Wayland is initialized.
-    bool init_ipc1();
-    /// Wires up the IPC socket file descriptor to Wayland's event loop.
-    void init_ipc2();
+    /// Creates socket file
+    bool init_ipc();
     /// Runs the config script in background. Executed before Server::init_ipc2.
     bool load_settings();
 

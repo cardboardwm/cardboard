@@ -15,7 +15,7 @@ cardboard_deps = [
   wayland_server,
   wlroots,
   xkbcommon,
-  server_protos,
+  server_protos
 ]
 
 cardboard_sources = files(
@@ -32,11 +32,13 @@ cardboard_sources = files(
   'Workspace.cpp',
   'XDGView.cpp',
   'main.cpp',
+  'commands/dispatch_command.cpp'
 )
 
 executable(
   'cardboard',
   cardboard_sources,
-  include_directories: [include_dir],
+  include_directories: [include_dir, '../libcardboard/include'],
   dependencies: cardboard_deps,
+  link_with: libcardboard
 )

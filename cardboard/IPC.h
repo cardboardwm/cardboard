@@ -20,30 +20,6 @@
 struct Server;
 
 /**
- * \brief This struct holds the result of an IPC command, which can be a string message
- * for the moment.
- */
-struct IPCCommandResult {
-    std::string message;
-};
-
-/**
- * \brief An array of strings, similar to \c argv.
- */
-using IPCParsedCommand = std::vector<std::string>;
-/**
- * \brief The function prototype for IPC command handlers.
- */
-using IPCCommandHandler = IPCCommandResult(IPCParsedCommand, Server*);
-
-/**
- * \brief Finds the appropiate handler for a command named \a name within the handler table.
- *
- * \returns \c std::nullopt if there is no command with that \a name.
- */
-std::optional<IPCCommandHandler*> ipc_find_command_handler(std::string_view name);
-
-/**
  * \brief Handler function for \c Server::event_loop that reads the raw
  * command from the IPC socket (\c Server::ipc_socket_fd).
  */
