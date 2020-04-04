@@ -1,8 +1,16 @@
 #ifndef BUILD_CUTTER_PARSE_ARGUMENTS_H
 #define BUILD_CUTTER_PARSE_ARGUMENTS_H
 
+#include <locale>
+#include <optional>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include <cardboard_common/IPC.h>
+#include <command_protocol.h>
 
 namespace detail {
 std::optional<CommandData> parse_arguments(std::vector<std::string> arguments);
@@ -42,7 +50,7 @@ std::optional<CommandData> parse_bind(const std::vector<std::string>& args)
 
     auto locale = std::locale("");
 
-    if (args.size() < 3)
+    if (args.size() < 2)
         return std::nullopt;
 
     size_t pos = 0;
