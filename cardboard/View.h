@@ -1,10 +1,12 @@
 #ifndef __CARDBOARD_VIEW_H_
 #define __CARDBOARD_VIEW_H_
 
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/types/wlr_output.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
-#include <wlr_cpp/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_xdg_shell.h>
+}
 
 #include <list>
 

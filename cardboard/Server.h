@@ -1,16 +1,20 @@
 #ifndef __CARDBOARD_SERVER_H_
 #define __CARDBOARD_SERVER_H_
 
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/backend.h>
-#include <wlr_cpp/types/wlr_compositor.h>
-#include <wlr_cpp/types/wlr_cursor.h>
-#include <wlr_cpp/types/wlr_data_device.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
-#include <wlr_cpp/types/wlr_xcursor_manager.h>
-#include <wlr_cpp/types/wlr_xdg_shell.h>
+#include <wlr/backend.h>
+#define static
+#include <wlr/types/wlr_compositor.h>
+#undef static
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/types/wlr_xdg_shell.h>
+}
 
-#include <layer_shell_v1.h>
+#include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
 #include <sys/un.h>
 

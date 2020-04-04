@@ -1,7 +1,9 @@
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/backend.h>
-#include <wlr_cpp/backend/multi.h>
-#include <wlr_cpp/types/wlr_input_device.h>
+#include <wlr/backend.h>
+#include <wlr/backend/multi.h>
+#include <wlr/types/wlr_input_device.h>
+}
 
 #include "Keyboard.h"
 #include "Server.h"

@@ -1,13 +1,15 @@
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/backend.h>
-#include <wlr_cpp/types/wlr_cursor.h>
-#include <wlr_cpp/types/wlr_output.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
-#include <wlr_cpp/types/wlr_xdg_shell.h>
-#include <wlr_cpp/util/log.h>
+#include <wlr/backend.h>
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/util/log.h>
+}
 
 // keep empty line above to avoid header sorting for this little guy
-#include <layer_shell_v1.h>
+#include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
 #include "Layers.h"
 #include "Listener.h"

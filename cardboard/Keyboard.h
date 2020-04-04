@@ -1,8 +1,10 @@
 #ifndef __CARDBOARD_KEYBOARD_H_
 #define __CARDBOARD_KEYBOARD_H_
 
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/types/wlr_input_device.h>
+#include <wlr/types/wlr_input_device.h>
+}
 
 #include <unordered_map>
 

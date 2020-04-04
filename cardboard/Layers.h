@@ -1,14 +1,16 @@
 #ifndef __CARDBOARD_LAYERS_H_
 #define __CARDBOARD_LAYERS_H_
 
+extern "C" {
+#include <wayland-server-core.h>
+#include <wlr/types/wlr_box.h>
+#include <wlr/types/wlr_surface.h>
+
+#include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
+}
+
 #include <array>
 #include <list>
-
-#include <wayland-server-core.h>
-#include <wlr_cpp/types/wlr_box.h>
-#include <wlr_cpp/types/wlr_surface.h>
-
-#include <layer_shell_v1.h>
 
 struct Server;
 struct Output;

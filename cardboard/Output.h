@@ -1,10 +1,12 @@
 #ifndef __CARDBOARD_OUTPUT_H_
 #define __CARDBOARD_OUTPUT_H_
 
-#include <array>
-
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
+#include <wlr/types/wlr_output_layout.h>
+}
+
+#include <array>
 
 #include "Layers.h"
 #include "Server.h"

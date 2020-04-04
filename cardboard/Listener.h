@@ -1,10 +1,12 @@
 #ifndef CARDBOARD_LISTENER_H
 #define CARDBOARD_LISTENER_H
 
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/types/wlr_input_device.h>
-#include <wlr_cpp/types/wlr_output.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
+#include <wlr/types/wlr_input_device.h>
+#include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
+}
 
 #include <algorithm>
 #include <cassert>

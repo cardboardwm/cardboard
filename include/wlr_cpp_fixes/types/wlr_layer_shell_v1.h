@@ -4,7 +4,7 @@
 extern "C" {
 
 #define namespace namespace_
-#include <wlr_cpp/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 #undef namespace
 
 }

@@ -1,6 +1,8 @@
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/types/wlr_xdg_shell.h>
-#include <wlr_cpp/util/log.h>
+#include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/util/log.h>
+}
 
 #include <cassert>
 #include <limits>

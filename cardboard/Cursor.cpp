@@ -1,6 +1,8 @@
-#include <wlr_cpp/types/wlr_cursor.h>
-#include <wlr_cpp/types/wlr_seat.h>
-#include <wlr_cpp/types/wlr_xcursor_manager.h>
+extern "C" {
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_xcursor_manager.h>
+}
 
 #include "Cursor.h"
 #include "Server.h"

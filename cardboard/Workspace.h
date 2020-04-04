@@ -1,11 +1,13 @@
 #ifndef __CARDBOARD_TILING_H_
 #define __CARDBOARD_TILING_H_
 
+extern "C" {
+#include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_output_layout.h>
+}
+
 #include <algorithm>
 #include <list>
-
-#include <wlr_cpp/types/wlr_output.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
 
 class View;
 struct Output;

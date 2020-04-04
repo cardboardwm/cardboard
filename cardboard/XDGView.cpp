@@ -1,4 +1,6 @@
-#include <wlr_cpp/util/log.h>
+extern "C" {
+#include <wlr/util/log.h>
+}
 
 #include "Server.h"
 #include "XDGView.h"

@@ -1,11 +1,13 @@
 #ifndef __CARDBOARD_SEAT_H_
 #define __CARDBOARD_SEAT_H_
 
+extern "C" {
 #include <wayland-server-core.h>
-#include <wlr_cpp/types/wlr_input_device.h>
-#include <wlr_cpp/types/wlr_seat.h>
+#include <wlr/types/wlr_input_device.h>
+#include <wlr/types/wlr_seat.h>
+}
 
-#include <layer_shell_v1.h>
+#include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
 #include <functional>
 #include <list>

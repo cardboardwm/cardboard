@@ -1,7 +1,9 @@
 #ifndef __CARDBOARD_EVENT_LISTENERS_H_
 #define __CARDBOARD_EVENT_LISTENERS_H_
 
+extern "C" {
 #include <wayland-server.h>
+}
 
 /**
  * \file

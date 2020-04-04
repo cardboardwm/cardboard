@@ -1,9 +1,11 @@
+extern "C" {
+#include <wlr/types/wlr_output.h>
+#include <wlr/util/log.h>
+}
+
+#include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
+
 #include <cstring>
-
-#include <wlr_cpp/types/wlr_output.h>
-#include <wlr_cpp/util/log.h>
-
-#include <layer_shell_v1.h>
 
 #include "Layers.h"
 #include "Listener.h"

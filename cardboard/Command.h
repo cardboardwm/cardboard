@@ -1,9 +1,10 @@
 #ifndef BUILD_CARDBOARD_COMMAND_H
 #define BUILD_CARDBOARD_COMMAND_H
 
-#include <command_protocol.h>
 #include <functional>
 #include <variant>
+
+#include <command_protocol.h>
 
 struct Server;
 

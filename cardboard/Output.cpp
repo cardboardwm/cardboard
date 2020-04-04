@@ -2,15 +2,19 @@
 #include "Listener.h"
 #include "Server.h"
 
+extern "C" {
 #include <wayland-server.h>
-#include <wlr_cpp/backend.h>
-#include <wlr_cpp/render/wlr_renderer.h>
-#include <wlr_cpp/types/wlr_matrix.h>
-#include <wlr_cpp/types/wlr_output_layout.h>
+#include <wlr/backend.h>
+#include <wlr/render/wlr_renderer.h>
+#define static
+#include <wlr/types/wlr_matrix.h>
+#undef static
+#include <wlr/types/wlr_output_layout.h>
+}
 
 #include <array>
 #include <ctime>
-#include <wlr_cpp/types/wlr_output.h>
+#include <wlr/types/wlr_output.h>
 
 struct RenderData {
     struct wlr_output* output;
