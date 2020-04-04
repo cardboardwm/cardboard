@@ -233,8 +233,8 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
     }
     double sx, sy;
     struct wlr_surface* surface = nullptr;
-    const View* view = server->get_surface_under_cursor(cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
-    if (!view) {
+    server->get_surface_under_cursor(cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
+    if (!surface) {
         // set the cursor to default
         wlr_xcursor_manager_set_cursor_image(cursor.wlr_cursor_manager, "left_ptr", cursor.wlr_cursor);
     }
