@@ -130,6 +130,10 @@ void Seat::focus_view(Server* server, View* view)
         return;
     }
 
+    if (!is_input_allowed(view->get_surface())) {
+        return;
+    }
+
     // put view at the beginning of the focus stack
     if (auto it = std::find(focus_stack.begin(), focus_stack.end(), view); it != focus_stack.end()) {
         focus_stack.splice(focus_stack.begin(), focus_stack, it);
@@ -238,7 +242,7 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
         // set the cursor to default
         wlr_xcursor_manager_set_cursor_image(cursor.wlr_cursor_manager, "left_ptr", cursor.wlr_cursor);
     }
-    if (surface) {
+    if (surface && is_input_allowed(surface)) {
         bool focus_changed = wlr_seat->pointer_state.focused_surface != surface;
         // Gives pointer focus when the cursor enters the surface
         wlr_seat_pointer_notify_enter(wlr_seat, surface, sx, sy);
@@ -317,6 +321,44 @@ void Seat::keyboard_notify_enter(struct wlr_surface* surface)
     }
 
     wlr_seat_keyboard_notify_enter(wlr_seat, surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+}
+
+void Seat::set_exclusive_client(Server* server, struct wl_client* client)
+{
+    // deactivate inhibition
+    if (!client) {
+        exclusive_client = std::nullopt;
+
+        auto* raw_output_under_cursor = wlr_output_layout_output_at(server->output_layout, cursor.wlr_cursor->x, cursor.wlr_cursor->y);
+        if (raw_output_under_cursor != nullptr) {
+            auto* output_under_cursor = static_cast<Output*>(raw_output_under_cursor->data);
+            arrange_layers(server, output_under_cursor);
+        }
+        return;
+    }
+
+    // if the currently focused layer is not the client, remove focus
+    if (focused_layer && wl_resource_get_client((*focused_layer)->resource) != client) {
+        focus_layer(server, nullptr);
+    }
+
+    // if the currently focused view is not the client, remove focus
+    if (auto* focused_view = get_focused_view(); focused_view != nullptr && wl_resource_get_client(focused_view->get_surface()->resource) != client) {
+        focus_view(server, nullptr);
+    }
+
+    // if the seat has pointer focus on someone who is not the client, remove focus
+    if (wlr_seat->pointer_state.focused_client != nullptr && wlr_seat->pointer_state.focused_client->client != client) {
+        wlr_seat_pointer_clear_focus(wlr_seat);
+    }
+
+    exclusive_client = client;
+}
+
+bool Seat::is_input_allowed(struct wlr_surface* surface)
+{
+    auto* client = wl_resource_get_client(surface->resource);
+    return !exclusive_client || *exclusive_client == client;
 }
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)

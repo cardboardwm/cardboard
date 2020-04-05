@@ -3,12 +3,13 @@
 
 extern "C" {
 #include <wayland-server.h>
-#include <wlr/backend.h>
 #define static
 #include <wlr/types/wlr_compositor.h>
 #undef static
+#include <wlr/backend.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_input_inhibitor.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -80,6 +81,8 @@ struct Server {
     KeybindingsConfig keybindings_config;
 
     Seat seat;
+
+    struct wlr_input_inhibit_manager* inhibit_manager;
 
     int exit_code = EXIT_SUCCESS;
 

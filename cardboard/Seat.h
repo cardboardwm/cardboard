@@ -42,7 +42,8 @@ struct Seat {
     std::list<Keyboard> keyboards;
     std::list<View*> focus_stack; ///< Views ordered by the time they were focused, from most recent.
 
-    std::optional<wlr_layer_surface_v1*> focused_layer;
+    std::optional<struct wlr_layer_surface_v1*> focused_layer;
+    std::optional<struct wl_client*> exclusive_client;
 
     /// Sets up a newly attached input device.
     void add_input_device(Server* server, struct wlr_input_device* device);
@@ -79,6 +80,16 @@ struct Seat {
 
     /// Returns the workspace under the cursor.
     std::optional<std::reference_wrapper<Workspace>> get_focused_workspace(Server* server);
+
+    /// Considers a \a client as exclusive. Only the surfaces of the \a client will get input events.
+    void set_exclusive_client(Server* server, struct wl_client* client);
+    /**
+     * \brief Returns true if input events can be delivered to \a surface.
+     *
+     * Input events can be delivered freely when there is no exclusive client. If there is
+     * an exclusive client set, input may be allowed only if the surface belongs to that client.
+     */
+    bool is_input_allowed(struct wlr_surface* surface);
 
 private:
     /// Sets keyboard focus on a \a surface.

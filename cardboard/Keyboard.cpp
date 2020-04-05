@@ -33,15 +33,20 @@ void key_handler(struct wl_listener* listener, void* data)
             event->keycode + 8,
             &syms);
 
-        for (int i = 0; i < syms_number; i++) {
-            auto& map = handle_data.config->map[modifiers];
-            // as you can see below, keysyms are always stored lowercase
-            if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
-                (it->second)(server);
-                handled = true;
+        // TODO: keybinds that work when there is an exclusive client
+        if (!handle_data.keyboard->seat->exclusive_client) {
+            for (int i = 0; i < syms_number; i++) {
+                auto& map = handle_data.config->map[modifiers];
+                // as you can see below, keysyms are always stored lowercase
+                if (auto it = map.find(xkb_keysym_to_lower(syms[i])); it != map.end()) {
+                    (it->second)(server);
+                    handled = true;
+                }
             }
         }
 
+        // VT changing works even when there is an exclusive client,
+        // to avoid getting locked out
         if (!handled) {
             for (int i = 0; i < syms_number; i++) {
                 if (syms[i] >= XKB_KEY_XF86Switch_VT_1 && syms[i] <= XKB_KEY_XF86Switch_VT_12) {

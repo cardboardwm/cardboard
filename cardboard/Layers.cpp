@@ -315,8 +315,38 @@ void layer_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[ma
 
 void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
+    auto* client = wl_resource_get_client(layer_surface->surface->resource);
+
+    // if the layer's client has exclusivity, we must focus the first mapped layer of the client,
+    // now that this layer is getting unmapped.
+    //
+    // so we begin searching for it!
+    if (client == server->seat.exclusive_client) {
+        LayerSurface* layer_surface_to_focus = nullptr;
+        if (client == server->seat.exclusive_client) {
+            for (auto& output : server->outputs) {
+                for (auto& layer : output.layers) {
+                    for (auto& layer_surface : layer) {
+                        if (wl_resource_get_client(layer_surface.surface->resource) == client && layer_surface.surface->mapped) {
+                            layer_surface_to_focus = &layer_surface;
+                        }
+                    }
+                    if (layer_surface_to_focus != nullptr) {
+                        break;
+                    }
+                }
+                if (layer_surface_to_focus != nullptr) {
+                    break;
+                }
+            }
+            if (layer_surface_to_focus != nullptr) {
+                server->seat.focus_layer(server, layer_surface_to_focus->surface);
+            }
+        }
+    }
     // we don't have to remove the layer surface from the layer list of the output
     // because the list is destroyed either way in Output.cpp:output_destroy_handler
     layer_surface->surface->output = nullptr;

@@ -55,4 +55,18 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data);
  */
 void new_input_handler(struct wl_listener* listener, void* data);
 
+/**
+ * \brief Activates the inhibition of input events for the requester.
+ *
+ * Per the wlr-input-inhibitor protocol.
+ */
+void activate_inhibit_handler(struct wl_listener* listener, void* data);
+
+/**
+ * \brief Deactivates the inhibiton of input events for the requester.
+ *
+ * Per the wlr-input-inhibitor protocol.
+ */
+void deactivate_inhibit_handler(struct wl_listener* listener, void* data);
+
 #endif // __CARDBOARD_EVENT_LISTENERS_H_

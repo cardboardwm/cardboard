@@ -128,3 +128,17 @@ void new_input_handler(struct wl_listener* listener, void* data)
 
     server->seat.add_input_device(server, device);
 }
+
+void activate_inhibit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+
+    server->seat.set_exclusive_client(server, server->inhibit_manager->active_client);
+}
+
+void deactivate_inhibit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+
+    server->seat.set_exclusive_client(server, nullptr);
+}

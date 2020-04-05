@@ -61,6 +61,9 @@ bool Server::init()
     wlr_data_control_manager_v1_create(wl_display);
     wlr_primary_selection_v1_device_manager_create(wl_display);
 
+    // less low effort protocol implementations
+    inhibit_manager = wlr_input_inhibit_manager_create(wl_display);
+
     init_seat(this, &seat, DEFAULT_SEAT);
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
@@ -72,13 +75,16 @@ bool Server::init()
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
+        { &backend->events.new_input, new_input_handler },
         { &backend->events.new_output, new_output_handler },
+
         { &output_layout->events.add, output_layout_add_handler },
 
         { &xdg_shell->events.new_surface, new_xdg_surface_handler },
         { &layer_shell->events.new_surface, new_layer_surface_handler },
 
-        { &backend->events.new_input, new_input_handler },
+        { &inhibit_manager->events.activate, activate_inhibit_handler },
+        { &inhibit_manager->events.deactivate, deactivate_inhibit_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
