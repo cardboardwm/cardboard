@@ -199,8 +199,9 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
 
     wlr_renderer_scissor(renderer, &(*ws.output)->usable_area);
     render_workspace(server, ws, wlr_output, renderer, &now);
-    render_floating(server, wlr_output, renderer, &now);
     wlr_renderer_scissor(renderer, nullptr);
+
+    render_floating(server, wlr_output, renderer, &now);
 
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);

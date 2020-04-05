@@ -10,6 +10,12 @@ extern "C" {
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_gamma_control_v1.h>
+#include <wlr/types/wlr_gtk_primary_selection.h>
+#include <wlr/types/wlr_export_dmabuf_v1.h>
+#include <wlr/types/wlr_screencopy_v1.h>
+#include <wlr/types/wlr_data_control_v1.h>
+#include <wlr/types/wlr_primary_selection_v1.h>
 #include <wlr/util/log.h>
 }
 
@@ -46,7 +52,14 @@ bool Server::init()
     xdg_shell = wlr_xdg_shell_create(wl_display);
     layer_shell = wlr_layer_shell_v1_create(wl_display);
 
+    // low effort protocol implementations
     wlr_xdg_output_manager_v1_create(wl_display, output_layout);
+    wlr_gamma_control_manager_v1_create(wl_display);
+    wlr_gtk_primary_selection_device_manager_create(wl_display);
+    wlr_export_dmabuf_manager_v1_create(wl_display);
+    wlr_screencopy_manager_v1_create(wl_display);
+    wlr_data_control_manager_v1_create(wl_display);
+    wlr_primary_selection_v1_device_manager_create(wl_display);
 
     init_seat(this, &seat, DEFAULT_SEAT);
 
