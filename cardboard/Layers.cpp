@@ -285,11 +285,9 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     wlr_log(WLR_DEBUG, "destroyed layer surface: namespace %s layer %d", layer_surface->surface->namespace_, layer_surface->surface->current.layer);
     server->listeners.clear_listeners(layer_surface);
 
-    auto* output = static_cast<Output*>(layer_surface->surface->output->data);
-    auto& layer = output->layers[layer_surface->layer];
-    layer.remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
-
-    if (output != nullptr) {
+    if (layer_surface->surface->output != nullptr) {
+        auto* output = static_cast<Output*>(layer_surface->surface->output->data);
+        output->remove_layer_surface(layer_surface);
         arrange_layers(server, output);
     }
 }
@@ -315,6 +313,12 @@ void layer_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[ma
 {
 }
 
-void layer_surface_output_destroy_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* layer_surface = get_listener_data<LayerSurface*>(listener);
+
+    // we don't have to remove the layer surface from the layer list of the output
+    // because the list is destroyed either way in Output.cpp:output_destroy_handler
+    layer_surface->surface->output = nullptr;
+    wlr_layer_surface_v1_close(layer_surface->surface);
 }

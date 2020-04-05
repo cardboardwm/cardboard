@@ -24,6 +24,12 @@ struct RenderData {
     Server* server;
 };
 
+void Output::remove_layer_surface(LayerSurface* layer_surface)
+{
+    auto& layer = layers[layer_surface->layer];
+    layer.remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
+}
+
 void register_output(Server* server, Output&& output_)
 {
     server->outputs.emplace_back(output_);

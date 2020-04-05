@@ -23,6 +23,8 @@ struct Output {
 
     LayerArray layers;
     struct wlr_box usable_area;
+
+    void remove_layer_surface(LayerSurface* layer_surface);
 };
 
 /// Executed for each frame render per output.
