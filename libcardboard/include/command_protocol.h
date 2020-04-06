@@ -61,9 +61,20 @@ struct bind {
 }
 
 /**
+ *  \brief Max size of a command message
+ */
+inline const int MAX_MESSAGE_SIZE = 8192;
+
+/**
  * \brief Deserializes data from a file descriptor
  */
 std::optional<CommandData> read_command_data(int fd);
+
+/**
+ * \brief Deserializes data from a pointer
+ */
+std::optional<CommandData> read_command_data(void* data, size_t);
+
 
 /**
  * \brief Serializes and write data to a file descriptor.

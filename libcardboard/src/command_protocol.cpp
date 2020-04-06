@@ -1,7 +1,10 @@
+#include <numeric>
+
 #include <command_protocol.h>
 
 #include "command.capnp.h"
 #include <capnp/message.h>
+#include <capnp/common.h>
 #include <capnp/serialize-packed.h>
 
 static CommandData deserialize(const generated::Command::Reader& reader)
@@ -36,7 +39,18 @@ static CommandData deserialize(const generated::Command::Reader& reader)
 std::optional<CommandData> read_command_data(int fd)
 {
     try {
-        ::capnp::PackedFdMessageReader message { fd };
+        ::capnp::StreamFdMessageReader message { fd };
+        return deserialize(message.getRoot<generated::Command>());
+    } catch (const kj::Exception&) {
+        return std::nullopt;
+    }
+}
+
+std::optional<CommandData> read_command_data(void* data, size_t size)
+{
+    try {
+        kj::Array<capnp::word> array(static_cast<capnp::word*>(data), size, kj::NullArrayDisposer{});
+        ::capnp::FlatArrayMessageReader message { array };
         return deserialize(message.getRoot<generated::Command>());
     } catch (const kj::Exception&) {
         return std::nullopt;
@@ -89,7 +103,19 @@ bool write_command_data(int fd, const CommandData& command_data)
         auto command = message.initRoot<generated::Command>();
         serialize(command, command_data);
 
-        writePackedMessageToFd(fd, message);
+        size_t message_size = std::accumulate(
+            message.getSegmentsForOutput().begin(),
+            message.getSegmentsForOutput().end(),
+            static_cast<size_t>(0),
+            [](size_t size, auto& v){
+                return size + v.size();
+            }
+        );
+
+        if(message_size > MAX_MESSAGE_SIZE)
+            return false;
+
+        writeMessageToFd(fd, message);
         return true;
     } catch (const kj::Exception&) {
         return false;
