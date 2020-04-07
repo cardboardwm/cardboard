@@ -18,7 +18,16 @@ extern "C" {
 
 struct Server;
 struct Seat;
-struct Keyboard;
+
+/// A keyboard device, managed by a seat.
+struct Keyboard {
+    Seat* seat; ///< The seat that manages this keyboard.
+    struct wlr_input_device* device;
+};
+
+/// Notifies the currently focused surface about the pressed state of the modifier keys.
+void modifiers_handler(struct wl_listener* listener, void* data);
+
 
 /**
  * \brief This structure holds the configured key bindings.
@@ -73,15 +82,6 @@ struct KeyHandleData {
         return keyboard == other.keyboard && config == other.config;
     }
 };
-
-/// A keyboard device, managed by a seat.
-struct Keyboard {
-    Seat* seat; ///< The seat that manages this keyboard.
-    struct wlr_input_device* device;
-};
-
-/// Notifies the currently focused surface about the pressed state of the modifier keys.
-void modifiers_handler(struct wl_listener* listener, void* data);
 
 /**
  * \brief Fired when a non-modifier key is pressed.
