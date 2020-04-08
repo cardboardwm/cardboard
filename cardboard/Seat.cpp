@@ -25,7 +25,7 @@ void init_seat(Server* server, Seat* seat, const char* name)
     } to_add_listeners[] = {
         { &seat->wlr_seat->events.request_set_cursor, seat_request_cursor_handler },
         { &seat->wlr_seat->events.request_set_selection, seat_request_selection_handler },
-        { &seat->wlr_seat->events.set_primary_selection, seat_request_primary_selection_handler },
+        { &seat->wlr_seat->events.request_set_primary_selection, seat_request_primary_selection_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
