@@ -1,4 +1,7 @@
+extern "C" {
+#include <wlr/types/wlr_primary_selection.h>
 #include <wlr/util/log.h>
+}
 
 #include <functional>
 #include <memory>
@@ -16,8 +19,19 @@ void init_seat(Server* server, Seat* seat, const char* name)
     seat->cursor = SeatCursor {};
     init_cursor(server, seat, &seat->cursor);
 
-    server->listeners.add_listener(&seat->wlr_seat->events.request_set_cursor,
-                                   Listener { seat_request_cursor_handler, server, seat });
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &seat->wlr_seat->events.request_set_cursor, seat_request_cursor_handler },
+        { &seat->wlr_seat->events.request_set_selection, seat_request_selection_handler },
+        { &seat->wlr_seat->events.set_primary_selection, seat_request_primary_selection_handler },
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        server->listeners.add_listener(to_add_listener.signal,
+                                       Listener { to_add_listener.notify, server, seat });
+    }
 }
 
 void Seat::add_input_device(Server* server, struct wlr_input_device* device)
@@ -371,4 +385,22 @@ void seat_request_cursor_handler(struct wl_listener* listener, void* data)
     if (focused_client == event->seat_client) {
         wlr_cursor_set_surface(server->seat.cursor.wlr_cursor, event->surface, event->hotspot_x, event->hotspot_y);
     }
+}
+
+void seat_request_selection_handler(struct wl_listener* listener, void* data)
+{
+    wlr_log(WLR_DEBUG, "normal selection happening");
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<wlr_seat_request_set_selection_event*>(data);
+
+    wlr_seat_set_selection(seat->wlr_seat, event->source, event->serial);
+}
+
+void seat_request_primary_selection_handler(struct wl_listener* listener, void* data)
+{
+    wlr_log(WLR_DEBUG, "primary selection happening");
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<wlr_seat_request_set_primary_selection_event*>(data);
+
+    wlr_seat_set_primary_selection(seat->wlr_seat, event->source, event->serial);
 }

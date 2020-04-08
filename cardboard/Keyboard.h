@@ -28,7 +28,6 @@ struct Keyboard {
 /// Notifies the currently focused surface about the pressed state of the modifier keys.
 void modifiers_handler(struct wl_listener* listener, void* data);
 
-
 /**
  * \brief This structure holds the configured key bindings.
  *

@@ -103,4 +103,14 @@ void init_seat(Server* server, Seat* seat, const char* name);
  */
 void seat_request_cursor_handler(struct wl_listener* listener, void* data);
 
+/**
+ * \brief Called when a client puts something in the clipboard (Ctrl-C)
+ */
+void seat_request_selection_handler(struct wl_listener* listener, void* data);
+
+/**
+ * \brief Called when a client puts something in the primary selection (selects some text).
+ */
+void seat_request_primary_selection_handler(struct wl_listener* listener, void* data);
+
 #endif // __CARDBOARD_SEAT_H_

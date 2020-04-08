@@ -43,7 +43,7 @@ bool Server::init()
     wlr_renderer_init_wl_display(renderer, wl_display);
 
     wlr_compositor_create(wl_display, renderer);
-    wlr_data_device_manager_create(wl_display); // for clipboard
+    wlr_data_device_manager_create(wl_display); // for clipboard managers
 
     output_layout = wlr_output_layout_create();
 
@@ -55,10 +55,10 @@ bool Server::init()
     // low effort protocol implementations
     wlr_xdg_output_manager_v1_create(wl_display, output_layout);
     wlr_gamma_control_manager_v1_create(wl_display);
-    wlr_gtk_primary_selection_device_manager_create(wl_display);
     wlr_export_dmabuf_manager_v1_create(wl_display);
     wlr_screencopy_manager_v1_create(wl_display);
     wlr_data_control_manager_v1_create(wl_display);
+    wlr_gtk_primary_selection_device_manager_create(wl_display);
     wlr_primary_selection_v1_device_manager_create(wl_display);
 
     // less low effort protocol implementations
