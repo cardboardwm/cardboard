@@ -22,11 +22,25 @@ public:
     void for_each_surface(wlr_surface_iterator_func_t iterator, void* data);
 };
 
+struct XDGPopup {
+    struct wlr_xdg_popup* wlr_popup;
+    XDGView* parent;
+
+    void unconstrain(Server* server);
+};
+
+void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent);
+
 void xdg_surface_map_handler(struct wl_listener* listener, void* data);
 void xdg_surface_unmap_handler(struct wl_listener* listener, void* data);
 void xdg_surface_destroy_handler(struct wl_listener* listener, void* data);
 void xdg_surface_commit_handler(struct wl_listener* listener, void* data);
+void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data);
+
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data);
 void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data);
+
+void xdg_popup_destroy_handler(struct wl_listener* listener, void* data);
+void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_XDGVIEW_H_

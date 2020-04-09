@@ -11,7 +11,7 @@ extern "C" {
 #include "Listener.h"
 #include "Server.h"
 
-void create_layer([[maybe_unused]] Server* server, LayerSurface&& layer_surface_)
+void create_layer(Server* server, LayerSurface&& layer_surface_)
 {
     auto layer = layer_surface_.surface->client_pending.layer;
     auto* output = static_cast<Output*>(layer_surface_.surface->output->data);
@@ -27,7 +27,7 @@ void create_layer([[maybe_unused]] Server* server, LayerSurface&& layer_surface_
         { &layer_surface.surface->events.destroy, layer_surface_destroy_handler },
         { &layer_surface.surface->events.map, layer_surface_map_handler },
         { &layer_surface.surface->events.unmap, layer_surface_unmap_handler },
-        { &layer_surface.surface->events.new_popup, layer_new_popup_handler },
+        { &layer_surface.surface->events.new_popup, layer_surface_new_popup_handler },
         { &layer_surface.surface->output->events.destroy, layer_surface_output_destroy_handler },
     };
 
@@ -43,6 +43,28 @@ void create_layer([[maybe_unused]] Server* server, LayerSurface&& layer_surface_
     layer_surface.surface->current = layer_surface.surface->client_pending;
     arrange_layers(server, output);
     layer_surface.surface->current = old_state;
+}
+
+void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSurface* layer_surface)
+{
+    wlr_log(WLR_DEBUG, "new layer popup");
+    auto* popup = new LayerSurfacePopup { wlr_popup, layer_surface };
+
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &popup->wlr_popup->base->events.destroy, &layer_surface_popup_destroy_handler },
+        { &popup->wlr_popup->base->events.new_popup, &layer_surface_popup_new_popup_handler },
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        server->listeners.add_listener(
+            to_add_listeners->signal,
+            Listener { to_add_listener.notify, server, popup });
+    }
+
+    popup->unconstrain(server);
 }
 
 bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const
@@ -62,6 +84,21 @@ bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_sur
     }
 
     return false;
+}
+
+void LayerSurfacePopup::unconstrain(Server* server)
+{
+    auto* output = static_cast<Output*>(parent->surface->output->data);
+    auto* output_box = wlr_output_layout_get_box(server->output_layout, output->wlr_output);
+
+    struct wlr_box output_toplevel_sx_box = {
+        .x = -parent->geometry.x,
+        .y = -parent->geometry.y,
+        .width = output_box->width,
+        .height = output_box->height,
+    };
+
+    wlr_xdg_popup_unconstrain_from_box(wlr_popup, &output_toplevel_sx_box);
 }
 
 static void apply_exclusive_zone(struct wlr_box* usable_area, const wlr_layer_surface_v1_state* state)
@@ -309,8 +346,13 @@ void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, 
     }
 }
 
-void layer_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
+    auto* layer_surface = get_listener_data<LayerSurface*>(listener);
+    auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
+
+    create_layer_popup(server, wlr_popup, layer_surface);
 }
 
 void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -351,4 +393,22 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
     // because the list is destroyed either way in Output.cpp:output_destroy_handler
     layer_surface->surface->output = nullptr;
     wlr_layer_surface_v1_close(layer_surface->surface);
+}
+
+void layer_surface_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
+
+    server->listeners.clear_listeners(popup);
+    delete popup;
+}
+
+void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
+    auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
+
+    create_layer_popup(server, wlr_popup, popup->parent);
 }

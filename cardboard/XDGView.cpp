@@ -49,6 +49,8 @@ void XDGView::prepare(Server* server)
         { &xdg_surface->events.map, xdg_surface_map_handler },
         { &xdg_surface->events.unmap, xdg_surface_unmap_handler },
         { &xdg_surface->events.destroy, xdg_surface_destroy_handler },
+
+        { &xdg_surface->events.new_popup, xdg_surface_new_popup_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -69,6 +71,52 @@ void XDGView::set_activated(bool activated)
 void XDGView::for_each_surface(wlr_surface_iterator_func_t iterator, void* data)
 {
     wlr_xdg_surface_for_each_surface(xdg_surface, iterator, data);
+}
+
+void XDGPopup::unconstrain(Server* server)
+{
+    auto ws = server->get_views_workspace(parent);
+    if (!ws) {
+        return;
+    }
+    auto output = ws->get().output;
+    if (!output) {
+        return;
+    }
+
+    auto* output_box = wlr_output_layout_get_box(server->output_layout, (*output)->wlr_output);
+
+    // the output box expressed in the coordinate system of the
+    // toplevel parent of the popup
+    struct wlr_box output_toplevel_sx_box = {
+        .x = output_box->x - parent->x,
+        .y = output_box->y - parent->y,
+        .width = output_box->width,
+        .height = output_box->height,
+    };
+
+    wlr_xdg_popup_unconstrain_from_box(wlr_popup, &output_toplevel_sx_box);
+}
+
+void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent)
+{
+    auto* popup = new XDGPopup { wlr_popup, parent };
+
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &popup->wlr_popup->base->events.destroy, &xdg_popup_destroy_handler },
+        { &popup->wlr_popup->base->events.new_popup, &xdg_popup_new_popup_handler },
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        server->listeners.add_listener(
+            to_add_listener.signal,
+            Listener { to_add_listener.notify, server, popup });
+    }
+
+    popup->unconstrain(server);
 }
 
 void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -144,6 +192,16 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         }
     }
 }
+
+void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* view = get_listener_data<XDGView*>(listener);
+    auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
+
+    create_xdg_popup(server, wlr_popup, view);
+}
+
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* view = get_listener_data<XDGView*>(listener);
@@ -158,4 +216,22 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
 
     auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
     server->seat.begin_interactive(view, Seat::GrabState::Mode::RESIZE, event->edges);
+}
+
+void xdg_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* popup = get_listener_data<XDGPopup*>(listener);
+
+    server->listeners.clear_listeners(popup);
+    delete popup;
+}
+
+void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* popup = get_listener_data<XDGPopup*>(listener);
+    auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
+
+    create_xdg_popup(server, wlr_popup, popup->parent);
 }

@@ -26,11 +26,13 @@ using ListenerData = std::variant<
     NoneT,
     KeyHandleData,
     LayerSurface*,
+    LayerSurfacePopup*,
     Output*,
     Keyboard*,
     SeatCursor*,
     Seat*,
-    XDGView*>;
+    XDGView*,
+    XDGPopup*>;
 
 /**
  * \brief The Listener is a wrapper around Wayland's \c wl_listener concept.

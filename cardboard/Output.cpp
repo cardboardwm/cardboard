@@ -171,7 +171,7 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
             .server = server
         };
 
-        wlr_surface_for_each_surface(surface.surface->surface, render_surface, &rdata);
+        wlr_layer_surface_v1_for_each_surface(surface.surface, render_surface, &rdata);
     }
 }
 
