@@ -117,6 +117,11 @@ void Seat::hide_view(Server* server, View* view)
     }
 }
 
+void Seat::focus_surface([[maybe_unused]] Server* server, struct wlr_surface* surface)
+{
+    keyboard_notify_enter(surface);
+}
+
 void Seat::focus_view(Server* server, View* view)
 {
     if (focused_layer) {

@@ -209,6 +209,14 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         }
     }
 
+#if HAVE_XWAYLAND
+    for (const auto xwayland_or_surface : xwayland_or_surfaces) {
+        if (xwayland_or_surface->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+            return nullptr;
+        }
+    }
+#endif
+
     for (auto* view : views) {
         if (!view->mapped) {
             continue;

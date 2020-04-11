@@ -38,4 +38,24 @@ void xwayland_surface_destroy_handler(struct wl_listener* listener, void* data);
 void xwayland_surface_request_configure_handler(struct wl_listener* listener, void* data);
 void xwayland_surface_commit_handler(struct wl_listener* listener, void* data);
 
+/// An "unmanaged" Xwayland surface. The "OR" stands for Override Redirect. Stuff like menus and tooltips.
+struct XwaylandORSurface {
+    Server* server;
+    struct wlr_xwayland_surface* xwayland_surface;
+    struct wl_listener* commit_listener;
+    int lx, ly;
+
+    bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+    void map(Server* server);
+};
+
+/// Registers an XwaylandORSurface.
+XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwayland_surface* xwayland_surface);
+
+void xwayland_or_surface_map_handler(struct wl_listener* listener, void* data);
+void xwayland_or_surface_unmap_handler(struct wl_listener* listener, void* data);
+void xwayland_or_surface_destroy_handler(struct wl_listener* listener, void* data);
+void xwayland_or_surface_request_configure_handler(struct wl_listener* listener, void* data);
+void xwayland_or_surface_commit_handler(struct wl_listener* listener, void* data);
+
 #endif // __CARDBOARD_XWAYLAND_H_

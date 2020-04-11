@@ -24,7 +24,6 @@ void XwaylandView::destroy()
 void XwaylandView::unmap()
 {
     server->unmap_view(this);
-    server->listeners.remove_listener(commit_listener);
 }
 
 struct wlr_surface* XwaylandView::get_surface()
@@ -98,9 +97,11 @@ void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]]
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     if (view->xwayland_surface->override_redirect) {
-        wlr_log(WLR_ERROR, "NOT IMPLEMENTED");
+        auto* xwayland_surface = view->xwayland_surface;
         view->unmap();
         view->destroy();
+        auto* xwayland_or_surface = create_xwayland_or_surface(server, xwayland_surface);
+        xwayland_or_surface->map(server);
         return;
     }
 
@@ -120,10 +121,12 @@ void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]]
 
 void xwayland_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     assert(view->get_surface() && "Cannot unmap unmapped view");
     view->unmap();
+    server->listeners.remove_listener(view->commit_listener);
 }
 
 void xwayland_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -159,8 +162,6 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
 
     auto* xsurface = view->xwayland_surface;
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
-        wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, xsurface->width, xsurface->height);
-
         view->x = xsurface->x;
         view->y = xsurface->y;
         view->geometry.width = xsurface->width;
@@ -171,4 +172,112 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
             workspace->get().fit_view_on_screen(server->seat.get_focused_view());
         }
     }
+}
+
+bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
+{
+    double view_x = lx - xwayland_surface->x;
+    double view_y = ly - xwayland_surface->y;
+
+    double sx_, sy_;
+    struct wlr_surface* surface_ = nullptr;
+    surface_ = wlr_surface_surface_at(xwayland_surface->surface, view_x, view_y, &sx_, &sy_);
+
+    if (surface_ != nullptr) {
+        sx = sx_;
+        sy = sy_;
+        surface = surface_;
+        return true;
+    }
+
+    return false;
+}
+
+void XwaylandORSurface::map(Server* server)
+{
+    server->xwayland_or_surfaces.push_back(this);
+    commit_listener = server->listeners.add_listener(&xwayland_surface->surface->events.commit,
+                                                     Listener { xwayland_or_surface_commit_handler, server, this });
+
+    lx = xwayland_surface->x;
+    ly = xwayland_surface->y;
+
+    if (wlr_xwayland_or_surface_wants_focus(xwayland_surface)) {
+        wlr_xwayland_set_seat(server->xwayland, server->seat.wlr_seat);
+        server->seat.focus_surface(server, xwayland_surface->surface);
+    }
+}
+
+XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwayland_surface* xwayland_surface)
+{
+    wlr_log(WLR_DEBUG, "new xwayland OR surface %d %d", xwayland_surface->x, xwayland_surface->y);
+    auto* xwayland_or_surface = new XwaylandORSurface;
+    xwayland_or_surface->server = server;
+    xwayland_or_surface->xwayland_surface = xwayland_surface;
+
+    struct {
+        wl_signal* signal;
+        wl_notify_func_t notify;
+    } to_add_listeners[] = {
+        { &xwayland_or_surface->xwayland_surface->events.map, xwayland_or_surface_map_handler },
+        { &xwayland_or_surface->xwayland_surface->events.unmap, xwayland_or_surface_unmap_handler },
+        { &xwayland_or_surface->xwayland_surface->events.destroy, xwayland_or_surface_destroy_handler },
+        { &xwayland_or_surface->xwayland_surface->events.request_configure, xwayland_or_surface_request_configure_handler }
+    };
+
+    for (const auto& to_add_listener : to_add_listeners) {
+        server->listeners.add_listener(to_add_listener.signal,
+                                       Listener { to_add_listener.notify, server, xwayland_or_surface });
+    }
+
+    return xwayland_or_surface;
+}
+
+void xwayland_or_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
+
+    xwayland_or_surface->map(server);
+}
+
+void xwayland_or_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
+
+    server->xwayland_or_surfaces.remove(xwayland_or_surface);
+    server->listeners.remove_listener(xwayland_or_surface->commit_listener);
+    if (server->seat.wlr_seat->keyboard_state.focused_surface == xwayland_or_surface->xwayland_surface->surface) {
+        // restore focus to the last focused view
+        if (!server->seat.focus_stack.empty()) {
+            server->seat.focus_view(server, nullptr);
+            server->seat.focus_view(server, server->seat.focus_stack.front());
+        }
+    }
+}
+
+void xwayland_or_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
+
+    server->listeners.clear_listeners(xwayland_or_surface);
+    delete xwayland_or_surface;
+}
+
+void xwayland_or_surface_request_configure_handler(struct wl_listener* listener, void* data)
+{
+    auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
+    auto* ev = static_cast<struct wlr_xwayland_surface_configure_event*>(data);
+
+    wlr_xwayland_surface_configure(xwayland_or_surface->xwayland_surface, ev->x, ev->y, ev->width, ev->height);
+}
+
+void xwayland_or_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
+
+    xwayland_or_surface->lx = xwayland_or_surface->xwayland_surface->x;
+    xwayland_or_surface->ly = xwayland_or_surface->xwayland_surface->y;
 }

@@ -38,6 +38,7 @@ using ListenerData = std::variant<
     Seat*,
 #if HAVE_XWAYLAND
     XwaylandView*,
+    XwaylandORSurface*,
 #endif
     XDGView*,
     XDGPopup*>;

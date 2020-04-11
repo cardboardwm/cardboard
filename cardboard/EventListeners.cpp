@@ -133,7 +133,7 @@ void new_xwayland_surface_handler(struct wl_listener* listener, void* data)
     auto* xsurface = static_cast<struct wlr_xwayland_surface*>(data);
 
     if (xsurface->override_redirect) {
-        wlr_log(WLR_ERROR, "NOT IMPLEMENTED");
+        create_xwayland_or_surface(server, xsurface);
         return;
     }
 

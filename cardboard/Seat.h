@@ -56,6 +56,8 @@ struct Seat {
     View* get_focused_view();
     /// Hides the \a view from the screen without unmapping. Happens when a Workspace is deactivated.
     void hide_view(Server* server, View* view);
+    /// Gives keyboard focus to a plain surface (OR xwayland usually)
+    void focus_surface(Server* server, struct wlr_surface* surface);
     /**
      * \brief Sets the focus state on \a view. Auto-scrolls the Workspace if it's tiled.
      *

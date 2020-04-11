@@ -75,10 +75,10 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    /// Holds the active views, ordered by the stacking order.
-    std::list<View*> views; // TODO: check if View's statefulness is needed
-        // change to std::vector if it's not needed +
-        // change in ListenerData from View* to View
+    std::list<View*> views;
+#if HAVE_XWAYLAND
+    std::list<XwaylandORSurface*> xwayland_or_surfaces;
+#endif
 
     std::vector<Workspace> workspaces;
 
