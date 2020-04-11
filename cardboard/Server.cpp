@@ -42,7 +42,7 @@ bool Server::init()
     renderer = wlr_backend_get_renderer(backend);
     wlr_renderer_init_wl_display(renderer, wl_display);
 
-    wlr_compositor_create(wl_display, renderer);
+    compositor = wlr_compositor_create(wl_display, renderer);
     wlr_data_device_manager_create(wl_display); // for clipboard managers
 
     output_layout = wlr_output_layout_create();
@@ -140,6 +140,19 @@ bool Server::init_ipc()
     return true;
 }
 
+#if HAVE_XWAYLAND
+void Server::init_xwayland()
+{
+    wlr_log(WLR_DEBUG, "Initializing Xwayland");
+    xwayland = wlr_xwayland_create(wl_display, compositor, true);
+
+    listeners.add_listener(&xwayland->events.new_surface,
+                           Listener { new_xwayland_surface_handler, this, NoneT {} });
+
+    setenv("DISPLAY", xwayland->display_name, true);
+}
+#endif
+
 bool Server::load_settings()
 {
     if (const char* config_home = getenv(CONFIG_HOME_ENV.data()); config_home != nullptr) {
@@ -196,7 +209,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         }
     }
 
-    for (const auto view : views) {
+    for (auto* view : views) {
         if (!view->mapped) {
             continue;
         }
@@ -269,6 +282,9 @@ Workspace& Server::create_workspace()
 
 bool Server::run()
 {
+#if HAVE_XWAYLAND
+    init_xwayland();
+#endif
     // add UNIX socket to the Wayland display
     const char* socket = wl_display_add_socket_auto(wl_display);
     if (!socket) {
@@ -297,6 +313,9 @@ bool Server::run()
 void Server::stop()
 {
     wlr_log(WLR_INFO, "Shutting down Cardboard");
+#if HAVE_XWAYLAND
+    wlr_xwayland_destroy(xwayland);
+#endif
     wl_display_destroy_clients(wl_display);
     wl_display_destroy(wl_display);
     close(ipc_socket_fd);

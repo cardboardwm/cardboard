@@ -5,6 +5,7 @@ extern "C" {
 #include <signal.h>
 #include <sys/wait.h>
 
+#include "BuildConfig.h"
 #include "Server.h"
 
 Server server;

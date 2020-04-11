@@ -1,5 +1,6 @@
 wayland_server = dependency('wayland-server')
 xkbcommon = dependency('xkbcommon')
+xcb = dependency('xcb', required: get_option('xwayland'))
 
 wlroots_version = '>=0.10.0'
 wlroots_proj = subproject(
@@ -10,6 +11,18 @@ wlroots_proj = subproject(
 )
 
 wlroots = wlroots_proj.get_variable('wlroots')
+wlroots_conf = wlroots_proj.get_variable('conf_data')
+wlroots_has_xwayland = wlroots_conf.get('WLR_HAS_XWAYLAND') == 1
+
+if get_option('xwayland').enabled() and not wlroots_has_xwayland
+    error('Cannot enable Xwayland support in cardboard: wlroots has been built without Xwayland support')
+endif
+have_xwayland = xcb.found() and wlroots_has_xwayland
+
+conf_data = configuration_data()
+conf_data.set10('HAVE_XWAYLAND', have_xwayland)
+
+configure_file(output: 'BuildConfig.h', configuration: conf_data)
 
 cardboard_deps = [
   wayland_server,
@@ -34,6 +47,11 @@ cardboard_sources = files(
   'main.cpp',
   'commands/dispatch_command.cpp'
 )
+
+if have_xwayland
+    cardboard_deps += xcb
+    cardboard_sources += 'Xwayland.cpp'
+endif
 
 executable(
   'cardboard',

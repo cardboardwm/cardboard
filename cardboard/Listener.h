@@ -1,6 +1,8 @@
 #ifndef CARDBOARD_LISTENER_H
 #define CARDBOARD_LISTENER_H
 
+#include "BuildConfig.h"
+
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_input_device.h>
@@ -16,6 +18,9 @@ extern "C" {
 #include "Keyboard.h"
 #include "Layers.h"
 #include "XDGView.h"
+#if HAVE_XWAYLAND
+#include "Xwayland.h"
+#endif
 
 struct NoneT {
 };
@@ -31,6 +36,9 @@ using ListenerData = std::variant<
     Keyboard*,
     SeatCursor*,
     Seat*,
+#if HAVE_XWAYLAND
+    XwaylandView*,
+#endif
     XDGView*,
     XDGPopup*>;
 
