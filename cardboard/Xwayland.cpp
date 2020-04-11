@@ -137,6 +137,7 @@ void xwayland_surface_destroy_handler(struct wl_listener* listener, [[maybe_unus
 
 void xwayland_surface_request_configure_handler(struct wl_listener* listener, void* data)
 {
+    auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
     auto* ev = static_cast<wlr_xwayland_surface_configure_event*>(data);
 
@@ -148,6 +149,7 @@ void xwayland_surface_request_configure_handler(struct wl_listener* listener, vo
     view->geometry.width = ev->width;
     view->geometry.height = ev->height;
     view->resize(view->geometry.width, view->geometry.height);
+    server->get_views_workspace(view)->get().arrange_tiles();
 }
 
 void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
