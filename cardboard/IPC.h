@@ -39,6 +39,8 @@ class IPC {
         wl_event_source *writable_event_source = nullptr;
         int payload_size = 0;
         std::string message{};
+
+        ~Client();
     };
 
 private:
@@ -63,6 +65,9 @@ private:
     static int handle_client_connection(int fd, [[maybe_unused]] uint32_t mask, void* data);
     static int handle_client_readable(int fd, [[maybe_unused]] uint32_t mask, void* data);
     static int handle_client_writeable(int fd, [[maybe_unused]] uint32_t mask, void* data);
+
+private:
+    void remove_client(Client*);
 
 private:
     ListenerList ipc_listeners;

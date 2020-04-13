@@ -5,7 +5,8 @@ kj = dependency('kj')
 
 sources = files(
     'src/command.capnp.c++',
-    'src/command_protocol.cpp'
+    'src/command_protocol.cpp',
+    'src/ipc.cpp',
 )
 
 install_headers('include/command_protocol.h')
