@@ -53,12 +53,12 @@ std::optional<IPCInstance> create_ipc(
 }
 
 // This function implements wl_event_loop_fd_func_t
-int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
+int IPC::handle_client_connection(int fd, [[maybe_unused]] uint32_t mask, void* data)
 {
-    Server* server = static_cast<Server*>(data);
+    auto ipc = static_cast<IPC*>(data);
     const int client_fd = accept(fd, nullptr, nullptr);
     if (client_fd == -1) {
-        wlr_log(WLR_ERROR, "Failed to accept on IPC socket %s: %s", server->ipc_sock_address.sun_path, strerror(errno));
+        wlr_log(WLR_ERROR, "Failed to accept on IPC socket %s: %s", ipc->socket_address->sun_path, strerror(errno));
         return 0;
     }
 
@@ -77,36 +77,30 @@ int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
         return 0;
     }
 
-    std::array<long long, MAX_MESSAGE_SIZE / sizeof(long long)> buffer{};
-
-    ssize_t size = recv(
+    ipc->clients.push_back({
+        ipc,
         client_fd,
-        buffer.data(),
-        sizeof(long long) * buffer.size() - 1,
-        0);
+        IPC::ClientState::READING_HEADER
+    });
 
-    if(size == -1) {
-        close(fd);
-        wlr_log(WLR_DEBUG, "Couldn't recv\n");
-        return 0;
-    }
-
-    std::optional<CommandData> command_data = read_command_data(
-        buffer.data(),
-        static_cast<size_t>(size)
-    );
-
-    if (!command_data) {
-        static const std::string message = "Unable to receive data";
-        send(client_fd, message.data(), message.size(), 0);
-        close(client_fd);
-    } else {
-        CommandResult result = dispatch_command(*command_data)(server);
-        if (!result.message.empty()) {
-            send(client_fd, result.message.c_str(), result.message.size(), 0);
-        }
-        close(client_fd);
-    }
+    ipc->clients.back().readable_event_source =
+        wl_event_loop_add_fd(
+            ipc->server->event_loop,
+            client_fd,
+            WL_EVENT_READABLE,
+            IPC::handle_client_readable,
+            &ipc->clients.back()
+        );
 
     return 0;
+}
+
+int IPC::handle_client_readable(int fd, [[maybe_unused]] uint32_t mask, void* data)
+{
+
+}
+
+int IPC::handle_client_writeable(int fd, [[maybe_unused]] uint32_t mask, void* data)
+{
+
 }

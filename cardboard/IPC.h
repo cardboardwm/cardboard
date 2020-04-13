@@ -35,7 +35,10 @@ class IPC {
         IPC* ipc;
         int client_fd;
         ClientState state;
-        int payload_size;
+        wl_event_source *readable_event_source = nullptr;
+        wl_event_source *writable_event_source = nullptr;
+        int payload_size = 0;
+        std::string message{};
     };
 
 private:
@@ -67,6 +70,8 @@ private:
     int socket_fd;
     std::unique_ptr<sockaddr_un> socket_address;
     std::function<std::string(CommandData)> command_callback;
+
+    std::list<Client> clients;
 
     friend std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
 };
