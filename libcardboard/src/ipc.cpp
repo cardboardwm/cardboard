@@ -19,3 +19,24 @@ Header interpret_header(const AlignedHeaderBuffer& buffer)
         return {static_cast<int>(r)};
     }
 }
+
+AlignedHeaderBuffer create_header_buffer(const Header& header)
+{
+    AlignedHeaderBuffer buffer;
+
+    *reinterpret_cast<int*>(buffer.data()) = header.incoming_bytes;
+
+    if constexpr(std::endian::native == std::endian::big)
+    {
+        uint32_t r = *reinterpret_cast<int*>(buffer.data());
+
+        r = ((r >> 24u) & 0x000000ffu) |
+            ((r << 8u ) & 0x00ff0000u) |
+            ((r >> 8u ) & 0x0000ff00u) |
+            ((r << 24u) & 0xff000000u);
+
+        *reinterpret_cast<int*>(buffer.data()) = r;
+    }
+
+    return buffer;
+}

@@ -192,9 +192,53 @@ int IPC::handle_client_readable(int fd, uint32_t mask, void* data)
     return 0;
 }
 
-int IPC::handle_client_writeable(int fd, uint32_t mask, void* data)
+int IPC::handle_client_writeable(int /*fd*/, uint32_t mask, void* data)
 {
+    auto client = static_cast<IPC::Client*>(data);
 
+
+    if(mask & WL_EVENT_ERROR)
+    {
+        wlr_log(WLR_ERROR, "IPC Client socket error, disconnecting");
+        client->ipc->remove_client(client);
+        return 0;
+    }
+
+    if(mask & WL_EVENT_HANGUP)
+    {
+        wlr_log(WLR_DEBUG, "IPC Client on fd %d hung up, disconnecting", client->client_fd);
+        client->ipc->remove_client(client);
+        return 0;
+    }
+
+    if(client->message.empty())
+        return 0;
+
+    libcardboard::ipc::AlignedHeaderBuffer header =
+        libcardboard::ipc::create_header_buffer({static_cast<int>(client->message.size())});
+
+    auto* buffer = new std::byte[client->message.empty() + header.size()];
+    std::copy(
+        header.begin(),
+        header.end(),
+        buffer
+    );
+
+    std::copy(
+        client->message.begin(),
+        client->message.end(),
+        reinterpret_cast<char*>(buffer)
+    );
+
+    ssize_t written = write(client->client_fd, buffer, client->message.empty() + header.size());
+    if(written == -1 && errno == EAGAIN)
+        return 0;
+
+    if(written == -1)
+        wlr_log(WLR_INFO, "Unable to send data to IPC client");
+
+    client->ipc->remove_client(client);
+    return 0;
 }
 
 void IPC::remove_client(IPC::Client* client)

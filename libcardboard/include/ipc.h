@@ -14,6 +14,7 @@ namespace libcardboard::ipc{
     struct alignas(alignof(Header)) AlignedHeaderBuffer: std::array<std::byte, HEADER_SIZE> {};
 
     Header interpret_header(const AlignedHeaderBuffer&);
+    AlignedHeaderBuffer create_header_buffer(const Header&);
 };
 
 #endif //BUILD_LIBCARDBOARD_INCLUDE_IPC_H
