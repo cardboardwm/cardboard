@@ -20,7 +20,7 @@ extern "C" {
 std::optional<IPCInstance> create_ipc(
     Server* server,
     const std::string& socket_path,
-    std::function<std::string(CommandData)> command_callback)
+    std::function<std::string(const CommandData&)> command_callback)
 {
     int ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     std::unique_ptr<sockaddr_un> socket_address = std::make_unique<sockaddr_un>();
@@ -99,7 +99,7 @@ int IPC::handle_client_connection(int fd, uint32_t mask, void* data)
     return 0;
 }
 
-int IPC::handle_client_readable(int fd, uint32_t mask, void* data)
+int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
 {
     auto client = static_cast<IPC::Client*>(data);
 
@@ -155,7 +155,7 @@ int IPC::handle_client_readable(int fd, uint32_t mask, void* data)
             client->ipc->remove_client(client);
             return 0;
         }
-
+        [[fallthrough]];
     }
     case IPC::ClientState::READING_PAYLOAD:
     {

@@ -48,7 +48,7 @@ private:
         Server* server,
         int socket_fd,
         std::unique_ptr<sockaddr_un>&& socket_address,
-        std::function<std::string(CommandData)>&& command_callback
+        std::function<std::string(const CommandData&)>&& command_callback
     ):
         server{server},
         socket_fd{socket_fd},
@@ -78,15 +78,9 @@ private:
 
     std::list<Client> clients;
 
-    friend std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
+    friend std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
 };
 
-std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
-
-/**
- * \brief Handler function for \c Server::event_loop that reads the raw
- * command from the IPC socket (\c Server::ipc_socket_fd).
- */
-int ipc_read_command(int fd, uint32_t mask, void* data);
+std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
 
 #endif // __CARDBOARD_IPC_H_
