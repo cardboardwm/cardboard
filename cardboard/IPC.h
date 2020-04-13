@@ -21,29 +21,57 @@
  */
 
 struct Server;
+class IPC;
+using IPCInstance = std::unique_ptr<IPC>;
 
 class IPC {
+    enum class ClientState {
+        READING_HEADER,
+        READING_PAYLOAD,
+        WRITING
+    };
+
+    struct Client {
+        IPC* ipc;
+        int client_fd;
+        ClientState state;
+        int payload_size;
+    };
+
 private:
     explicit IPC(
         Server* server,
         int socket_fd,
-        std::unique_ptr<sockaddr_un>&& socket_address
+        std::unique_ptr<sockaddr_un>&& socket_address,
+        std::function<std::string(CommandData)>&& command_callback
     ):
         server{server},
         socket_fd{socket_fd},
-        socket_address{std::move(socket_address)}
+        socket_address{std::move(socket_address)},
+        command_callback{std::move(command_callback)}
     {}
+
+public:
+    IPC() = delete;
+    IPC(const IPC &) = delete;
+    IPC(IPC&&) = default;
+
+private:
+    static int handle_client_connection(int fd, [[maybe_unused]] uint32_t mask, void* data);
+    static int handle_client_readable(int fd, [[maybe_unused]] uint32_t mask, void* data);
+    static int handle_client_writeable(int fd, [[maybe_unused]] uint32_t mask, void* data);
 
 private:
     ListenerList ipc_listeners;
     Server* server;
     int socket_fd;
     std::unique_ptr<sockaddr_un> socket_address;
+    std::function<std::string(CommandData)> command_callback;
 
-    friend std::optional<IPC> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
+    friend std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
 };
 
-std::optional<IPC> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
+std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(CommandData)> command_callback);
 
 /**
  * \brief Handler function for \c Server::event_loop that reads the raw

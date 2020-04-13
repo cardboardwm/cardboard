@@ -15,6 +15,43 @@ extern "C" {
 
 #include <command_protocol.h>
 
+std::optional<IPCInstance> create_ipc(
+    Server* server,
+    const std::string& socket_path,
+    std::function<std::string(CommandData)> command_callback)
+{
+    int ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    std::unique_ptr<sockaddr_un> socket_address = std::make_unique<sockaddr_un>();
+
+    socket_address->sun_family = AF_UNIX;
+    memcpy(socket_address->sun_path, socket_path.c_str(), socket_path.size() + 1);
+
+    unlink(socket_path.c_str());
+    if (bind(ipc_socket_fd, reinterpret_cast<sockaddr*>(&socket_address), sizeof(socket_address)) == -1) {
+        wlr_log(WLR_ERROR, "Couldn't bind a name ('%s') to the IPC socket.", socket_address->sun_path);
+        return std::nullopt;
+    }
+
+    if (listen(ipc_socket_fd, SOMAXCONN) == -1) {
+        wlr_log(WLR_ERROR, "Couldn't listen to the IPC socket '%s'.", socket_address->sun_path);
+        return std::nullopt;
+    }
+
+    // add destroy display handling
+    IPCInstance ipc = std::make_unique<IPC>(IPC{
+        server, ipc_socket_fd, std::move(socket_address), std::move(command_callback)
+    });
+    wl_event_loop_add_fd(
+        server->event_loop,
+        ipc_socket_fd,
+        WL_EVENT_READABLE,
+        IPC::handle_client_connection,
+        ipc.get()
+    );
+
+    return ipc;
+}
+
 // This function implements wl_event_loop_fd_func_t
 int ipc_read_command(int fd, [[maybe_unused]] uint32_t mask, void* data)
 {
