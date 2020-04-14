@@ -53,5 +53,6 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, void* da
 
 void layer_surface_popup_destroy_handler(struct wl_listener* listener, void* data);
 void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* data);
+void layer_surface_popup_map_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_LAYERS_H_

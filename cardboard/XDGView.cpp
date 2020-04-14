@@ -108,6 +108,7 @@ void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* 
     } to_add_listeners[] = {
         { &popup->wlr_popup->base->events.destroy, &xdg_popup_destroy_handler },
         { &popup->wlr_popup->base->events.new_popup, &xdg_popup_new_popup_handler },
+        { &popup->wlr_popup->base->events.map, &xdg_popup_map_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -234,4 +235,14 @@ void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data)
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
     create_xdg_popup(server, wlr_popup, popup->parent);
+}
+
+void xdg_popup_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* server = get_server(listener);
+    auto* popup = get_listener_data<XDGPopup*>(listener);
+
+    if (auto* output = popup->parent->get_views_output(server); output) {
+        wlr_surface_send_enter(popup->wlr_popup->base->surface, output->wlr_output);
+    }
 }

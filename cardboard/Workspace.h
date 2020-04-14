@@ -94,6 +94,11 @@ struct Workspace {
     int get_view_wx(View*);
 
     /**
+     * Assigns the workspace to an \a output.
+     */
+    void activate(Output* output);
+
+    /**
      * Marks the workspace as inactive: it is not assigned to any output.
      */
     void deactivate();

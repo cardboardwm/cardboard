@@ -61,7 +61,7 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
         ws_to_assign = &server->create_workspace();
     }
 
-    ws_to_assign->output = &output;
+    ws_to_assign->activate(&output);
 
     // expose the output to the clients
     wlr_output_create_global(output.wlr_output);
@@ -70,10 +70,8 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
 void new_xdg_surface_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
-
     auto* xdg_surface = static_cast<struct wlr_xdg_surface*>(data);
 
-    // ignore popups TODO: don't ignore them
     if (xdg_surface->role != WLR_XDG_SURFACE_ROLE_TOPLEVEL) {
         return;
     }

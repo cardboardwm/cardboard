@@ -56,6 +56,7 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
     } to_add_listeners[] = {
         { &popup->wlr_popup->base->events.destroy, &layer_surface_popup_destroy_handler },
         { &popup->wlr_popup->base->events.new_popup, &layer_surface_popup_new_popup_handler },
+        { &popup->wlr_popup->base->events.map, &layer_surface_popup_map_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -411,4 +412,11 @@ void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* d
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
     create_layer_popup(server, wlr_popup, popup->parent);
+}
+
+void layer_surface_popup_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
+
+    wlr_surface_send_enter(popup->wlr_popup->base->surface, popup->parent->surface->output);
 }

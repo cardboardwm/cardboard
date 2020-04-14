@@ -97,6 +97,9 @@ public:
 
     virtual void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) = 0;
 
+    Output* get_views_output(Server* server);
+    void change_output(Output* old_output, Output* new_output);
+
 protected:
     View()
         : geometry { 0, 0, 0, 0 }

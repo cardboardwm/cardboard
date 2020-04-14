@@ -42,5 +42,6 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
 
 void xdg_popup_destroy_handler(struct wl_listener* listener, void* data);
 void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data);
+void xdg_popup_map_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_XDGVIEW_H_

@@ -141,7 +141,19 @@ int Workspace::get_view_wx(View* view)
     return acc_wx;
 }
 
+void Workspace::activate(Output* new_output)
+{
+    for (const auto& tile : tiles) {
+        tile.view->change_output(output ? *output : nullptr, new_output);
+    }
+
+    output = new_output;
+}
+
 void Workspace::deactivate()
 {
+    for (const auto& tile : tiles) {
+        tile.view->change_output(*output, nullptr);
+    }
     output = std::nullopt;
 }
