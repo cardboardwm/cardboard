@@ -1,3 +1,0 @@
-[submodule "3rdparty/wlroots"]
-	path = 3rdparty/wlroots
-	url = https://github.com/swaywm/wlroots
