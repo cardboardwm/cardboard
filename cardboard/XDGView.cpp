@@ -166,12 +166,8 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
 
     server->listeners.clear_listeners(view);
 
-    // just in case
-    if (auto ws = server->get_views_workspace(view)) {
-        ws->get().remove_view(view);
-    }
+    // unmap handler is guaranteed to be called if the view is mapped
 
-    server->seat.remove_from_focus_stack(view);
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;
 }

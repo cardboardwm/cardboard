@@ -1,6 +1,8 @@
 #ifndef __CARDBOARD_SERVER_H_
 #define __CARDBOARD_SERVER_H_
 
+#include "BuildConfig.h"
+
 extern "C" {
 #include <wayland-server.h>
 #define static
@@ -36,6 +38,10 @@ extern "C" {
 #include "View.h"
 #include "Workspace.h"
 
+#if HAVE_XWAYLAND
+#include <wlr_cpp_fixes/xwayland.h>
+#endif
+
 const std::string_view CARDBOARD_NAME = "cardboard"; ///< The name of the compositor.
 const std::string_view CONFIG_NAME = "cardboardrc"; ///< The name of the config script.
 /// The environment variable for the standard config directory.
@@ -50,6 +56,7 @@ const int WORKSPACE_NR = 4; ///< Default number of pre-initialized workspaces.
  */
 struct Server {
     struct wl_display* wl_display;
+    struct wlr_compositor* compositor;
     struct wlr_backend* backend;
     struct wlr_renderer* renderer;
 
@@ -66,11 +73,12 @@ struct Server {
 
     struct wlr_xdg_shell* xdg_shell;
     struct wlr_layer_shell_v1* layer_shell;
+    struct wlr_xwayland* xwayland;
 
-    /// Holds the active views, ordered by the stacking order.
-    std::list<View*> views; // TODO: check if View's statefulness is needed
-        // change to std::vector if it's not needed +
-        // change in ListenerData from View* to View
+    std::list<View*> views;
+#if HAVE_XWAYLAND
+    std::list<XwaylandORSurface*> xwayland_or_surfaces;
+#endif
 
     std::vector<Workspace> workspaces;
 
@@ -93,6 +101,9 @@ struct Server {
     bool init();
     /// Creates socket file
     bool init_ipc();
+#if HAVE_XWAYLAND
+    void init_xwayland();
+#endif
     /// Runs the config script in background. Executed before Server::init_ipc2.
     bool load_settings();
 

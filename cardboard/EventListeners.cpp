@@ -1,3 +1,5 @@
+#include "BuildConfig.h"
+
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/backend.h>
@@ -11,11 +13,15 @@ extern "C" {
 // keep empty line above to avoid header sorting for this little guy
 #include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
+#include "EventListeners.h"
 #include "Layers.h"
 #include "Listener.h"
 #include "Server.h"
+#include "XDGView.h"
 
-#include "EventListeners.h"
+#if HAVE_XWAYLAND
+#include "Xwayland.h"
+#endif
 
 void new_output_handler(struct wl_listener* listener, void* data)
 {
@@ -117,6 +123,22 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
     ls.surface = layer_surface;
     create_layer(server, std::move(ls));
 }
+
+#if HAVE_XWAYLAND
+void new_xwayland_surface_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* xsurface = static_cast<struct wlr_xwayland_surface*>(data);
+
+    if (xsurface->override_redirect) {
+        create_xwayland_or_surface(server, xsurface);
+        return;
+    }
+
+    wlr_log(WLR_DEBUG, "new xwayland surface title='%s' class='%s'", xsurface->title, xsurface->class_);
+    create_view(server, new XwaylandView(server, xsurface));
+}
+#endif
 
 void new_input_handler(struct wl_listener* listener, void* data)
 {

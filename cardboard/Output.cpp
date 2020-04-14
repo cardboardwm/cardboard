@@ -1,12 +1,10 @@
-#include "Output.h"
-#include "Listener.h"
-#include "Server.h"
+#include "BuildConfig.h"
 
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/backend.h>
-#include <wlr/render/wlr_renderer.h>
 #define static
+#include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_matrix.h>
 #undef static
 #include <wlr/types/wlr_output_layout.h>
@@ -15,6 +13,13 @@ extern "C" {
 #include <array>
 #include <ctime>
 #include <wlr/types/wlr_output.h>
+
+#include "Listener.h"
+#include "Output.h"
+#include "Server.h"
+#if HAVE_XWAYLAND
+#include "Xwayland.h"
+#endif
 
 struct RenderData {
     struct wlr_output* output;
@@ -175,6 +180,25 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
     }
 }
 
+#if HAVE_XWAYLAND
+static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+{
+    auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
+    for (const auto xwayland_or_surface : server->xwayland_or_surfaces) {
+        RenderData rdata = {
+            .output = wlr_output,
+            .renderer = renderer,
+            .ox = xwayland_or_surface->lx - output_box->x,
+            .oy = xwayland_or_surface->ly - output_box->y,
+            .when = now,
+            .server = server
+        };
+
+        wlr_surface_for_each_surface(xwayland_or_surface->xwayland_surface->surface, render_surface, &rdata);
+    }
+}
+#endif
+
 void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
@@ -206,6 +230,10 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     wlr_renderer_scissor(renderer, &(*ws.output)->usable_area);
     render_workspace(server, ws, wlr_output, renderer, &now);
     wlr_renderer_scissor(renderer, nullptr);
+
+#if HAVE_XWAYLAND
+    render_xwayland_or_surface(server, wlr_output, renderer, &now);
+#endif
 
     render_floating(server, wlr_output, renderer, &now);
 

@@ -49,6 +49,13 @@ void new_xdg_surface_handler(struct wl_listener* listener, void* data);
 void new_layer_surface_handler(struct wl_listener* listener, void* data);
 
 /**
+ * \brief Called when a new \c xwayland_surface is spawned by an X client.
+ *
+ * An \c xwayland_surface is a type of surface exposed by the xwayland wlroots system.
+ */
+void new_xwayland_surface_handler(struct wl_listener* listener, void* data);
+
+/**
  * \brief Called when an input device (keyboard, mouse, touchscreen, tablet) is attached.
  *
  * The device is registered within the compositor accordingly.
