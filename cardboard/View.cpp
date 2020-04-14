@@ -23,7 +23,7 @@ Output* View::get_views_output(Server* server)
 
 void View::change_output(Output* old_output, Output* new_output)
 {
-    if (old_output && old_output->wlr_output != new_output->wlr_output) {
+    if (old_output && old_output != new_output) {
         wlr_surface_send_leave(get_surface(), old_output->wlr_output);
     }
 

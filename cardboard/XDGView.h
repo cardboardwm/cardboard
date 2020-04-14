@@ -9,7 +9,7 @@ class XDGView final : public View {
 public:
     struct wlr_xdg_surface* xdg_surface;
     /// Stores listeners that are active only when the view is mapped. They are removed when unmapping.
-    std::array<struct wl_listener*, 3> map_unmap_listeners;
+    std::array<struct wl_listener*, 4> map_unmap_listeners;
 
     XDGView(struct wlr_xdg_surface* xdg_surface);
     ~XDGView() = default;
@@ -39,6 +39,7 @@ void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data);
 
 void xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data);
 void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data);
+void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data);
 
 void xdg_popup_destroy_handler(struct wl_listener* listener, void* data);
 void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data);

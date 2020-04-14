@@ -16,7 +16,8 @@ public:
     Server* server;
 
     struct wlr_xwayland_surface* xwayland_surface;
-    struct wl_listener* commit_listener;
+    /// Stores listeners that are active only when the view is mapped. They are removed when unmapping.
+    std::array<struct wl_listener*, 2> map_unmap_listeners;
 
     XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland_surface);
     ~XwaylandView() = default;
@@ -37,6 +38,7 @@ void xwayland_surface_unmap_handler(struct wl_listener* listener, void* data);
 void xwayland_surface_destroy_handler(struct wl_listener* listener, void* data);
 void xwayland_surface_request_configure_handler(struct wl_listener* listener, void* data);
 void xwayland_surface_commit_handler(struct wl_listener* listener, void* data);
+void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, void* data);
 
 /// An "unmanaged" Xwayland surface. The "OR" stands for Override Redirect. Stuff like menus and tooltips.
 struct XwaylandORSurface {

@@ -2,6 +2,8 @@ extern "C" {
 #include <wlr/util/log.h>
 }
 
+#include <cstring>
+
 #include "Server.h"
 #include "XDGView.h"
 
@@ -139,7 +141,8 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
     } to_add_listeners[] = {
         { &view->xdg_surface->surface->events.commit, xdg_surface_commit_handler },
         { &view->xdg_surface->toplevel->events.request_move, xdg_toplevel_request_move_handler },
-        { &view->xdg_surface->toplevel->events.request_resize, xdg_toplevel_request_resize_handler }
+        { &view->xdg_surface->toplevel->events.request_resize, xdg_toplevel_request_resize_handler },
+        { &view->xdg_surface->toplevel->events.request_fullscreen, xdg_toplevel_request_fullscreen_handler },
     };
 
     for (unsigned long i = 0; i < sizeof(to_add_listeners) / sizeof(*to_add_listeners); i++) {
@@ -159,6 +162,7 @@ void xdg_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] vo
         server->listeners.remove_listener(listener);
     }
 }
+
 void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* view = get_listener_data<XDGView*>(listener);
@@ -171,6 +175,7 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;
 }
+
 void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* view = get_listener_data<XDGView*>(listener);
@@ -178,7 +183,7 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
 
     struct wlr_box new_geo;
     wlr_xdg_surface_get_geometry(view->xdg_surface, &new_geo);
-    if (new_geo.width != view->geometry.width || new_geo.height != view->geometry.height) {
+    if (memcmp(&new_geo, &view->geometry, sizeof(struct wlr_box)) != 0) {
         // the view has set a new size
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
@@ -213,6 +218,14 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
 
     auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
     server->seat.begin_interactive(view, Seat::GrabState::Mode::RESIZE, event->edges);
+}
+
+void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data)
+{
+    auto* view = get_listener_data<XDGView*>(listener);
+    auto* event = static_cast<struct wlr_xdg_toplevel_set_fullscreen_event*>(data);
+
+    wlr_xdg_toplevel_set_fullscreen(view->xdg_surface, event->fullscreen);
 }
 
 void xdg_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)

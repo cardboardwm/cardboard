@@ -112,9 +112,13 @@ void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]]
         .height = view->xwayland_surface->height,
     };
 
-    view->commit_listener = server->listeners.add_listener(
+    view->map_unmap_listeners[0] = server->listeners.add_listener(
         &view->xwayland_surface->surface->events.commit,
         Listener { xwayland_surface_commit_handler, server, view });
+
+    view->map_unmap_listeners[1] = server->listeners.add_listener(
+        &view->xwayland_surface->events.request_fullscreen,
+        Listener { xwayland_surface_request_fullscreen_handler, server, view });
 
     server->map_view(view);
 }
@@ -126,7 +130,9 @@ void xwayland_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused
 
     assert(view->get_surface() && "Cannot unmap unmapped view");
     view->unmap();
-    server->listeners.remove_listener(view->commit_listener);
+    for (auto* wl_listener : view->map_unmap_listeners) {
+        server->listeners.remove_listener(wl_listener);
+    }
 }
 
 void xwayland_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -172,6 +178,13 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
             workspace->get().fit_view_on_screen(server->seat.get_focused_view());
         }
     }
+}
+
+void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    auto* view = get_listener_data<XwaylandView*>(listener);
+
+    wlr_xwayland_surface_set_fullscreen(view->xwayland_surface, view->xwayland_surface->fullscreen);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
