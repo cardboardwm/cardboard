@@ -19,12 +19,16 @@ if get_option('xwayland').enabled() and not wlroots_has_xwayland
 endif
 have_xwayland = xcb.found() and wlroots_has_xwayland
 
+expected_proj = subproject('expected', required: true)
+expected = expected_proj.get_variable('expected_dep')
+
 conf_data = configuration_data()
 conf_data.set10('HAVE_XWAYLAND', have_xwayland)
 
 configure_file(output: 'BuildConfig.h', configuration: conf_data)
 
 cardboard_deps = [
+  expected,
   wayland_server,
   wlroots,
   xkbcommon,
