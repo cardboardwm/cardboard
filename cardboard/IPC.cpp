@@ -23,14 +23,35 @@ std::optional<IPCInstance> create_ipc(
     std::function<std::string(const CommandData&)> command_callback)
 {
     int ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if(ipc_socket_fd == -1)
+    {
+        wlr_log(WLR_ERROR, "Couldn't create ipc socket");
+        return std::nullopt;
+    }
+
+    if (fcntl(ipc_socket_fd, F_SETFD, FD_CLOEXEC) == -1) {
+        wlr_log(WLR_ERROR, "Unable to set CLOEXEC on IPC client socket: %s", strerror(errno));
+        close(ipc_socket_fd);
+        return std::nullopt;
+    }
+
+    if (fcntl(ipc_socket_fd, F_SETFL, O_NONBLOCK) == -1) {
+        wlr_log(WLR_ERROR, "Unable to set O_NONBLOCK on IPC client socket: %s", strerror(errno));
+        close(ipc_socket_fd);
+        return std::nullopt;
+    }
+
+
     std::unique_ptr<sockaddr_un> socket_address = std::make_unique<sockaddr_un>();
 
     socket_address->sun_family = AF_UNIX;
     memcpy(socket_address->sun_path, socket_path.c_str(), socket_path.size() + 1);
 
     unlink(socket_path.c_str());
-    if (bind(ipc_socket_fd, reinterpret_cast<sockaddr*>(&socket_address), sizeof(socket_address)) == -1) {
-        wlr_log(WLR_ERROR, "Couldn't bind a name ('%s') to the IPC socket.", socket_address->sun_path);
+    if (bind(ipc_socket_fd, reinterpret_cast<sockaddr*>(socket_address.get()), sizeof(*socket_address)) == -1) {
+        int err = errno;
+        wlr_log(WLR_ERROR, "Couldn't bind a name ('%s') to the IPC socket. (%d)", socket_address->sun_path, err);
         return std::nullopt;
     }
 
@@ -163,6 +184,16 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
             break;
 
         auto* buffer = new std::byte[client->payload_size];
+        if(ssize_t received = recv(
+            client->client_fd,
+            buffer,
+            client->payload_size,
+            0); received == -1)
+        {
+            wlr_log(WLR_INFO, "couldn't read payload");
+            client->ipc->remove_client(client);
+            return 0;
+        }
         auto command_data = read_command_data(buffer, client->payload_size);
         delete[] buffer;
 
@@ -253,9 +284,9 @@ IPC::Client::~Client()
     // shutdown routine for ipc client
     shutdown(client_fd, SHUT_RDWR);
 
-    if(!readable_event_source)
+    if(readable_event_source)
         wl_event_source_remove(readable_event_source);
 
-    if(!writable_event_source)
+    if(writable_event_source)
         wl_event_source_remove(writable_event_source);
 }

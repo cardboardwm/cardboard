@@ -2,7 +2,8 @@
 
 #include <bit>
 
-using namespace libcardboard::ipc;
+namespace libcardboard::ipc {
+
 
 Header interpret_header(const AlignedHeaderBuffer& buffer)
 {
@@ -39,4 +40,6 @@ AlignedHeaderBuffer create_header_buffer(const Header& header)
     }
 
     return buffer;
+}
+
 }
