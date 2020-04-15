@@ -69,8 +69,8 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
 
     ws_to_assign->activate(&output);
 
-    // expose the output to the clients
-    wlr_output_create_global(output.wlr_output);
+    // the output doesn't need to be exposed as a wayland global
+    // because wlr_output_layout does it for us already
 }
 
 void new_xdg_surface_handler(struct wl_listener* listener, void* data)
