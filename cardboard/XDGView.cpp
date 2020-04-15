@@ -77,16 +77,12 @@ void XDGView::for_each_surface(wlr_surface_iterator_func_t iterator, void* data)
 
 void XDGPopup::unconstrain(Server* server)
 {
-    auto ws = server->get_views_workspace(parent);
-    if (!ws) {
-        return;
-    }
-    auto output = ws->get().output;
+    auto output = server->get_views_workspace(parent).and_then<Output>([](auto& ws) { return ws.output; });
     if (!output) {
         return;
     }
 
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, (*output)->wlr_output);
+    auto* output_box = wlr_output_layout_get_box(server->output_layout, output.unwrap().wlr_output);
 
     // the output box expressed in the coordinate system of the
     // toplevel parent of the popup
@@ -188,10 +184,10 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
-        if (auto workspace = server->get_views_workspace(view)) {
-            workspace->get().arrange_tiles();
-            workspace->get().fit_view_on_screen(server->seat.get_focused_view());
-        }
+        server->get_views_workspace(view).and_then([server](auto& ws) {
+            ws.arrange_tiles();
+            ws.fit_view_on_screen(server->seat.get_focused_view());
+        });
     }
 }
 
@@ -251,7 +247,7 @@ void xdg_popup_map_handler(struct wl_listener* listener, [[maybe_unused]] void* 
     auto* server = get_server(listener);
     auto* popup = get_listener_data<XDGPopup*>(listener);
 
-    if (auto* output = popup->parent->get_views_output(server); output) {
-        wlr_surface_send_enter(popup->wlr_popup->base->surface, output->wlr_output);
-    }
+    popup->parent->get_views_output(server).and_then([popup](const auto& output) {
+        wlr_surface_send_enter(popup->wlr_popup->base->surface, output.wlr_output);
+    });
 }

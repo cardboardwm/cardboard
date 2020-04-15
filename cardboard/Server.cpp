@@ -222,9 +222,9 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
             continue;
         }
 
-        auto views_output = get_views_workspace(view)->get().output;
+        auto views_output = get_views_workspace(view).and_then<Output>([](const auto& ws) { return ws.output; });
         // the view is either tiled in the output holding the cursor, or not tiled at all
-        if (((views_output && (*views_output)->wlr_output == wlr_output) || !views_output)
+        if (((views_output && views_output.unwrap().wlr_output == wlr_output) || !views_output)
             && view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return view;
         }
@@ -251,18 +251,18 @@ void Server::map_view(View* view)
 
     auto* prev_focused = seat.get_focused_view();
 
-    if (auto focused_workspace = seat.get_focused_workspace(this); focused_workspace) {
-        focused_workspace->get().add_view(view, prev_focused);
-    }
+    seat.get_focused_workspace(this).and_then([view, prev_focused](auto& ws) {
+        ws.add_view(view, prev_focused);
+    });
     seat.focus_view(this, view);
 }
 
 void Server::unmap_view(View* view)
 {
     view->mapped = false;
-    if (auto ws = get_views_workspace(view)) {
-        ws->get().remove_view(view);
-    }
+    get_views_workspace(view).and_then([view](Workspace& ws) {
+        ws.remove_view(view);
+    });
 
     seat.hide_view(this, view);
     seat.remove_from_focus_stack(view);
@@ -273,13 +273,13 @@ void Server::move_view_to_front(View* view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](const auto x) { return view == x; }));
 }
 
-std::optional<std::reference_wrapper<Workspace>> Server::get_views_workspace(View* view)
+SafePointer<Workspace> Server::get_views_workspace(View* view)
 {
     if (view->workspace_id < 0) {
-        return std::nullopt;
+        return SafePointer<Workspace>(nullptr);
     }
 
-    return std::ref(workspaces[view->workspace_id]);
+    return workspaces[view->workspace_id];
 }
 
 Workspace& Server::create_workspace()

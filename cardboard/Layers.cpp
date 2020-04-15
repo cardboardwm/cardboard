@@ -248,7 +248,7 @@ void arrange_layers(Server* server, Output* output)
 
     if (memcmp(&usable_area, &output->usable_area, sizeof(struct wlr_box)) != 0) {
         output->usable_area = usable_area;
-        auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && *other.output == output; });
+        auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
         assert(ws_it != server->workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
         if (auto focused_view = server->seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {

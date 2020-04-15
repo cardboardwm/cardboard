@@ -67,7 +67,7 @@ void output_layout_add_handler(struct wl_listener* listener, void* data)
         ws_to_assign = &server->create_workspace();
     }
 
-    ws_to_assign->activate(&output);
+    ws_to_assign->activate(output);
 
     // the output doesn't need to be exposed as a wayland global
     // because wlr_output_layout does it for us already
@@ -104,19 +104,16 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
 
     if (!layer_surface->output) {
         // Assigns output of the focused workspace
-        Output* output = nullptr;
-        auto focused_workspace = server->seat.get_focused_workspace(server);
-        if (focused_workspace && focused_workspace->get().output) {
-            output = *focused_workspace->get().output;
-        }
-        if (!output) {
-            if (server->outputs.empty()) {
-                wlr_layer_surface_v1_close(layer_surface);
-                return;
-            }
-            output = &server->outputs.front();
-        }
-        layer_surface->output = output->wlr_output;
+        server->seat.get_focused_workspace(server)
+            .and_then<Output>([](auto& ws) { return ws.output; })
+            .or_else([server]() {
+                if (server->outputs.empty()) {
+                    return SafePointer<Output>(nullptr);
+                }
+                return SafePointer(server->outputs.front());
+            })
+            .and_then<Output>([layer_surface](auto& output) { layer_surface->output = output.wlr_output; return SafePointer(output); })
+            .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullPointer<Output>; });
     }
 
     LayerSurface ls;

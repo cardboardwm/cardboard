@@ -9,6 +9,8 @@ extern "C" {
 #include <algorithm>
 #include <list>
 
+#include "SafePointer.h"
+
 class View;
 struct Output;
 
@@ -39,7 +41,7 @@ struct Workspace {
      *
      * It's equal to \c std::nullopt if this workspace isn't assigned.
      */
-    std::optional<Output*> output;
+    SafePointer<Output> output;
 
     IndexType index;
 
@@ -96,7 +98,7 @@ struct Workspace {
     /**
      * Assigns the workspace to an \a output.
      */
-    void activate(Output* output);
+    void activate(Output& output);
 
     /**
      * Marks the workspace as inactive: it is not assigned to any output.

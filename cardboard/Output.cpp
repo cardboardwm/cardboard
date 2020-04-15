@@ -61,7 +61,7 @@ void register_output(Server* server, Output&& output_)
 
 void arrange_output(Server* server, Output* output)
 {
-    auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && *other.output == output; });
+    auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
     if (ws_it == server->workspaces.end()) {
         return;
     }
@@ -222,12 +222,12 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    auto& ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return *other.output == output; });
+    auto& ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
 
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
 
-    wlr_renderer_scissor(renderer, &(*ws.output)->usable_area);
+    wlr_renderer_scissor(renderer, &output->usable_area);
     render_workspace(server, ws, wlr_output, renderer, &now);
     wlr_renderer_scissor(renderer, nullptr);
 
@@ -254,7 +254,7 @@ void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void*
     auto* output = get_listener_data<Output*>(listener);
 
     for (auto& ws : server->workspaces) {
-        if (ws.output && *ws.output == output) {
+        if (ws.output && &ws.output.unwrap() == output) {
             ws.deactivate();
             break;
         }

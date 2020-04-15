@@ -8,6 +8,7 @@ extern "C" {
 #include "Output.h"
 #include "View.h"
 #include "Workspace.h"
+#include "SafePointer.h"
 
 Workspace::Workspace(IndexType index)
     : index(index)
@@ -57,8 +58,8 @@ void Workspace::arrange_tiles()
     }
 
     int acc_width = 0;
-    const auto* output_box = wlr_output_layout_get_box(output_layout, (*output)->wlr_output);
-    struct wlr_box usable_area = (*output)->usable_area;
+    const auto* output_box = wlr_output_layout_get_box(output_layout, output.unwrap().wlr_output);
+    const struct wlr_box& usable_area = output.unwrap().usable_area;
 
     for (auto& tile : tiles) {
         tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
@@ -75,13 +76,12 @@ bool Workspace::is_spanning()
         return false;
     }
 
-    assert(output.has_value());
-
-    const auto& usable_area = (*output)->usable_area;
+    const auto& output = this->output.unwrap();
+    const auto& usable_area = output.usable_area;
 
     for (const auto& tile : tiles) {
         double ox = tile.view->x + tile.view->geometry.x, oy = tile.view->y + tile.view->geometry.y;
-        wlr_output_layout_output_coords(output_layout, (*output)->wlr_output, &ox, &oy);
+        wlr_output_layout_output_coords(output_layout, output.wlr_output, &ox, &oy);
 
         if (ox < usable_area.x || ox + tile.view->geometry.width > usable_area.x + usable_area.width) {
             return true;
@@ -101,13 +101,12 @@ void Workspace::fit_view_on_screen(View* view)
         return;
     }
 
-    assert(output.has_value());
-
-    const auto* output_box = wlr_output_layout_get_box(output_layout, (*output)->wlr_output);
+    const auto& output = this->output.unwrap();
+    const auto* output_box = wlr_output_layout_get_box(output_layout, output.wlr_output);
     if (output_box == nullptr) {
         return;
     }
-    const auto usable_area = (*output)->usable_area;
+    const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
     int vx = view->x + view->geometry.x;
 
@@ -141,19 +140,19 @@ int Workspace::get_view_wx(View* view)
     return acc_wx;
 }
 
-void Workspace::activate(Output* new_output)
+void Workspace::activate(Output& new_output)
 {
     for (const auto& tile : tiles) {
-        tile.view->change_output(output ? *output : nullptr, new_output);
+        tile.view->change_output(output, new_output);
     }
 
-    output = new_output;
+    output = SafePointer<Output>(new_output);
 }
 
 void Workspace::deactivate()
 {
     for (const auto& tile : tiles) {
-        tile.view->change_output(*output, nullptr);
+        tile.view->change_output(output.unwrap(), NullPointer<Output>);
     }
-    output = std::nullopt;
+    output = NullPointer<Output>;
 }

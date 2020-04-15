@@ -101,19 +101,16 @@ void Seat::hide_view(Server* server, View* view)
 {
     // focus last focused window mapped to an active workspace
     if (get_focused_view() == view && !focus_stack.empty()) {
-        View* to_focus = nullptr;
-        for (View* v : focus_stack) {
+        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [server, view](auto* v) -> bool {
             if (v == view || !v->mapped) {
-                continue;
+                return false;
             }
 
-            if (auto ws = server->get_views_workspace(v); ws && ws->get().output) {
-                to_focus = v;
-                break;
-            }
+            return server->get_views_workspace(v).template and_then<Output>([](const auto& ws) { return ws.output; }).has_value();
+        });
+        if (to_focus != focus_stack.end()) {
+            focus_view(server, *to_focus);
         }
-
-        focus_view(server, to_focus);
     }
 }
 
@@ -167,9 +164,7 @@ void Seat::focus_view(Server* server, View* view)
     // the seat will send keyboard events to the view automatically
     keyboard_notify_enter(view->get_surface());
 
-    if (auto ws = server->get_views_workspace(view)) {
-        ws->get().fit_view_on_screen(view);
-    }
+    server->get_views_workspace(view).and_then([view](auto& ws) { ws.fit_view_on_screen(view); });
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
@@ -208,8 +203,8 @@ void Seat::focus_by_offset(Server* server, int offset)
         return;
     }
 
-    auto it = ws->get().find_tile(focused_view);
-    if (int index = std::distance(ws->get().tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws->get().tiles.size())) {
+    auto it = ws.unwrap().find_tile(focused_view);
+    if (int index = std::distance(ws.unwrap().tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.unwrap().tiles.size())) {
         // out of bounds
         return;
     }
@@ -320,15 +315,15 @@ void Seat::end_interactive()
     grab_state = std::nullopt;
 }
 
-std::optional<std::reference_wrapper<Workspace>> Seat::get_focused_workspace(Server* server)
+SafePointer<Workspace> Seat::get_focused_workspace(Server* server)
 {
     for (auto& ws : server->workspaces) {
-        if (ws.output && wlr_output_layout_contains_point(server->output_layout, (*ws.output)->wlr_output, cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+        if (ws.output && wlr_output_layout_contains_point(server->output_layout, ws.output.unwrap().wlr_output, cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
 
-    return std::nullopt;
+    return SafePointer<Workspace>(nullptr);
 }
 
 void Seat::keyboard_notify_enter(struct wlr_surface* surface)

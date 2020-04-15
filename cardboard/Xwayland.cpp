@@ -54,11 +54,13 @@ void XwaylandView::resize(int width, int height)
 {
     assert(mapped);
 
-    auto* output = *(server->get_views_workspace(this)->get().output);
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, output->wlr_output);
-
-    wlr_xwayland_surface_configure(
-        xwayland_surface, x + output_box->x, y + output_box->y, width, height);
+    server->get_views_workspace(this)
+        .and_then<Output>([](const auto& ws) { return ws.output; })
+        .and_then([this, width, height](const auto& output) {
+            auto* output_box = wlr_output_layout_get_box(server->output_layout, output.wlr_output);
+            wlr_xwayland_surface_configure(
+                xwayland_surface, x + output_box->x, y + output_box->y, width, height);
+        });
 }
 
 void XwaylandView::prepare(Server* server)
@@ -158,7 +160,7 @@ void xwayland_surface_request_configure_handler(struct wl_listener* listener, vo
     view->geometry.width = ev->width;
     view->geometry.height = ev->height;
     view->resize(view->geometry.width, view->geometry.height);
-    server->get_views_workspace(view)->get().arrange_tiles();
+    server->get_views_workspace(view).and_then([](auto& ws) { ws.arrange_tiles(); });
 }
 
 void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -173,10 +175,10 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
         view->geometry.width = xsurface->width;
         view->geometry.height = xsurface->height;
 
-        if (auto workspace = server->get_views_workspace(view)) {
-            workspace->get().arrange_tiles();
-            workspace->get().fit_view_on_screen(server->seat.get_focused_view());
-        }
+        server->get_views_workspace(view).and_then([server](auto& ws) {
+            ws.arrange_tiles();
+            ws.fit_view_on_screen(server->seat.get_focused_view());
+        });
     }
 }
 

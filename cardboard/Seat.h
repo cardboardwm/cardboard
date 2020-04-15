@@ -17,6 +17,7 @@ extern "C" {
 #include "Cursor.h"
 #include "Keyboard.h"
 #include "View.h"
+#include "SafePointer.h"
 
 struct Server;
 
@@ -81,7 +82,7 @@ struct Seat {
     void end_interactive();
 
     /// Returns the workspace under the cursor.
-    std::optional<std::reference_wrapper<Workspace>> get_focused_workspace(Server* server);
+    SafePointer<Workspace> get_focused_workspace(Server* server);
 
     /// Considers a \a client as exclusive. Only the surfaces of the \a client will get input events.
     void set_exclusive_client(Server* server, struct wl_client* client);
