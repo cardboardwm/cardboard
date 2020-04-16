@@ -5,7 +5,7 @@ project(
   license: 'XXX',
   default_options: [
     'c_std=c17',
-    'cpp_std=gnu++2a',
+    'cpp_std=c++2a',
     'warning_level=2',
     'werror=true',
     'default_library=static'
