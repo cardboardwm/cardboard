@@ -108,12 +108,12 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
             .and_then<Output>([](auto& ws) { return ws.output; })
             .or_else([server]() {
                 if (server->outputs.empty()) {
-                    return SafePointer<Output>(nullptr);
+                    return OptionalRef<Output>(nullptr);
                 }
-                return SafePointer(server->outputs.front());
+                return OptionalRef(server->outputs.front());
             })
-            .and_then<Output>([layer_surface](auto& output) { layer_surface->output = output.wlr_output; return SafePointer(output); })
-            .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullPointer<Output>; });
+            .and_then<Output>([layer_surface](auto& output) { layer_surface->output = output.wlr_output; return OptionalRef(output); })
+            .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullRef<Output>; });
     }
 
     LayerSurface ls;

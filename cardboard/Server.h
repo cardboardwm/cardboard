@@ -34,7 +34,7 @@ extern "C" {
 #include "Layers.h"
 #include "Listener.h"
 #include "Output.h"
-#include "SafePointer.h"
+#include "OptionalRef.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
@@ -126,7 +126,7 @@ struct Server {
     void move_view_to_front(View* view);
 
     /// Returns the workspace in which the given \a view resides, if any.
-    SafePointer<Workspace> get_views_workspace(View* view);
+    OptionalRef<Workspace> get_views_workspace(View* view);
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
 

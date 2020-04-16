@@ -317,7 +317,7 @@ void Seat::end_interactive()
     grab_state = std::nullopt;
 }
 
-SafePointer<Workspace> Seat::get_focused_workspace(Server* server)
+OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
 {
     for (auto& ws : server->workspaces) {
         if (ws.output && wlr_output_layout_contains_point(server->output_layout, ws.output.unwrap().wlr_output, cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
@@ -325,7 +325,7 @@ SafePointer<Workspace> Seat::get_focused_workspace(Server* server)
         }
     }
 
-    return SafePointer<Workspace>(nullptr);
+    return OptionalRef<Workspace>(nullptr);
 }
 
 void Seat::keyboard_notify_enter(struct wlr_surface* surface)

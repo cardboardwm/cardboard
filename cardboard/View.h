@@ -97,8 +97,8 @@ public:
 
     virtual void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) = 0;
 
-    SafePointer<Output> get_views_output(Server* server);
-    void change_output(SafePointer<Output> old_output, SafePointer<Output> new_output);
+    OptionalRef<Output> get_views_output(Server* server);
+    void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
 
 protected:
     View()

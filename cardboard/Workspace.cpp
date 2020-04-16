@@ -6,7 +6,7 @@ extern "C" {
 #include <cassert>
 
 #include "Output.h"
-#include "SafePointer.h"
+#include "OptionalRef.h"
 #include "View.h"
 #include "Workspace.h"
 
@@ -146,13 +146,13 @@ void Workspace::activate(Output& new_output)
         tile.view->change_output(output, new_output);
     }
 
-    output = SafePointer<Output>(new_output);
+    output = OptionalRef<Output>(new_output);
 }
 
 void Workspace::deactivate()
 {
     for (const auto& tile : tiles) {
-        tile.view->change_output(output.unwrap(), NullPointer<Output>);
+        tile.view->change_output(output.unwrap(), NullRef<Output>);
     }
-    output = NullPointer<Output>;
+    output = NullRef<Output>;
 }

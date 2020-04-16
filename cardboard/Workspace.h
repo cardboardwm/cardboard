@@ -9,7 +9,7 @@ extern "C" {
 #include <algorithm>
 #include <list>
 
-#include "SafePointer.h"
+#include "OptionalRef.h"
 
 class View;
 struct Output;
@@ -41,7 +41,7 @@ struct Workspace {
      *
      * It's equal to \c std::nullopt if this workspace isn't assigned.
      */
-    SafePointer<Output> output;
+    OptionalRef<Output> output;
 
     IndexType index;
 

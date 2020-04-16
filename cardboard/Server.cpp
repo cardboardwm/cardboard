@@ -273,10 +273,10 @@ void Server::move_view_to_front(View* view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](const auto x) { return view == x; }));
 }
 
-SafePointer<Workspace> Server::get_views_workspace(View* view)
+OptionalRef<Workspace> Server::get_views_workspace(View* view)
 {
     if (view->workspace_id < 0) {
-        return SafePointer<Workspace>(nullptr);
+        return OptionalRef<Workspace>(nullptr);
     }
 
     return workspaces[view->workspace_id];
