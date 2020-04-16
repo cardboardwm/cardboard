@@ -1,10 +1,8 @@
 inc = include_directories('include')
 
-capnp = dependency('capnp')
-kj = dependency('kj')
+cereal = dependency('cereal')
 
 sources = files(
-    'src/command.capnp.c++',
     'src/command_protocol.cpp',
     'src/ipc.cpp',
 )
@@ -16,5 +14,5 @@ libcardboard = library(
     sources,
     include_directories: inc,
     install: true,
-    dependencies: [capnp, kj]
+    dependencies: [cereal]
 )

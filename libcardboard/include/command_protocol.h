@@ -57,18 +57,23 @@ struct bind {
     }
 
     bind(bind&&) = default;
+    bind& operator = (bind&&) = default;
+
+    bind& operator=(const bind& other)
+    {
+        if(&other == this)
+            return *this;
+
+        modifiers = other.modifiers;
+        key = other.key;
+        command = std::make_unique<CommandData>(*other.command);
+
+        return *this;
+    }
+
 };
 }
 
-/**
- *  \brief Max size of a command message
- */
-inline const int MAX_MESSAGE_SIZE = 8192;
-
-/**
- * \brief Deserializes data from a file descriptor
- */
-std::optional<CommandData> read_command_data(int fd);
 
 /**
  * \brief Deserializes data from a pointer
