@@ -7,6 +7,7 @@
 
 #include <cardboard_common/IPC.h>
 #include <command_protocol.h>
+#include <ipc.h>
 
 #include "parse_arguments.h"
 
@@ -66,9 +67,15 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    char answer[BUFSIZ];
-    if (recv(sock_fd, answer, sizeof(answer), 0) > 0) {
-        std::cout << answer << std::flush;
+    libcardboard::ipc::AlignedHeaderBuffer buffer;
+    if(recv(sock_fd, buffer.data(), libcardboard::ipc::HEADER_SIZE, 0) == libcardboard::ipc::HEADER_SIZE)
+    {
+        libcardboard::ipc::Header header = libcardboard::ipc::interpret_header(buffer);
+        auto* response_buffer = new std::byte[header.incoming_bytes];
+        if (recv(sock_fd, response_buffer, sizeof(header.incoming_bytes), 0) == header.incoming_bytes) {
+            std::cout << response_buffer << std::flush;
+        }
+
     }
 
     close(sock_fd);
