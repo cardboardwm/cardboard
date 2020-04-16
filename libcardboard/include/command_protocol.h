@@ -7,6 +7,8 @@
 #include <variant>
 #include <vector>
 
+#include <tl/expected.hpp>
+
 namespace CommandArguments {
 struct quit {
 };
@@ -78,12 +80,12 @@ struct bind {
 /**
  * \brief Deserializes data from a pointer
  */
-std::optional<CommandData> read_command_data(void* data, size_t);
+tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
 
 
 /**
  * \brief Serializes and write data to a file descriptor.
  */
-bool write_command_data(int fd, const CommandData&);
+tl::expected<void, std::string> write_command_data(int fd, const CommandData&);
 
 #endif //BUILD_LIBCOMMAND_PROTOCOL_COMMAND_H

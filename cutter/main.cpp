@@ -51,21 +51,21 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    std::optional<CommandData> command_data = parse_arguments(argc, argv);
+    tl::expected<CommandData, std::string> command_data = parse_arguments(argc, argv);
 
     if (!command_data.has_value()) {
-        std::cerr << "Unable to parse data" << std::endl;
+        std::cerr << "Unable to parse data: " << command_data.error() << std::endl;
         close(sock_fd);
         return EXIT_FAILURE;
     }
 
-    bool written = write_command_data(sock_fd, *command_data);
-
-    if (!written) {
-        std::cerr << "Failed to write data" << std::endl;
-        close(sock_fd);
-        return EXIT_FAILURE;
-    }
+    write_command_data(sock_fd, *command_data).map_error(
+        [sock_fd](const std::string& error){
+            std::cerr << "error: " << error << std::endl;
+            close(sock_fd);
+            return EXIT_FAILURE;
+        }
+    );
 
     libcardboard::ipc::AlignedHeaderBuffer buffer;
     if(recv(sock_fd, buffer.data(), libcardboard::ipc::HEADER_SIZE, 0) == libcardboard::ipc::HEADER_SIZE)

@@ -13,32 +13,34 @@
 #include <command_protocol.h>
 
 namespace detail {
-std::optional<CommandData> parse_arguments(std::vector<std::string> arguments);
+using namespace std::string_literals;
 
-std::optional<CommandData> parse_quit(const std::vector<std::string>&)
+tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments);
+
+    tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>&)
 {
     return CommandArguments::quit {};
 }
 
-std::optional<CommandData> parse_focus(const std::vector<std::string>& args)
+tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string>& args)
 {
     if (args.empty())
-        return std::nullopt;
+        return tl::unexpected("not enough arguments"s);
 
     if (args[0] == "left")
         return CommandArguments::focus { CommandArguments::focus::Direction::Left };
     else if (args[0] == "right")
         return CommandArguments::focus { CommandArguments::focus::Direction::Right };
 
-    return std::nullopt;
+    return tl::unexpected("unrecognized word '"s + args[0] + "'");
 }
 
-std::optional<CommandData> parse_exec(const std::vector<std::string>& args)
+tl::expected<CommandData, std::string> parse_exec(const std::vector<std::string>& args)
 {
     return CommandArguments::exec { args };
 }
 
-std::optional<CommandData> parse_bind(const std::vector<std::string>& args)
+tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>& args)
 {
     static const auto find_mod_key = [](const std::string& key) {
         static const std::unordered_set<std::string> mod_keys = { "shift", "ctrl", "alt", "super", "caps", "mod2", "mod3", "mod5" };
@@ -51,7 +53,7 @@ std::optional<CommandData> parse_bind(const std::vector<std::string>& args)
     auto locale = std::locale("");
 
     if (args.size() < 2)
-        return std::nullopt;
+        return tl::unexpected("not enough arguments"s);
 
     size_t pos = 0;
     while (pos < args[0].size()) {
@@ -76,7 +78,7 @@ std::optional<CommandData> parse_bind(const std::vector<std::string>& args)
     auto command_data = parse_arguments(sub_command_args);
 
     if (!command_data.has_value())
-        return std::nullopt;
+        return tl::unexpected("could not parse sub command: \n"s + command_data.error());
 
     return CommandArguments::bind {
         std::move(modifiers),
@@ -85,7 +87,7 @@ std::optional<CommandData> parse_bind(const std::vector<std::string>& args)
     };
 }
 
-using parse_f = std::optional<CommandData> (*)(const std::vector<std::string>&);
+using parse_f = tl::expected<CommandData, std::string>(*)(const std::vector<std::string>&);
 static std::unordered_map<std::string, parse_f> parse_table = {
     { "quit", parse_quit },
     { "focus", parse_focus },
@@ -93,21 +95,21 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "bind", parse_bind },
 };
 
-std::optional<CommandData> parse_arguments(std::vector<std::string> arguments)
+tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments)
 {
     if (arguments.empty())
-        return std::nullopt;
+        return tl::unexpected("not enough arguments"s);
 
     if (auto it = detail::parse_table.find(arguments[0]); it != detail::parse_table.end()) {
         arguments.erase(arguments.begin());
         return (*it->second)(arguments);
     }
 
-    return std::nullopt;
+    return tl::unexpected("unknown command '"s + arguments[0] + "'");
 }
 }
 
-std::optional<CommandData> parse_arguments(int argc, char* argv[])
+tl::expected<CommandData, std::string> parse_arguments(int argc, char* argv[])
 {
     std::vector<std::string> arguments;
 

@@ -7,4 +7,5 @@ tmp/
 
 build
 subprojects/wlroots
+subprojects/expected
 compile_commands.json

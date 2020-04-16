@@ -194,16 +194,18 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
             client->ipc->remove_client(client);
             return 0;
         }
-        auto command_data = read_command_data(buffer, client->payload_size);
+        read_command_data(buffer, client->payload_size)
+            .map([client](const CommandData& command_data){
+                client->message = client->ipc->command_callback(command_data);
+            })
+            .map_error([client](const std::string& error){
+                using namespace std::string_literals;
+                wlr_log(WLR_INFO, "unable to parse command: %s", error.c_str());
+                client->message = "Unable to parse command: " + error;
+            });
         delete[] buffer;
 
-        if(!command_data.has_value())
-        {
-            wlr_log(WLR_INFO, "unable to parse command");
-            client->message = "Unable to parse command";
-        }
-        else
-            client->message = client->ipc->command_callback(*command_data);
+
 
         client->writable_event_source = wl_event_loop_add_fd(
             client->ipc->server->event_loop,
