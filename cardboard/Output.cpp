@@ -136,12 +136,12 @@ static void render_workspace(Server* server, Workspace& ws, struct wlr_output* w
     }
 }
 
-static void render_floating(Server* server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_floating(Server* server, View* ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
     // render stacked windows
     for (auto it = server->views.rbegin(); it != server->views.rend(); it++) {
         auto view = *it;
-        if (!view->mapped || view->workspace_id >= 0) {
+        if (!view->mapped || view->workspace_id >= 0 || (ancestor && !view->is_transient_for(ancestor))) {
             // don't render unmapped views or views assigned to workspaces
             continue;
         }
@@ -223,21 +223,27 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     wlr_renderer_clear(renderer, color.data());
 
     auto& ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
+    if (ws.fullscreen_view) {
+        render_workspace(server, ws, wlr_output, renderer, &now);
+#if HAVE_XWAYLAND
+        render_xwayland_or_surface(server, wlr_output, renderer, &now);
+#endif
+        render_floating(server, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
+    } else {
+        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
+        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
 
-    render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
-    render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
-
-    wlr_renderer_scissor(renderer, &output->usable_area);
-    render_workspace(server, ws, wlr_output, renderer, &now);
-    wlr_renderer_scissor(renderer, nullptr);
+        wlr_renderer_scissor(renderer, &output->usable_area);
+        render_workspace(server, ws, wlr_output, renderer, &now);
+        wlr_renderer_scissor(renderer, nullptr);
 
 #if HAVE_XWAYLAND
-    render_xwayland_or_surface(server, wlr_output, renderer, &now);
+        render_xwayland_or_surface(server, wlr_output, renderer, &now);
 #endif
 
-    render_floating(server, wlr_output, renderer, &now);
-
-    render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
+        render_floating(server, nullptr, wlr_output, renderer, &now);
+        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
+    }
     render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
 
     // in case of software rendered cursor, render it

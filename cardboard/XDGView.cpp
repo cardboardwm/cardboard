@@ -71,9 +71,42 @@ void XDGView::set_activated(bool activated)
     wlr_xdg_toplevel_set_activated(xdg_surface, activated);
 }
 
+void XDGView::set_fullscreen(bool fullscreen)
+{
+    wlr_xdg_toplevel_set_fullscreen(xdg_surface, fullscreen);
+}
+
 void XDGView::for_each_surface(wlr_surface_iterator_func_t iterator, void* data)
 {
     wlr_xdg_surface_for_each_surface(xdg_surface, iterator, data);
+}
+
+bool XDGView::is_transient_for(View* ancestor)
+{
+    auto* xdg_ancestor = dynamic_cast<XDGView*>(ancestor);
+    if (xdg_ancestor == nullptr) {
+        return false;
+    }
+
+    auto* surface = xdg_surface;
+    while (surface && surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL) {
+        if (surface->toplevel->parent == xdg_ancestor->xdg_surface) {
+            return true;
+        }
+        surface = surface->toplevel->parent;
+    }
+
+    return false;
+}
+
+void XDGView::close_popups()
+{
+    struct wlr_xdg_popup* popup;
+    struct wlr_xdg_popup* tmp;
+    wl_list_for_each_safe(popup, tmp, &xdg_surface->popups, link)
+    {
+        wlr_xdg_popup_destroy(popup->base);
+    }
 }
 
 void XDGPopup::unconstrain(Server* server)
@@ -190,6 +223,13 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
             ws.fit_view_on_screen(server->seat.get_focused_view());
         });
     }
+    server->get_views_workspace(view).and_then([view](auto& ws) {
+        if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
+            wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
+            view->resize(view->saved_size->first, view->saved_size->second);
+            view->saved_size = std::nullopt;
+        }
+    });
 }
 
 void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data)
@@ -219,10 +259,20 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
 
 void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data)
 {
+    auto* server = get_server(listener);
     auto* view = get_listener_data<XDGView*>(listener);
     auto* event = static_cast<struct wlr_xdg_toplevel_set_fullscreen_event*>(data);
 
-    wlr_xdg_toplevel_set_fullscreen(view->xdg_surface, event->fullscreen);
+    bool set = event->fullscreen;
+    server->get_views_workspace(view)
+        .and_then<Workspace>([view, set](auto& ws) {
+            ws.set_fullscreen_view(set ? view : nullptr);
+            return OptionalRef(ws);
+        })
+        .or_else([view, set]() {
+            view->set_fullscreen(set);
+            return NullRef<Workspace>;
+        });
 }
 
 void xdg_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)

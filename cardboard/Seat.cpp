@@ -136,8 +136,20 @@ void Seat::focus_view(Server* server, View* view)
     if (prev_view == view) {
         return; // already focused
     }
+
+    // if view is null, ws_ref is NullRef
+    auto ws_ref = server->get_views_workspace(view);
+    // deny setting focus to a view which is hidden by a fullscreen view
+    if (ws_ref && ws_ref.unwrap().fullscreen_view && &ws_ref.unwrap().fullscreen_view.unwrap() != view) {
+        // unless it's transient for the fullscreened view
+        if (!view->is_transient_for(&ws_ref.unwrap().fullscreen_view.unwrap())) {
+            return;
+        }
+    }
+
     if (prev_view) {
         // deactivate previous surface
+        prev_view->close_popups();
         prev_view->set_activated(false);
         wlr_seat_keyboard_clear_focus(wlr_seat);
     }

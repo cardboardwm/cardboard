@@ -9,6 +9,8 @@ extern "C" {
 }
 
 #include <list>
+#include <optional>
+#include <utility>
 
 #include "Workspace.h"
 
@@ -63,6 +65,8 @@ public:
      * The change happens in xdg_surface_commit_handler().
      */
     struct wlr_box geometry;
+    /// Saved size before fullscreen;
+    std::optional<std::pair<int, int>> saved_size;
 
     /// The id of the workspace this View is assigned to. Set to -1 if none.
     Workspace::IndexType workspace_id;
@@ -95,10 +99,25 @@ public:
     /// Set activated (focused) status to \a activated.
     virtual void set_activated(bool activated) = 0;
 
+    /// Set fullscreen status to \a fullscreen.
+    virtual void set_fullscreen(bool fullscreen) = 0;
+
     virtual void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) = 0;
 
+    /// Returns true if this view is a descendant of \a ancestor.
+    virtual bool is_transient_for(View* ancestor) = 0;
+
+    /// Closes currently active popups.
+    virtual void close_popups() = 0;
+
+    /// Returns the output where this view is drawn on.
     OptionalRef<Output> get_views_output(Server* server);
+
+    /// Marks the change of output where this view is drawn.
     void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
+
+    /// Saves the size of the view before becoming fullscreen.
+    void save_size(std::pair<int, int>&& to_save);
 
 protected:
     View()

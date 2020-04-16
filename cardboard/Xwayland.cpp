@@ -89,9 +89,37 @@ void XwaylandView::set_activated(bool activated)
     wlr_xwayland_set_seat(server->xwayland, server->seat.wlr_seat);
 }
 
+void XwaylandView::set_fullscreen(bool fullscreen)
+{
+    wlr_xwayland_surface_set_fullscreen(xwayland_surface, fullscreen);
+}
+
 void XwaylandView::for_each_surface(wlr_surface_iterator_func_t iterator, void* data)
 {
     wlr_surface_for_each_surface(xwayland_surface->surface, iterator, data);
+}
+
+bool XwaylandView::is_transient_for(View* ancestor)
+{
+    auto* xwayland_ancestor = dynamic_cast<XwaylandView*>(ancestor);
+    if (xwayland_ancestor == nullptr) {
+        return false;
+    }
+
+    auto* surface = xwayland_surface;
+    while (surface != nullptr) {
+        if (surface->parent == xwayland_ancestor->xwayland_surface) {
+            return true;
+        }
+        surface = surface->parent;
+    }
+
+    return false;
+}
+
+void XwaylandView::close_popups()
+{
+    // nothing!
 }
 
 void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -181,13 +209,30 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
             ws.fit_view_on_screen(server->seat.get_focused_view());
         });
     }
+    server->get_views_workspace(view).and_then([view](auto& ws) {
+        if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
+            wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
+            view->resize(view->saved_size->first, view->saved_size->second);
+            view->saved_size = std::nullopt;
+        }
+    });
 }
 
 void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
 
-    wlr_xwayland_surface_set_fullscreen(view->xwayland_surface, view->xwayland_surface->fullscreen);
+    bool set = view->xwayland_surface->fullscreen;
+    server->get_views_workspace(view)
+        .and_then<Workspace>([view, set](auto& ws) {
+            ws.set_fullscreen_view(set ? view : nullptr);
+            return OptionalRef(ws);
+        })
+        .or_else([view, set]() {
+            view->set_fullscreen(set);
+            return NullRef<Workspace>;
+        });
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

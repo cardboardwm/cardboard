@@ -69,7 +69,7 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
     popup->unconstrain(server);
 }
 
-bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const
+bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surf, double& sx, double& sy) const
 {
     double layer_x = lx - geometry.x;
     double layer_y = ly - geometry.y;
@@ -81,7 +81,7 @@ bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_sur
     if (surface_ != nullptr) {
         sx = sx_;
         sy = sy_;
-        surface = surface_;
+        surf = surface_;
         return true;
     }
 

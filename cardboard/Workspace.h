@@ -8,6 +8,7 @@ extern "C" {
 
 #include <algorithm>
 #include <list>
+#include <optional>
 
 #include "OptionalRef.h"
 
@@ -37,11 +38,14 @@ struct Workspace {
     struct wlr_output_layout* output_layout;
 
     /**
-     * The output assigned to this workspace (or the output to which this workspace is assigned).
+     * \brief The output assigned to this workspace (or the output to which this workspace is assigned).
      *
      * It's equal to \c std::nullopt if this workspace isn't assigned.
      */
     OptionalRef<Output> output;
+    /// The currently full screened view, if any.
+    OptionalRef<View> fullscreen_view;
+    std::optional<std::pair<int, int>> fullscreen_original_size;
 
     IndexType index;
 
@@ -94,6 +98,9 @@ struct Workspace {
     * be it off-screen or not.
     */
     int get_view_wx(View*);
+
+    /// Sets \a view as the currently fullscreen view. If null, the fullscreen view will be cleared, if any.
+    void set_fullscreen_view(View* view);
 
     /**
      * Assigns the workspace to an \a output.

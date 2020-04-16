@@ -5,8 +5,8 @@ extern "C" {
 #include <algorithm>
 #include <cassert>
 
-#include "Output.h"
 #include "OptionalRef.h"
+#include "Output.h"
 #include "View.h"
 #include "Workspace.h"
 
@@ -46,6 +46,9 @@ void Workspace::add_view(View* view, View* next_to)
 
 void Workspace::remove_view(View* view)
 {
+    if (fullscreen_view && &fullscreen_view.unwrap() == view) {
+        fullscreen_view = NullRef<View>;
+    }
     tiles.remove_if([view](auto& other) { return other.view == view; });
 
     arrange_tiles();
@@ -59,6 +62,14 @@ void Workspace::arrange_tiles()
 
     int acc_width = 0;
     const auto* output_box = wlr_output_layout_get_box(output_layout, output.unwrap().wlr_output);
+    if (fullscreen_view) {
+        // make the view fill the screen if fullscreen and return
+        auto& view = fullscreen_view.unwrap();
+        view.x = output_box->x - view.geometry.x;
+        view.y = output_box->y - view.geometry.y;
+        view.resize(output_box->width, output_box->height);
+        return;
+    }
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
     for (auto& tile : tiles) {
@@ -93,6 +104,12 @@ bool Workspace::is_spanning()
 
 void Workspace::fit_view_on_screen(View* view)
 {
+    // don't do anything if we have a fullscreened view or the previously
+    // fullscreened view hasn't been restored
+    if (fullscreen_view.has_value() || view->saved_size.has_value()) {
+        return;
+    }
+
     if (view == nullptr) {
         return;
     }
@@ -138,6 +155,20 @@ int Workspace::get_view_wx(View* view)
     }
 
     return acc_wx;
+}
+
+void Workspace::set_fullscreen_view(View* view)
+{
+    fullscreen_view.and_then([](auto& fview) {
+        fview.set_fullscreen(false);
+    });
+    if (view != nullptr) {
+        view->save_size({ view->geometry.width, view->geometry.height });
+        view->set_fullscreen(true);
+    }
+    fullscreen_view = OptionalRef(view);
+
+    arrange_tiles();
 }
 
 void Workspace::activate(Output& new_output)

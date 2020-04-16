@@ -275,8 +275,8 @@ void Server::move_view_to_front(View* view)
 
 OptionalRef<Workspace> Server::get_views_workspace(View* view)
 {
-    if (view->workspace_id < 0) {
-        return OptionalRef<Workspace>(nullptr);
+    if (view == nullptr || view->workspace_id < 0) {
+        return NullRef<Workspace>;
     }
 
     return workspaces[view->workspace_id];

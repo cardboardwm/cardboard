@@ -27,7 +27,10 @@ public:
     void resize(int width, int height);
     void prepare(Server* server);
     void set_activated(bool activated);
+    void set_fullscreen(bool fullscreen);
     void for_each_surface(wlr_surface_iterator_func_t iterator, void* data);
+    bool is_transient_for(View* ancestor);
+    void close_popups();
 
     void destroy();
     void unmap();
