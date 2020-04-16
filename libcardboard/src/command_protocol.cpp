@@ -63,9 +63,12 @@ tl::expected<void, std::string> write_command_data(int fd, const CommandData& co
     using namespace std::string_literals;
 
     std::stringstream buffer_stream;
-    cereal::PortableBinaryOutputArchive archive{buffer_stream};
 
-    archive(command_data);
+    {
+        cereal::PortableBinaryOutputArchive archive{buffer_stream};
+        archive(command_data);
+    }
+
     std::string buffer = buffer_stream.str();
 
     libcardboard::ipc::AlignedHeaderBuffer header_buffer =
