@@ -11,6 +11,7 @@ XDGView::XDGView(struct wlr_xdg_surface* xdg_surface)
     : View()
     , xdg_surface(xdg_surface)
 {
+    xdg_surface->data = this;
 }
 
 struct wlr_surface* XDGView::get_surface()

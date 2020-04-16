@@ -12,6 +12,7 @@ void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
     cursor->seat = seat;
 
     cursor->wlr_cursor = wlr_cursor_create();
+    cursor->wlr_cursor->data = cursor;
     wlr_cursor_attach_output_layout(cursor->wlr_cursor, server->output_layout);
 
     cursor->wlr_cursor_manager = wlr_xcursor_manager_create(nullptr, 24);

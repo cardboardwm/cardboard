@@ -12,6 +12,7 @@ XwaylandView::XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland
     , server(server)
     , xwayland_surface(xwayland_surface)
 {
+    xwayland_surface->data = this;
 }
 
 void XwaylandView::destroy()

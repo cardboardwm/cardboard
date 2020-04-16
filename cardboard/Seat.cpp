@@ -15,6 +15,7 @@ extern "C" {
 void init_seat(Server* server, Seat* seat, const char* name)
 {
     seat->wlr_seat = wlr_seat_create(server->wl_display, name);
+    seat->wlr_seat->data = seat;
 
     seat->cursor = SeatCursor {};
     init_cursor(server, seat, &seat->cursor);
@@ -60,6 +61,7 @@ void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
 {
     keyboards.push_back(Keyboard { this, device });
     auto& keyboard = keyboards.back();
+    keyboard.device->data = &keyboard;
 
     struct xkb_rule_names rules = {};
     struct xkb_context* context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
