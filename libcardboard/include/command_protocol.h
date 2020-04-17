@@ -59,11 +59,11 @@ struct bind {
     }
 
     bind(bind&&) = default;
-    bind& operator = (bind&&) = default;
+    bind& operator=(bind&&) = default;
 
     bind& operator=(const bind& other)
     {
-        if(&other == this)
+        if (&other == this)
             return *this;
 
         modifiers = other.modifiers;
@@ -72,16 +72,13 @@ struct bind {
 
         return *this;
     }
-
 };
 }
-
 
 /**
  * \brief Deserializes data from a pointer
  */
 tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
-
 
 /**
  * \brief Serializes and write data to a file descriptor.

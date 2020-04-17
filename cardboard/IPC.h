@@ -5,9 +5,10 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "Listener.h"
 
 #include <sys/un.h>
+
+#include "Listener.h"
 
 /**
  * \file
@@ -35,12 +36,17 @@ class IPC {
         IPC* ipc;
         int client_fd;
         ClientState state;
-        wl_event_source *readable_event_source = nullptr;
-        wl_event_source *writable_event_source = nullptr;
+        wl_event_source* readable_event_source = nullptr;
+        wl_event_source* writable_event_source = nullptr;
         int payload_size = 0;
-        std::string message{};
+        std::string message {};
 
-        Client(IPC* ipc, int client_fd, ClientState state) : ipc(ipc), client_fd(client_fd), state(state) {}
+        Client(IPC* ipc, int client_fd, ClientState state)
+            : ipc(ipc)
+            , client_fd(client_fd)
+            , state(state)
+        {
+        }
         Client(const Client&) = delete;
         ~Client();
     };
@@ -50,17 +56,17 @@ private:
         Server* server,
         int socket_fd,
         std::unique_ptr<sockaddr_un>&& socket_address,
-        std::function<std::string(const CommandData&)>&& command_callback
-    ):
-        server{server},
-        socket_fd{socket_fd},
-        socket_address{std::move(socket_address)},
-        command_callback{std::move(command_callback)}
-    {}
+        std::function<std::string(const CommandData&)>&& command_callback)
+        : server { server }
+        , socket_fd { socket_fd }
+        , socket_address { std::move(socket_address) }
+        , command_callback { std::move(command_callback) }
+    {
+    }
 
 public:
     IPC() = delete;
-    IPC(const IPC &) = delete;
+    IPC(const IPC&) = delete;
     IPC(IPC&&) = default;
 
 private:

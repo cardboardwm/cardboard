@@ -67,14 +67,12 @@ int main(int argc, char* argv[])
     }
 
     libcardboard::ipc::AlignedHeaderBuffer buffer;
-    if(recv(sock_fd, buffer.data(), libcardboard::ipc::HEADER_SIZE, 0) == libcardboard::ipc::HEADER_SIZE)
-    {
+    if (recv(sock_fd, buffer.data(), libcardboard::ipc::HEADER_SIZE, 0) == libcardboard::ipc::HEADER_SIZE) {
         libcardboard::ipc::Header header = libcardboard::ipc::interpret_header(buffer);
         auto* response_buffer = new std::byte[header.incoming_bytes];
         if (recv(sock_fd, response_buffer, sizeof(header.incoming_bytes), 0) == header.incoming_bytes) {
             std::cout << response_buffer << std::flush;
         }
-
     }
 
     close(sock_fd);

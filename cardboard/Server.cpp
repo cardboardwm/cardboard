@@ -111,9 +111,9 @@ bool Server::init_ipc()
         socket_path = "/tmp/cardboard-" + display;
     }
 
-    ipc = create_ipc(this, socket_path, [this](const CommandData& command_data) -> std::string{
-        return dispatch_command(command_data)(this).message;
-    }).value();
+    ipc = create_ipc(this, socket_path, [this](const CommandData& command_data) -> std::string {
+              return dispatch_command(command_data)(this).message;
+          }).value();
 
     return true;
 }

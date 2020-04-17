@@ -6,9 +6,9 @@ extern "C" {
 #include <cassert>
 
 #include "Output.h"
+#include "SafePointer.h"
 #include "View.h"
 #include "Workspace.h"
-#include "SafePointer.h"
 
 Workspace::Workspace(IndexType index)
     : index(index)

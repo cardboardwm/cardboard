@@ -7,11 +7,21 @@
 template <typename T>
 class SafePointer {
 public:
-    explicit SafePointer() : ptr(nullptr) {}
-    SafePointer(T& ref) : ptr(&ref) {}
-    explicit SafePointer(T* ptr) : ptr(ptr) {}
+    explicit SafePointer()
+        : ptr(nullptr)
+    {
+    }
+    SafePointer(T& ref)
+        : ptr(&ref)
+    {
+    }
+    explicit SafePointer(T* ptr)
+        : ptr(ptr)
+    {
+    }
 
-    T& unwrap() {
+    T& unwrap()
+    {
         if (ptr == nullptr) {
             assert("bad access");
         }
@@ -19,7 +29,8 @@ public:
         return *ptr;
     }
 
-    const T& unwrap() const {
+    const T& unwrap() const
+    {
         if (ptr == nullptr) {
             assert("bad access");
         }
@@ -27,24 +38,29 @@ public:
         return *ptr;
     }
 
-    bool has_value() const noexcept {
+    bool has_value() const noexcept
+    {
         return ptr != nullptr;
     }
 
-    explicit operator bool() const noexcept {
+    explicit operator bool() const noexcept
+    {
         return has_value();
     }
 
-    bool operator==(const SafePointer<T>& other) const {
+    bool operator==(const SafePointer<T>& other) const
+    {
         return ptr == other.ptr;
     }
 
-    bool operator!=(const SafePointer<T>& other) const {
+    bool operator!=(const SafePointer<T>& other) const
+    {
         return ptr != other.ptr;
     }
 
-    template<typename U, typename F>
-    SafePointer<U> and_then(F&& f) {
+    template <typename U, typename F>
+    SafePointer<U> and_then(F&& f)
+    {
         if (has_value()) {
             return f(unwrap());
         }
@@ -52,15 +68,17 @@ public:
         return SafePointer<U>(nullptr);
     }
 
-    template<typename F>
-    void and_then(F&& f) {
+    template <typename F>
+    void and_then(F&& f)
+    {
         if (has_value()) {
             f(unwrap());
         }
     }
 
-    template<typename F>
-    SafePointer<T> or_else(F&& f) {
+    template <typename F>
+    SafePointer<T> or_else(F&& f)
+    {
         if (!has_value()) {
             return f();
         }
@@ -72,7 +90,7 @@ private:
     T* ptr;
 };
 
-template<typename T>
+template <typename T>
 const auto NullPointer = SafePointer<T>(nullptr);
 
 #endif // __CARDBOARD_SAFEPOINTER_H_

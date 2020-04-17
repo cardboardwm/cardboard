@@ -16,8 +16,8 @@ extern "C" {
 
 #include "Cursor.h"
 #include "Keyboard.h"
-#include "View.h"
 #include "SafePointer.h"
+#include "View.h"
 
 struct Server;
 

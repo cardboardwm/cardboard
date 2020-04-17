@@ -3,8 +3,8 @@ extern "C" {
 }
 
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -24,8 +24,7 @@ std::optional<IPCInstance> create_ipc(
 {
     int ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
-    if(ipc_socket_fd == -1)
-    {
+    if (ipc_socket_fd == -1) {
         wlr_log(WLR_ERROR, "Couldn't create ipc socket");
         return std::nullopt;
     }
@@ -41,7 +40,6 @@ std::optional<IPCInstance> create_ipc(
         close(ipc_socket_fd);
         return std::nullopt;
     }
-
 
     std::unique_ptr<sockaddr_un> socket_address = std::make_unique<sockaddr_un>();
 
@@ -61,16 +59,14 @@ std::optional<IPCInstance> create_ipc(
     }
 
     // add destroy display handling
-    IPCInstance ipc = std::make_unique<IPC>(IPC{
-        server, ipc_socket_fd, std::move(socket_address), std::move(command_callback)
-    });
+    IPCInstance ipc = std::make_unique<IPC>(IPC {
+        server, ipc_socket_fd, std::move(socket_address), std::move(command_callback) });
     wl_event_loop_add_fd(
         server->event_loop,
         ipc_socket_fd,
         WL_EVENT_READABLE,
         IPC::handle_client_connection,
-        ipc.get()
-    );
+        ipc.get());
 
     return ipc;
 }
@@ -105,17 +101,14 @@ int IPC::handle_client_connection(int fd, uint32_t mask, void* data)
     ipc->clients.emplace_back(
         ipc,
         client_fd,
-        IPC::ClientState::READING_HEADER
-    );
+        IPC::ClientState::READING_HEADER);
 
-    ipc->clients.back().readable_event_source =
-        wl_event_loop_add_fd(
-            ipc->server->event_loop,
-            client_fd,
-            WL_EVENT_READABLE,
-            IPC::handle_client_readable,
-            &ipc->clients.back()
-        );
+    ipc->clients.back().readable_event_source = wl_event_loop_add_fd(
+        ipc->server->event_loop,
+        client_fd,
+        WL_EVENT_READABLE,
+        IPC::handle_client_readable,
+        &ipc->clients.back());
 
     return 0;
 }
@@ -124,96 +117,86 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
 {
     auto client = static_cast<IPC::Client*>(data);
 
-
-    if(mask & WL_EVENT_ERROR)
-    {
+    if (mask & WL_EVENT_ERROR) {
         wlr_log(WLR_ERROR, "IPC Client socket error, disconnecting");
         client->ipc->remove_client(client);
         return 0;
     }
 
-    if(mask & WL_EVENT_HANGUP)
-    {
+    if (mask & WL_EVENT_HANGUP) {
         wlr_log(WLR_DEBUG, "IPC Client on fd %d hung up, disconnecting", client->client_fd);
         client->ipc->remove_client(client);
         return 0;
     }
 
     int available_bytes;
-    if(ioctl(client->client_fd, FIONREAD, &available_bytes) == -1)
-    {
+    if (ioctl(client->client_fd, FIONREAD, &available_bytes) == -1) {
         wlr_log(WLR_INFO, "Unable to read pending available data");
         client->ipc->remove_client(client);
         return 0;
     }
 
-    switch(client->state){
-    case IPC::ClientState::READING_HEADER:
-    {
-        if(available_bytes < static_cast<int>(libcardboard::ipc::HEADER_SIZE))
+    switch (client->state) {
+    case IPC::ClientState::READING_HEADER: {
+        if (available_bytes < static_cast<int>(libcardboard::ipc::HEADER_SIZE))
             break;
 
         libcardboard::ipc::AlignedHeaderBuffer buffer;
-        if(ssize_t received = recv(
-            client->client_fd,
-            buffer.data(),
-            libcardboard::ipc::HEADER_SIZE,
-            0); received != -1)
-        {
+        if (ssize_t received = recv(
+                client->client_fd,
+                buffer.data(),
+                libcardboard::ipc::HEADER_SIZE,
+                0);
+            received != -1) {
             libcardboard::ipc::Header header = libcardboard::ipc::interpret_header(buffer);
             client->payload_size = header.incoming_bytes;
             client->state = IPC::ClientState::READING_PAYLOAD;
 
             available_bytes -= received;
 
-            if(client->payload_size <= available_bytes)
+            if (client->payload_size <= available_bytes)
                 ; // do nothing jumps to the IPC::ClientState::READING_PAYLOAD case
-            else break;
-        }
-        else
-        {
+            else
+                break;
+        } else {
             wlr_log(WLR_INFO, "recv failed on header");
             client->ipc->remove_client(client);
             return 0;
         }
         [[fallthrough]];
     }
-    case IPC::ClientState::READING_PAYLOAD:
-    {
-        if(client->payload_size > available_bytes)
+    case IPC::ClientState::READING_PAYLOAD: {
+        if (client->payload_size > available_bytes)
             break;
 
         auto* buffer = new std::byte[client->payload_size];
-        if(ssize_t received = recv(
-            client->client_fd,
-            buffer,
-            client->payload_size,
-            0); received == -1)
-        {
+        if (ssize_t received = recv(
+                client->client_fd,
+                buffer,
+                client->payload_size,
+                0);
+            received == -1) {
             wlr_log(WLR_INFO, "couldn't read payload");
             client->ipc->remove_client(client);
             return 0;
         }
         read_command_data(buffer, client->payload_size)
-            .map([client](const CommandData& command_data){
+            .map([client](const CommandData& command_data) {
                 client->message = client->ipc->command_callback(command_data);
             })
-            .map_error([client](const std::string& error){
+            .map_error([client](const std::string& error) {
                 using namespace std::string_literals;
                 wlr_log(WLR_INFO, "unable to parse command: %s", error.c_str());
                 client->message = "Unable to parse command: " + error;
             });
         delete[] buffer;
 
-
-
         client->writable_event_source = wl_event_loop_add_fd(
             client->ipc->server->event_loop,
             client->client_fd,
             WL_EVENT_WRITABLE,
             IPC::handle_client_writeable,
-            client
-        );
+            client);
 
         client->state = IPC::ClientState::WRITING;
         break;
@@ -229,43 +212,37 @@ int IPC::handle_client_writeable(int /*fd*/, uint32_t mask, void* data)
 {
     auto client = static_cast<IPC::Client*>(data);
 
-
-    if(mask & WL_EVENT_ERROR)
-    {
+    if (mask & WL_EVENT_ERROR) {
         wlr_log(WLR_ERROR, "IPC Client socket error, disconnecting");
         client->ipc->remove_client(client);
         return 0;
     }
 
-    if(mask & WL_EVENT_HANGUP)
-    {
+    if (mask & WL_EVENT_HANGUP) {
         wlr_log(WLR_DEBUG, "IPC Client on fd %d hung up, disconnecting", client->client_fd);
         client->ipc->remove_client(client);
         return 0;
     }
 
-    if(!client->message.empty()) {
-        libcardboard::ipc::AlignedHeaderBuffer header =
-            libcardboard::ipc::create_header_buffer({static_cast<int>(client->message.size())});
+    if (!client->message.empty()) {
+        libcardboard::ipc::AlignedHeaderBuffer header = libcardboard::ipc::create_header_buffer({ static_cast<int>(client->message.size()) });
 
         auto* buffer = new std::byte[client->message.empty() + header.size()];
         std::copy(
             header.begin(),
             header.end(),
-            buffer
-        );
+            buffer);
 
         std::copy(
             client->message.begin(),
             client->message.end(),
-            reinterpret_cast<char*>(buffer)
-        );
+            reinterpret_cast<char*>(buffer));
 
         ssize_t written = write(client->client_fd, buffer, client->message.empty() + header.size());
-        if(written == -1 && errno == EAGAIN)
+        if (written == -1 && errno == EAGAIN)
             return 0;
 
-        if(written == -1) {
+        if (written == -1) {
             wlr_log(WLR_INFO, "Unable to send data to IPC client");
         }
     }
@@ -277,8 +254,7 @@ int IPC::handle_client_writeable(int /*fd*/, uint32_t mask, void* data)
 void IPC::remove_client(IPC::Client* client)
 {
     clients.remove_if(
-        [client](auto& x) { return client == &x; }
-    );
+        [client](auto& x) { return client == &x; });
 }
 
 IPC::Client::~Client()
@@ -286,9 +262,9 @@ IPC::Client::~Client()
     // shutdown routine for ipc client
     shutdown(client_fd, SHUT_RDWR);
 
-    if(readable_event_source)
+    if (readable_event_source)
         wl_event_source_remove(readable_event_source);
 
-    if(writable_event_source)
+    if (writable_event_source)
         wl_event_source_remove(writable_event_source);
 }

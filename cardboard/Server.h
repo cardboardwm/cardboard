@@ -34,10 +34,10 @@ extern "C" {
 #include "Layers.h"
 #include "Listener.h"
 #include "Output.h"
+#include "SafePointer.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
-#include "SafePointer.h"
 
 #if HAVE_XWAYLAND
 #include <wlr_cpp_fixes/xwayland.h>
