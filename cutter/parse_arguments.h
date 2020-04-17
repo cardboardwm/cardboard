@@ -3,6 +3,7 @@
 
 #include <locale>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,9 +18,16 @@ using namespace std::string_literals;
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments);
 
-tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>&)
+tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>& args)
 {
-    return CommandArguments::quit {};
+    int code = 0;
+    if (args.size() >= 1) {
+        std::stringstream oss(args[0]);
+        if (!(oss >> code)) {
+            return tl::unexpected("malformed exit code '"s + args[0] + "'");
+        }
+    }
+    return CommandArguments::quit { code };
 }
 
 tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string>& args)

@@ -22,9 +22,9 @@ inline CommandResult focus(Server* server, int focus_direction)
     return { "" };
 }
 
-inline CommandResult quit(Server* server)
+inline CommandResult quit(Server* server, int code)
 {
-    server->teardown(0);
+    server->teardown(code);
     return { "" };
 }
 

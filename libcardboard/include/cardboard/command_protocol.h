@@ -11,6 +11,7 @@
 
 namespace CommandArguments {
 struct quit {
+    int code;
 };
 
 struct focus {

@@ -14,9 +14,9 @@
 
 namespace cereal {
 template <typename Archive>
-void serialize(Archive& ar, CommandArguments::quit&)
+void serialize(Archive& ar, CommandArguments::quit& quit)
 {
-    ar(bool(true));
+    ar(quit.code);
 }
 
 template <typename Archive>
