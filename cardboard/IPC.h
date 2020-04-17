@@ -40,6 +40,8 @@ class IPC {
         int payload_size = 0;
         std::string message{};
 
+        Client(IPC* ipc, int client_fd, ClientState state) : ipc(ipc), client_fd(client_fd), state(state) {}
+        Client(const Client&) = delete;
         ~Client();
     };
 
@@ -72,7 +74,7 @@ private:
 private:
     ListenerList ipc_listeners;
     Server* server;
-    int socket_fd;
+    [[maybe_unused]] int socket_fd;
     std::unique_ptr<sockaddr_un> socket_address;
     std::function<std::string(CommandData)> command_callback;
 

@@ -102,11 +102,11 @@ int IPC::handle_client_connection(int fd, uint32_t mask, void* data)
         return 0;
     }
 
-    ipc->clients.push_back({
+    ipc->clients.emplace_back(
         ipc,
         client_fd,
         IPC::ClientState::READING_HEADER
-    });
+    );
 
     ipc->clients.back().readable_event_source =
         wl_event_loop_add_fd(
@@ -244,31 +244,31 @@ int IPC::handle_client_writeable(int /*fd*/, uint32_t mask, void* data)
         return 0;
     }
 
-    if(client->message.empty())
-        return 0;
+    if(!client->message.empty()) {
+        libcardboard::ipc::AlignedHeaderBuffer header =
+            libcardboard::ipc::create_header_buffer({static_cast<int>(client->message.size())});
 
-    libcardboard::ipc::AlignedHeaderBuffer header =
-        libcardboard::ipc::create_header_buffer({static_cast<int>(client->message.size())});
+        auto* buffer = new std::byte[client->message.empty() + header.size()];
+        std::copy(
+            header.begin(),
+            header.end(),
+            buffer
+        );
 
-    auto* buffer = new std::byte[client->message.empty() + header.size()];
-    std::copy(
-        header.begin(),
-        header.end(),
-        buffer
-    );
+        std::copy(
+            client->message.begin(),
+            client->message.end(),
+            reinterpret_cast<char*>(buffer)
+        );
 
-    std::copy(
-        client->message.begin(),
-        client->message.end(),
-        reinterpret_cast<char*>(buffer)
-    );
+        ssize_t written = write(client->client_fd, buffer, client->message.empty() + header.size());
+        if(written == -1 && errno == EAGAIN)
+            return 0;
 
-    ssize_t written = write(client->client_fd, buffer, client->message.empty() + header.size());
-    if(written == -1 && errno == EAGAIN)
-        return 0;
-
-    if(written == -1)
-        wlr_log(WLR_INFO, "Unable to send data to IPC client");
+        if(written == -1) {
+            wlr_log(WLR_INFO, "Unable to send data to IPC client");
+        }
+    }
 
     client->ipc->remove_client(client);
     return 0;

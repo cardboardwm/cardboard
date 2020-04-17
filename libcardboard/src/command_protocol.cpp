@@ -77,13 +77,13 @@ tl::expected<void, std::string> write_command_data(int fd, const CommandData& co
     if(write(fd, header_buffer.data(), libcardboard::ipc::HEADER_SIZE) == -1)
     {
         int err = errno;
-        return tl::unexpected("unable to write payload: "s + std::to_string(err));
+        return tl::unexpected("unable to write payload: "s + strerror(err));
     }
 
     if(write(fd, buffer.c_str(), buffer.size() + 1) == -1)
     {
         int err = errno;
-        return tl::unexpected("unable to write payload: "s + std::to_string(err));
+        return tl::unexpected("unable to write payload: "s + strerror(err));
     }
 
     return {};
