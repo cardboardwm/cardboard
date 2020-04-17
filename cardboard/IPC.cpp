@@ -14,8 +14,8 @@ extern "C" {
 #include "IPC.h"
 #include "Server.h"
 
-#include <command_protocol.h>
-#include <ipc.h>
+#include <cardboard/command_protocol.h>
+#include <cardboard/ipc.h>
 
 std::optional<IPCInstance> create_ipc(
     Server* server,

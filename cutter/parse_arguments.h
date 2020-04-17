@@ -1,5 +1,5 @@
-#ifndef BUILD_CUTTER_PARSE_ARGUMENTS_H
-#define BUILD_CUTTER_PARSE_ARGUMENTS_H
+#ifndef __CUTTER_PARSE_ARGUMENTS_H_
+#define __CUTTER_PARSE_ARGUMENTS_H_
 
 #include <locale>
 #include <optional>
@@ -9,8 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <cardboard/command_protocol.h>
 #include <cardboard_common/IPC.h>
-#include <command_protocol.h>
 
 namespace detail {
 using namespace std::string_literals;
@@ -120,4 +120,4 @@ tl::expected<CommandData, std::string> parse_arguments(int argc, char* argv[])
     return detail::parse_arguments(std::move(arguments));
 }
 
-#endif //BUILD_CUTTER_PARSE_ARGUMENTS_H
+#endif //__CUTTER_PARSE_ARGUMENTS_H_

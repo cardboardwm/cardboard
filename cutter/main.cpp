@@ -5,9 +5,9 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <cardboard/command_protocol.h>
+#include <cardboard/ipc.h>
 #include <cardboard_common/IPC.h>
-#include <command_protocol.h>
-#include <ipc.h>
 
 #include "parse_arguments.h"
 

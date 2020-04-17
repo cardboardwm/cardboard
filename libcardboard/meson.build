@@ -5,13 +5,10 @@ cereal = dependency('cereal')
 expected_proj = subproject('expected', required: true)
 expected = expected_proj.get_variable('expected_dep')
 
-
 sources = files(
     'src/command_protocol.cpp',
     'src/ipc.cpp',
 )
-
-install_headers('include/command_protocol.h')
 
 libcardboard = library(
     'command_protocol',

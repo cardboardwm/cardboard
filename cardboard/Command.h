@@ -4,7 +4,7 @@
 #include <functional>
 #include <variant>
 
-#include <command_protocol.h>
+#include <cardboard/command_protocol.h>
 
 struct Server;
 

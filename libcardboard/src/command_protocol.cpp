@@ -1,9 +1,3 @@
-#include <numeric>
-#include <sstream>
-
-#include <command_protocol.h>
-
-#include <ipc.h>
 #include <unistd.h>
 
 #include <cereal/archives/portable_binary.hpp>
@@ -11,6 +5,12 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/variant.hpp>
 #include <cereal/types/vector.hpp>
+
+#include <numeric>
+#include <sstream>
+
+#include <cardboard/command_protocol.h>
+#include <cardboard/ipc.h>
 
 namespace cereal {
 template <typename Archive>
