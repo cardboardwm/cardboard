@@ -194,11 +194,17 @@ bool Server::load_settings()
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
     const auto* wlr_output = wlr_output_layout_output_at(output_layout, lx, ly);
-    const auto output_it = std::find_if(outputs.begin(), outputs.end(), [wlr_output](const auto& other) { return wlr_output == other.wlr_output; });
-    assert(output_it != outputs.end());
+    const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [wlr_output](const auto& other) {
+        return other.output && other.output.unwrap().wlr_output == wlr_output;
+    });
+    assert(ws_it != workspaces.end());
 
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP }) {
-        for (const auto& layer_surface : output_it->layers[layer]) {
+        // fullscreen views render on top of the TOP layer
+        if (ws_it->fullscreen_view && layer == ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
+            continue;
+        }
+        for (const auto& layer_surface : ws_it->output.unwrap().layers[layer]) {
             if (!layer_surface.surface->mapped) {
                 continue;
             }
@@ -231,7 +237,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND }) {
-        for (const auto& layer_surface : output_it->layers[layer]) {
+        for (const auto& layer_surface : ws_it->output.unwrap().layers[layer]) {
             if (!layer_surface.surface->mapped) {
                 continue;
             }

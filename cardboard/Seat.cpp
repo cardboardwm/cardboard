@@ -178,7 +178,7 @@ void Seat::focus_view(Server* server, View* view)
     // the seat will send keyboard events to the view automatically
     keyboard_notify_enter(view->get_surface());
 
-    server->get_views_workspace(view).and_then([view](auto& ws) { ws.fit_view_on_screen(view); });
+    ws_ref.and_then([view](auto& ws) { ws.fit_view_on_screen(view); });
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
