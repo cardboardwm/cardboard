@@ -77,12 +77,12 @@ struct bind {
 }
 
 /**
- * \brief Deserializes data from a pointer
+ * \brief Deserializes data from a region of memory
  */
 tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
 
 /**
- * \brief Serializes and write data to a file descriptor.
+ * \brief Serializes CommandData type data into a std::string buffer
  */
 tl::expected<std::string, std::string> write_command_data(const CommandData&);
 
