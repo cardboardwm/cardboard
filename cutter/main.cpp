@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     std::string response = client.wait_response()
         .map_error([](int error_code)
                    {
-                       std::cerr << "cutter: error code" << error_code << std::endl;
+                       std::cerr << "cutter: error code " << error_code << std::endl;
                        exit(EXIT_FAILURE);
                    }).value();
 

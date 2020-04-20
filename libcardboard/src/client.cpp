@@ -45,6 +45,11 @@ namespace libcutter {
 
         if (recv(socket_fd, buffer.data(), libcardboard::ipc::HEADER_SIZE, 0) == libcardboard::ipc::HEADER_SIZE) {
             libcardboard::ipc::Header header = libcardboard::ipc::interpret_header(buffer);
+
+            if(header.incoming_bytes == 0) {
+                return std::string{};
+            }
+
             auto* response_buffer = new std::byte[header.incoming_bytes];
             if (recv(socket_fd, response_buffer, sizeof(header.incoming_bytes), 0) == header.incoming_bytes) {
                 return std::string(reinterpret_cast<char*>(response_buffer));
@@ -54,6 +59,11 @@ namespace libcutter {
             }
         } else {
             int err = errno;
+
+            if(err == 9) {
+                return std::string{};
+            }
+
             return tl::unexpected(err);
         }
     }
