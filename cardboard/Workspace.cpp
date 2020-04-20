@@ -7,7 +7,6 @@ extern "C" {
 
 #include "OptionalRef.h"
 #include "Output.h"
-#include "SafePointer.h"
 #include "View.h"
 #include "Workspace.h"
 

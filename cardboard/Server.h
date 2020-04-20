@@ -35,7 +35,6 @@ extern "C" {
 #include "Listener.h"
 #include "OptionalRef.h"
 #include "Output.h"
-#include "SafePointer.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
