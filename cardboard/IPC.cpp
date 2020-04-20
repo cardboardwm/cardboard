@@ -138,8 +138,9 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
 
     switch (client->state) {
     case IPC::ClientState::READING_HEADER: {
-        if (available_bytes < static_cast<int>(libcardboard::ipc::HEADER_SIZE))
+        if (available_bytes < static_cast<int>(libcardboard::ipc::HEADER_SIZE)) {
             break;
+        }
 
         libcardboard::ipc::AlignedHeaderBuffer buffer;
         if (ssize_t received = recv(
@@ -154,10 +155,12 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
 
             available_bytes -= received;
 
-            if (client->payload_size <= available_bytes)
-                ; // do nothing jumps to the IPC::ClientState::READING_PAYLOAD case
-            else
+            if (client->payload_size <= available_bytes) {
+                // do nothing jumps to the IPC::ClientState::READING_PAYLOAD case
+            }
+            else {
                 break;
+            }
         } else {
             wlr_log(WLR_INFO, "recv failed on header");
             client->ipc->remove_client(client);
@@ -239,8 +242,9 @@ int IPC::handle_client_writeable(int /*fd*/, uint32_t mask, void* data)
             reinterpret_cast<char*>(buffer));
 
         ssize_t written = write(client->client_fd, buffer, client->message.empty() + header.size());
-        if (written == -1 && errno == EAGAIN)
+        if (written == -1 && errno == EAGAIN) {
             return 0;
+        }
 
         if (written == -1) {
             wlr_log(WLR_INFO, "Unable to send data to IPC client");
@@ -262,11 +266,13 @@ IPC::Client::~Client()
     // shutdown routine for ipc client
     shutdown(client_fd, SHUT_RDWR);
 
-    if (readable_event_source)
+    if (readable_event_source) {
         wl_event_source_remove(readable_event_source);
+    }
 
-    if (writable_event_source)
+    if (writable_event_source) {
         wl_event_source_remove(writable_event_source);
+    }
 }
 
 IPC::Client::Client(IPC::Client&& other) noexcept:

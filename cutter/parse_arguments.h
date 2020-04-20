@@ -20,7 +20,7 @@ tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> 
 tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>& args)
 {
     int code = 0;
-    if (args.size() >= 1) {
+    if (args.empty()) {
         std::stringstream oss(args[0]);
         if (!(oss >> code)) {
             return tl::unexpected("malformed exit code '"s + args[0] + "'");
@@ -34,10 +34,12 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
     if (args.empty())
         return tl::unexpected("not enough arguments"s);
 
-    if (args[0] == "left")
+    if (args[0] == "left") {
         return CommandArguments::focus { CommandArguments::focus::Direction::Left };
-    else if (args[0] == "right")
+    }
+    else if (args[0] == "right") {
         return CommandArguments::focus { CommandArguments::focus::Direction::Right };
+    }
 
     return tl::unexpected("unrecognized word '"s + args[0] + "'");
 }
@@ -59,26 +61,30 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
 
     auto locale = std::locale("");
 
-    if (args.size() < 2)
+    if (args.size() < 2){
         return tl::unexpected("not enough arguments"s);
+    }
 
     size_t pos = 0;
     while (pos < args[0].size()) {
         auto plus_index = args[0].find('+', pos);
         auto token = args[0].substr(pos, plus_index - pos);
 
-        if (find_mod_key(token))
+        if (find_mod_key(token)) {
             modifiers.push_back(token);
+        }
         else {
             for (char& c : token)
                 c = std::tolower(c, locale);
             key = token;
         }
 
-        if (plus_index == args[1].npos)
+        if (plus_index == args[1].npos) {
             pos = args[0].size();
-        else
+        }
+        else {
             pos = plus_index + 1;
+        }
     }
 
     auto sub_command_args = std::vector(args.begin() + 1, args.end());
@@ -104,8 +110,9 @@ static std::unordered_map<std::string, parse_f> parse_table = {
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments)
 {
-    if (arguments.empty())
+    if (arguments.empty()) {
         return tl::unexpected("not enough arguments"s);
+    }
 
     if (auto it = detail::parse_table.find(arguments[0]); it != detail::parse_table.end()) {
         arguments.erase(arguments.begin());
@@ -121,8 +128,9 @@ tl::expected<CommandData, std::string> parse_arguments(int argc, char* argv[])
     std::vector<std::string> arguments;
 
     arguments.reserve(argc - 1);
-    for (int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++) {
         arguments.emplace_back(std::string { argv[i] });
+    }
 
     return detail::parse_arguments(std::move(arguments));
 }
