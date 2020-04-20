@@ -268,3 +268,18 @@ IPC::Client::~Client()
     if (writable_event_source)
         wl_event_source_remove(writable_event_source);
 }
+
+IPC::Client::Client(IPC::Client&& other) noexcept:
+    ipc{other.ipc},
+    client_fd{other.client_fd},
+    state{other.state},
+    readable_event_source{other.readable_event_source},
+    writable_event_source{other.writable_event_source},
+    payload_size{other.payload_size},
+    message{std::move(other.message)} {
+    other.ipc = nullptr;
+    other.client_fd = 0;
+    other.readable_event_source = nullptr;
+    other.writable_event_source = nullptr;
+    other.payload_size = 0;
+}

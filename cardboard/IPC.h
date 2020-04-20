@@ -58,6 +58,8 @@ class IPC {
         }
         Client(const Client&) = delete;
 
+        Client(Client&&) noexcept;
+
         /**
          * \brief disconnects the client and removes the event sources from wayland's book keeping
          */
