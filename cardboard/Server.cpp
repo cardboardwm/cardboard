@@ -19,7 +19,7 @@ extern "C" {
 #include <wlr/util/log.h>
 }
 
-#include <cardboard_common/IPC.h>
+#include <cardboard/ipc.h>
 #include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
 #include <sys/socket.h>
@@ -100,7 +100,7 @@ bool Server::init_ipc()
 {
     std::string socket_path;
 
-    char* env_path = getenv(IPC_SOCKET_ENV_VAR);
+    char* env_path = getenv(libcardboard::ipc::SOCKET_ENV_VAR);
     if (env_path != nullptr) {
         socket_path = env_path;
     } else {

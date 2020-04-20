@@ -11,7 +11,6 @@
 #include <vector>
 
 #include <cardboard/command_protocol.h>
-#include <cardboard_common/IPC.h>
 
 namespace detail {
 using namespace std::string_literals;
