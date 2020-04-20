@@ -157,8 +157,7 @@ int IPC::handle_client_readable(int /*fd*/, uint32_t mask, void* data)
 
             if (client->payload_size <= available_bytes) {
                 // do nothing jumps to the IPC::ClientState::READING_PAYLOAD case
-            }
-            else {
+            } else {
                 break;
             }
         } else {
@@ -275,14 +274,15 @@ IPC::Client::~Client()
     }
 }
 
-IPC::Client::Client(IPC::Client&& other) noexcept:
-    ipc{other.ipc},
-    client_fd{other.client_fd},
-    state{other.state},
-    readable_event_source{other.readable_event_source},
-    writable_event_source{other.writable_event_source},
-    payload_size{other.payload_size},
-    message{std::move(other.message)} {
+IPC::Client::Client(IPC::Client&& other) noexcept
+    : ipc { other.ipc }
+    , client_fd { other.client_fd }
+    , state { other.state }
+    , readable_event_source { other.readable_event_source }
+    , writable_event_source { other.writable_event_source }
+    , payload_size { other.payload_size }
+    , message { std::move(other.message) }
+{
     other.ipc = nullptr;
     other.client_fd = 0;
     other.readable_event_source = nullptr;
