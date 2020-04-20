@@ -1,19 +1,22 @@
 inc = include_directories('include')
 
-capnp = dependency('capnp')
-kj = dependency('kj')
+expected_proj = subproject('expected', required: true)
+expected = expected_proj.get_variable('expected_dep')
+
+cereal_proj = subproject('cereal', required: true)
+cereal = cereal_proj.get_variable('cereal_dep')
 
 sources = files(
-    'src/command.capnp.c++',
-    'src/command_protocol.cpp'
+    'src/command_protocol.cpp',
+    'src/ipc.cpp',
+    'src/client.cpp',
 )
-
-install_headers('include/command_protocol.h')
 
 libcardboard = library(
     'command_protocol',
     sources,
     include_directories: inc,
     install: true,
-    dependencies: [capnp, kj]
+    dependencies: [cereal, expected],
+    cpp_args: '-Wno-deprecated'
 )

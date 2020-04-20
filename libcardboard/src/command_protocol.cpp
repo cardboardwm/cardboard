@@ -1,97 +1,69 @@
-#include <command_protocol.h>
+#include <unistd.h>
 
-#include "command.capnp.h"
-#include <capnp/message.h>
-#include <capnp/serialize-packed.h>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/variant.hpp>
+#include <cereal/types/vector.hpp>
 
-static CommandData deserialize(const generated::Command::Reader& reader)
+#include <numeric>
+#include <sstream>
+
+#include <cardboard/command_protocol.h>
+#include <cardboard/ipc.h>
+
+namespace cereal {
+template <typename Archive>
+void serialize(Archive& ar, CommandArguments::quit& quit)
 {
-    switch (reader.getCommand()) {
-    case generated::Command::Commands::QUIT:
-        return CommandArguments::quit {};
-    case generated::Command::Commands::FOCUS:
-        return CommandArguments::focus {
-            reader.getArguments().getFocusDirection() == generated::Command::FocusDirection::LEFT ? CommandArguments::focus::Direction::Left : CommandArguments::focus::Direction::Right
-        };
-    case generated::Command::Commands::BIND: {
-        std::vector<std::string> modifiers;
-        for (auto modifier : reader.getArguments().getBind().getModifiers())
-            modifiers.emplace_back(modifier.cStr());
-        return CommandArguments::bind {
-            std::move(modifiers),
-            reader.getArguments().getBind().getKey().cStr(),
-            deserialize(reader.getArguments().getBind().getCommand())
-        };
-    }
-    case generated::Command::Commands::EXEC:
-        std::vector<std::string> argv;
-        for (auto arg : reader.getArguments().getExecCommand())
-            argv.emplace_back(arg.cStr());
-        return CommandArguments::exec { std::move(argv) };
-    }
-
-    return {};
+    ar(quit.code);
 }
 
-std::optional<CommandData> read_command_data(int fd)
+template <typename Archive>
+void serialize(Archive& ar, CommandArguments::focus& focus)
+{
+    ar(focus.direction);
+}
+
+template <typename Archive>
+void serialize(Archive& ar, CommandArguments::exec& exec)
+{
+    ar(exec.argv);
+}
+
+template <typename Archive>
+void serialize(Archive& ar, CommandArguments::bind& bind)
+{
+    ar(bind.modifiers, bind.key, bind.command);
+}
+}
+
+tl::expected<CommandData, std::string> read_command_data(void* data, size_t size)
 {
     try {
-        ::capnp::PackedFdMessageReader message { fd };
-        return deserialize(message.getRoot<generated::Command>());
-    } catch (const kj::Exception&) {
-        return std::nullopt;
+        std::string buffer(static_cast<char*>(data), size);
+        std::istringstream buffer_stream { buffer };
+        cereal::PortableBinaryInputArchive archive { buffer_stream };
+
+        CommandData command_data;
+        archive(command_data);
+
+        return command_data;
+    } catch (const cereal::Exception& e) {
+        return tl::unexpected(std::string { e.what() });
     }
 }
 
-template <class... Ts>
-struct overloaded : Ts... {
-    using Ts::operator()...;
-};
-template <class... Ts>
-overloaded(Ts...)->overloaded<Ts...>;
-
-static void serialize(generated::Command::Builder& builder, const CommandData& command_data)
+tl::expected<std::string, std::string> write_command_data(const CommandData& command_data)
 {
-    std::visit(overloaded {
-                   [&builder](const CommandArguments::focus& focus_data) {
-                       builder.setCommand(generated::Command::Commands::FOCUS);
-                       builder.initArguments().setFocusDirection(
-                           focus_data.direction == CommandArguments::focus::Direction::Left ? generated::Command::FocusDirection::LEFT : generated::Command::FocusDirection::RIGHT);
-                   },
-                   [&builder](const CommandArguments::quit&) {
-                       builder.setCommand(generated::Command::Commands::QUIT);
-                   },
-                   [&builder](const CommandArguments::bind& bind_data) {
-                       builder.setCommand(generated::Command::Commands::BIND);
-                       auto bind_builder = builder.initArguments().initBind();
-                       auto modifiers = bind_builder.initModifiers(bind_data.modifiers.size());
-                       for (size_t i = 0; i < bind_data.modifiers.size(); i++)
-                           modifiers.set(i, bind_data.modifiers[i]);
-                       bind_builder.setKey(bind_data.key);
-                       auto command_builder = bind_builder.initCommand();
-                       serialize(command_builder, *(bind_data.command.get()));
-                   },
-                   [&builder](const CommandArguments::exec& exec_data) {
-                       builder.setCommand(generated::Command::Commands::EXEC);
-                       auto argv = builder.initArguments().initExecCommand(exec_data.argv.size());
+    using namespace std::string_literals;
 
-                       for (size_t i = 0; i < exec_data.argv.size(); i++)
-                           argv.set(i, exec_data.argv[i]);
-                   },
-               },
-               command_data);
-}
+    std::stringstream buffer_stream;
 
-bool write_command_data(int fd, const CommandData& command_data)
-{
-    try {
-        ::capnp::MallocMessageBuilder message;
-        auto command = message.initRoot<generated::Command>();
-        serialize(command, command_data);
-
-        writePackedMessageToFd(fd, message);
-        return true;
-    } catch (const kj::Exception&) {
-        return false;
+    {
+        cereal::PortableBinaryOutputArchive archive { buffer_stream };
+        archive(command_data);
     }
+
+    return buffer_stream.str();
 }

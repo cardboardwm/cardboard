@@ -1,5 +1,5 @@
-#ifndef BUILD_LIBCOMMAND_PROTOCOL_COMMAND_H
-#define BUILD_LIBCOMMAND_PROTOCOL_COMMAND_H
+#ifndef __LIBCARDBOARD_COMMAND_PROTOCOL_H_
+#define __LIBCARDBOARD_COMMAND_PROTOCOL_H_
 
 #include <memory>
 #include <optional>
@@ -7,8 +7,11 @@
 #include <variant>
 #include <vector>
 
+#include <tl/expected.hpp>
+
 namespace CommandArguments {
 struct quit {
+    int code;
 };
 
 struct focus {
@@ -57,17 +60,30 @@ struct bind {
     }
 
     bind(bind&&) = default;
+    bind& operator=(bind&&) = default;
+
+    bind& operator=(const bind& other)
+    {
+        if (&other == this)
+            return *this;
+
+        modifiers = other.modifiers;
+        key = other.key;
+        command = std::make_unique<CommandData>(*other.command);
+
+        return *this;
+    }
 };
 }
 
 /**
- * \brief Deserializes data from a file descriptor
+ * \brief Deserializes data from a region of memory
  */
-std::optional<CommandData> read_command_data(int fd);
+tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
 
 /**
- * \brief Serializes and write data to a file descriptor.
+ * \brief Serializes CommandData type data into a std::string buffer
  */
-bool write_command_data(int fd, const CommandData&);
+tl::expected<std::string, std::string> write_command_data(const CommandData&);
 
-#endif //BUILD_LIBCOMMAND_PROTOCOL_COMMAND_H
+#endif //__LIBCARDBOARD_COMMAND_PROTOCOL_H_

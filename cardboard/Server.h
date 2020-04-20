@@ -35,6 +35,7 @@ extern "C" {
 #include "Listener.h"
 #include "OptionalRef.h"
 #include "Output.h"
+#include "SafePointer.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
@@ -61,10 +62,7 @@ struct Server {
     struct wlr_backend* backend;
     struct wlr_renderer* renderer;
 
-    /// The address of the UNIX domain socket used for IPC.
-    sockaddr_un ipc_sock_address;
-    /// File descriptor for the IPC socket.
-    int ipc_socket_fd = -1;
+    IPCInstance ipc;
     /// Event loop object for integrating IPC events with the rest of Wayland's event system.
     wl_event_loop* event_loop;
     /// IPC event source for Wayland' event loop mechanism.

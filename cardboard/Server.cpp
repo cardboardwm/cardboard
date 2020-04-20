@@ -19,7 +19,7 @@ extern "C" {
 #include <wlr/util/log.h>
 }
 
-#include <cardboard_common/IPC.h>
+#include <cardboard/ipc.h>
 #include <wlr_cpp_fixes/types/wlr_layer_shell_v1.h>
 
 #include <sys/socket.h>
@@ -100,7 +100,7 @@ bool Server::init_ipc()
 {
     std::string socket_path;
 
-    char* env_path = getenv(IPC_SOCKET_ENV_VAR);
+    char* env_path = getenv(libcardboard::ipc::SOCKET_ENV_VAR);
     if (env_path != nullptr) {
         socket_path = env_path;
     } else {
@@ -111,31 +111,9 @@ bool Server::init_ipc()
         socket_path = "/tmp/cardboard-" + display;
     }
 
-    ipc_sock_address.sun_family = AF_UNIX;
-    strncpy(ipc_sock_address.sun_path, socket_path.c_str(), sizeof(ipc_sock_address.sun_path));
-
-    ipc_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (ipc_socket_fd == -1) {
-        wlr_log(WLR_ERROR, "Couldn't create the IPC socket.");
-        return false;
-    }
-
-    unlink(socket_path.c_str());
-
-    if (bind(ipc_socket_fd, reinterpret_cast<sockaddr*>(&ipc_sock_address), sizeof(ipc_sock_address)) == -1) {
-        wlr_log(WLR_ERROR, "Couldn't bind a name ('%s') to the IPC socket.", ipc_sock_address.sun_path);
-        return false;
-    }
-
-    if (listen(ipc_socket_fd, SOMAXCONN) == -1) {
-        wlr_log(WLR_ERROR, "Couldn't listen to the IPC socket '%s'.", ipc_sock_address.sun_path);
-        return false;
-    }
-
-    setenv(IPC_SOCKET_ENV_VAR, ipc_sock_address.sun_path, 0);
-    ipc_event_source = wl_event_loop_add_fd(event_loop, ipc_socket_fd, WL_EVENT_READABLE, ipc_read_command, this);
-
-    wlr_log(WLR_INFO, "Listening on socket %s", ipc_sock_address.sun_path);
+    ipc = create_ipc(this, socket_path, [this](const CommandData& command_data) -> std::string {
+              return dispatch_command(command_data)(this).message;
+          }).value();
 
     return true;
 }
@@ -326,13 +304,13 @@ bool Server::run()
 
 void Server::stop()
 {
+    ipc = nullptr; // release ipc system
     wlr_log(WLR_INFO, "Shutting down Cardboard");
 #if HAVE_XWAYLAND
     wlr_xwayland_destroy(xwayland);
 #endif
     wl_display_destroy_clients(wl_display);
     wl_display_destroy(wl_display);
-    close(ipc_socket_fd);
 }
 
 void Server::teardown(int code)

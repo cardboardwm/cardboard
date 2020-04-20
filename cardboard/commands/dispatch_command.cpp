@@ -21,8 +21,8 @@ Command dispatch_command(const CommandData& command_data)
                                       focus_data.direction == CommandArguments::focus::Direction::Left ? -1 : +1);
                               };
                           },
-                          [](CommandArguments::quit) -> Command {
-                              return commands::quit;
+                          [](CommandArguments::quit quit_data) -> Command {
+                              return [quit_data](Server* server) { return commands::quit(server, quit_data.code); };
                           },
                           [](const CommandArguments::bind& bind_data) -> Command {
                               static const std::unordered_map<std::string, uint32_t> mod_table = {
