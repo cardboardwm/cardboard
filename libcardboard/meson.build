@@ -16,5 +16,6 @@ libcardboard = library(
     sources,
     include_directories: inc,
     install: true,
-    dependencies: [cereal, expected]
+    dependencies: [cereal, expected],
+    cpp_args: '-Wno-deprecated'
 )

@@ -70,9 +70,9 @@ public:
     IPC(IPC&&) = default;
 
 private:
-    static int handle_client_connection(int fd, [[maybe_unused]] uint32_t mask, void* data);
-    static int handle_client_readable(int fd, [[maybe_unused]] uint32_t mask, void* data);
-    static int handle_client_writeable(int fd, [[maybe_unused]] uint32_t mask, void* data);
+    static int handle_client_connection(int fd, uint32_t mask, void* data);
+    static int handle_client_readable(int fd, uint32_t mask, void* data);
+    static int handle_client_writeable(int fd, uint32_t mask, void* data);
 
 private:
     void remove_client(Client*);
@@ -80,7 +80,7 @@ private:
 private:
     ListenerList ipc_listeners;
     Server* server;
-    [[maybe_unused]] int socket_fd;
+    int socket_fd;
     std::unique_ptr<sockaddr_un> socket_address;
     std::function<std::string(CommandData)> command_callback;
 
