@@ -72,12 +72,12 @@ std::optional<IPCInstance> create_ipc(
 }
 
 // This function implements wl_event_loop_fd_func_t
-int IPC::handle_client_connection(int fd, uint32_t mask, void* data)
+int IPC::handle_client_connection(int /*fd*/, uint32_t mask, void* data)
 {
     assert(mask == WL_EVENT_READABLE);
 
     auto ipc = static_cast<IPC*>(data);
-    const int client_fd = accept(fd, nullptr, nullptr);
+    const int client_fd = accept(ipc->socket_fd, nullptr, nullptr);
     if (client_fd == -1) {
         wlr_log(WLR_ERROR, "Failed to accept on IPC socket %s: %s", ipc->socket_address->sun_path, strerror(errno));
         return 0;

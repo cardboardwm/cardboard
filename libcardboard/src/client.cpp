@@ -58,7 +58,7 @@ tl::expected<std::string, int> libcutter::Client::wait_response()
     } else {
         int err = errno;
 
-        if (err == 9) {
+        if (err == EBADF) {
             return std::string {};
         }
 
