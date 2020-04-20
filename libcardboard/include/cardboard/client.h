@@ -3,9 +3,9 @@
 
 #include <string>
 #include <memory>
-#include <tl/expected.hpp>
+#include "../../../subprojects/expected/include/tl/expected.hpp"
 
-#include <cardboard/command_protocol.h>
+#include "command_protocol.h"
 
 #include <sys/un.h>
 
