@@ -84,6 +84,6 @@ tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
 /**
  * \brief Serializes and write data to a file descriptor.
  */
-tl::expected<void, std::string> write_command_data(int fd, const CommandData&);
+tl::expected<std::string, std::string> write_command_data(const CommandData&);
 
 #endif //__LIBCARDBOARD_COMMAND_PROTOCOL_H_

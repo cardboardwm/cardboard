@@ -9,6 +9,7 @@ cereal = cereal_proj.get_variable('cereal_dep')
 sources = files(
     'src/command_protocol.cpp',
     'src/ipc.cpp',
+    'src/client.cpp',
 )
 
 libcardboard = library(

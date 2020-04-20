@@ -54,7 +54,7 @@ tl::expected<CommandData, std::string> read_command_data(void* data, size_t size
     }
 }
 
-tl::expected<void, std::string> write_command_data(int fd, const CommandData& command_data)
+tl::expected<std::string, std::string> write_command_data(const CommandData& command_data)
 {
     using namespace std::string_literals;
 
@@ -65,19 +65,5 @@ tl::expected<void, std::string> write_command_data(int fd, const CommandData& co
         archive(command_data);
     }
 
-    std::string buffer = buffer_stream.str();
-
-    libcardboard::ipc::AlignedHeaderBuffer header_buffer = libcardboard::ipc::create_header_buffer({ static_cast<int>(buffer.size() + 1) });
-
-    if (write(fd, header_buffer.data(), libcardboard::ipc::HEADER_SIZE) == -1) {
-        int err = errno;
-        return tl::unexpected("unable to write payload: "s + strerror(err));
-    }
-
-    if (write(fd, buffer.c_str(), buffer.size() + 1) == -1) {
-        int err = errno;
-        return tl::unexpected("unable to write payload: "s + strerror(err));
-    }
-
-    return {};
+    return buffer_stream.str();
 }
