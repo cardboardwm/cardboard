@@ -20,7 +20,7 @@ tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> 
 tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>& args)
 {
     int code = 0;
-    if (args.empty()) {
+    if (!args.empty()) {
         std::stringstream oss(args[0]);
         if (!(oss >> code)) {
             return tl::unexpected("malformed exit code '"s + args[0] + "'");
