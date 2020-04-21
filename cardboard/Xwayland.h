@@ -34,6 +34,8 @@ public:
 
     void destroy();
     void unmap();
+
+    void close() override;
 };
 
 void xwayland_surface_map_handler(struct wl_listener* listener, void* data);

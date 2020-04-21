@@ -55,6 +55,9 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::exec(server, exec_data.argv);
                               };
                           },
+                          [](CommandArguments::close) -> Command {
+                              return commands::close;
+                          },
                       },
                       command_data);
 }

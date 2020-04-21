@@ -121,6 +121,9 @@ void XwaylandView::close_popups()
 {
     // nothing!
 }
+void XwaylandView::close() {
+    wlr_xwayland_surface_close(xwayland_surface);
+}
 
 void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {

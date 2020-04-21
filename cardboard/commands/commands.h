@@ -58,6 +58,14 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
     return { "" };
 }
 
+inline CommandResult close(Server* server)
+{
+    View* active_view = server->views.front();
+    active_view->close();
+
+    return { "" };
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

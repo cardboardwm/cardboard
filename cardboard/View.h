@@ -119,6 +119,9 @@ public:
     /// Saves the size of the view before becoming fullscreen.
     void save_size(std::pair<int, int>&& to_save);
 
+    /// Closes view
+    virtual void close() = 0;
+
 protected:
     View()
         : geometry { 0, 0, 0, 0 }

@@ -100,12 +100,19 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
     };
 }
 
+tl::expected<CommandData, std::string> parse_close(const std::vector<std::string>&)
+{
+    return CommandArguments::close{};
+}
+
+
 using parse_f = tl::expected<CommandData, std::string> (*)(const std::vector<std::string>&);
 static std::unordered_map<std::string, parse_f> parse_table = {
     { "quit", parse_quit },
     { "focus", parse_focus },
     { "exec", parse_exec },
     { "bind", parse_bind },
+    { "close", parse_close },
 };
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments)

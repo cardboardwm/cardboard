@@ -26,6 +26,9 @@ struct bind;
 struct exec {
     std::vector<std::string> argv;
 };
+
+struct close {
+};
 }
 
 /**
@@ -35,7 +38,8 @@ using CommandData = std::variant<
     CommandArguments::quit,
     CommandArguments::focus,
     CommandArguments::exec,
-    CommandArguments::bind>;
+    CommandArguments::bind,
+    CommandArguments::close>;
 
 namespace CommandArguments {
 struct bind {

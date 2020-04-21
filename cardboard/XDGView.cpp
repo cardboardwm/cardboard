@@ -108,6 +108,9 @@ void XDGView::close_popups()
         wlr_xdg_popup_destroy(popup->base);
     }
 }
+void XDGView::close() {
+    wlr_xdg_toplevel_send_close(xdg_surface);
+}
 
 void XDGPopup::unconstrain(Server* server)
 {

@@ -36,6 +36,11 @@ void serialize(Archive& ar, CommandArguments::bind& bind)
 {
     ar(bind.modifiers, bind.key, bind.command);
 }
+
+template <typename Archive>
+void serialize(Archive&, CommandArguments::close&)
+{
+}
 }
 
 tl::expected<CommandData, std::string> read_command_data(void* data, size_t size)
