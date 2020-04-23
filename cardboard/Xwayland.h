@@ -22,20 +22,19 @@ public:
     XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland_surface);
     ~XwaylandView() = default;
 
-    struct wlr_surface* get_surface();
-    bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
-    void resize(int width, int height);
-    void prepare(Server* server);
-    void set_activated(bool activated);
-    void set_fullscreen(bool fullscreen);
-    void for_each_surface(wlr_surface_iterator_func_t iterator, void* data);
-    bool is_transient_for(View* ancestor);
-    void close_popups();
+    struct wlr_surface* get_surface() override;
+    bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) override;
+    void resize(int width, int height) override;
+    void prepare(Server* server) override;
+    void set_activated(bool activated) override;
+    void set_fullscreen(bool fullscreen) override;
+    void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) override;
+    bool is_transient_for(View* ancestor) override;
+    void close_popups() override;
+    void close() override;
 
     void destroy();
     void unmap();
-
-    void close() override;
 };
 
 void xwayland_surface_map_handler(struct wl_listener* listener, void* data);
