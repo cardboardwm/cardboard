@@ -1,0 +1,24 @@
+image: archlinux
+
+stages:
+  - build
+
+default:
+  before_script:
+    - |
+      pacman -Syu --noconfirm meson ninja \
+          wlroots mesa pkgconf wayland-protocols git
+
+gnu:
+  stage: build
+  script:
+    - pacman -Syu --noconfirm gcc
+    - CC=gcc CXX=g++ meson build-gnu
+    - ninja -C build-gnu
+
+clang:
+  stage: build
+  script:
+    - pacman -Syu --noconfirm clang
+    - CC=clang CXX=clang++ meson build-clang
+    - ninja -C build-clang
