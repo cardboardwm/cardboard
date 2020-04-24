@@ -232,35 +232,63 @@ void Seat::remove_from_focus_stack(View* view)
     focus_stack.remove(view);
 }
 
-void Seat::begin_interactive(View* view, GrabState::Mode mode, uint32_t edges)
+void Seat::begin_move(Server* server, View* view)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
     if (view->get_surface() != focused_surface) {
-        // don't handle the request if the view is not in focus
+        // don't handle the request if the view is not in pointer focus
         return;
     }
-    struct wlr_box geometry = view->geometry;
 
-    GrabState state = { mode, view, 0, 0, geometry.width, geometry.height, edges };
-    if (mode == GrabState::Mode::MOVE) {
-        state.x = cursor.wlr_cursor->x - view->x;
-        state.y = cursor.wlr_cursor->y - view->y;
-    } else {
-        state.x = cursor.wlr_cursor->x;
-        state.y = cursor.wlr_cursor->y;
+    auto workspace = server->get_views_workspace(view);
+    grab_state = {
+        .view = view,
+        .grab_data = GrabState::Move {
+            .lx = cursor.wlr_cursor->x,
+            .ly = cursor.wlr_cursor->y,
+            .workspace = workspace,
+            .scroll_x = workspace ? workspace.unwrap().scroll_x : 0,
+        },
+    };
+}
+
+void Seat::begin_resize(Server* server, View* view, uint32_t edges)
+{
+    assert(grab_state == std::nullopt);
+    struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
+    if (view->get_surface() != focused_surface) {
+        // don't handle the request if the view is not in pointer focus
+        return;
     }
-    grab_state = state;
+
+    auto workspace = server->get_views_workspace(view);
+    grab_state = {
+        .view = view,
+        .grab_data = GrabState::Resize {
+            .lx = cursor.wlr_cursor->x,
+            .ly = cursor.wlr_cursor->y,
+            .geometry = view->geometry,
+            .resize_edges = edges,
+            .workspace = workspace,
+            .scroll_x = workspace ? workspace.unwrap().scroll_x : 0,
+        },
+    };
 }
 
 void Seat::process_cursor_motion(Server* server, uint32_t time)
 {
-    if (grab_state.has_value() && grab_state->mode == GrabState::Mode::MOVE) {
-        process_cursor_move();
-        return;
-    }
-    if (grab_state.has_value() && grab_state->mode == GrabState::Mode::RESIZE) {
-        process_cursor_resize();
+    if (grab_state) {
+        std::visit([this](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+
+            if constexpr (std::is_same_v<T, GrabState::Move>) {
+                process_cursor_move(arg);
+            } else if constexpr (std::is_same_v<T, GrabState::Resize>) {
+                process_cursor_resize(arg);
+            }
+        },
+                   grab_state->grab_data);
         return;
     }
     double sx, sy;
@@ -285,43 +313,75 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
     }
 }
 
-void Seat::process_cursor_move()
+void Seat::process_cursor_move(GrabState::Move move_data)
 {
     assert(grab_state.has_value());
-    grab_state->view->x = cursor.wlr_cursor->x - grab_state->x;
-    grab_state->view->y = cursor.wlr_cursor->y - grab_state->y;
+
+    double dx = cursor.wlr_cursor->x - move_data.lx;
+    double dy = cursor.wlr_cursor->y - move_data.ly;
+    move_data.workspace
+        .or_else([&]() {
+            grab_state->view->x = move_data.lx + dx;
+            grab_state->view->y = move_data.ly + dy;
+            return NullRef<Workspace>;
+        })
+        .and_then([&](auto& ws) {
+            ws.scroll_x = move_data.scroll_x - dx;
+            ws.arrange_tiles();
+        });
 }
 
-void Seat::process_cursor_resize()
+void Seat::process_cursor_resize(GrabState::Resize resize_data)
 {
     assert(grab_state.has_value());
-    double dx = cursor.wlr_cursor->x - grab_state->x;
-    double dy = cursor.wlr_cursor->y - grab_state->y;
+
+    double dx = cursor.wlr_cursor->x - resize_data.lx;
+    double dy = cursor.wlr_cursor->y - resize_data.ly;
     double x = grab_state->view->x;
     double y = grab_state->view->y;
-    double width = grab_state->width;
-    double height = grab_state->height;
-    if (grab_state->resize_edges & WLR_EDGE_TOP) {
-        y = grab_state->y + dy;
-        height -= dy;
-        if (height < 1) {
-            y += height;
-        }
-    } else if (grab_state->resize_edges & WLR_EDGE_BOTTOM) {
-        height += dy;
-    }
-    if (grab_state->resize_edges & WLR_EDGE_LEFT) {
-        x = grab_state->x + dx;
-        width -= dx;
-        if (width < 1) {
-            x += width;
-        }
-    } else if (grab_state->resize_edges & WLR_EDGE_RIGHT) {
-        width += dx;
-    }
-    grab_state->view->x = x;
-    grab_state->view->y = y;
-    grab_state->view->resize(width, height);
+    double width = resize_data.geometry.width;
+    double height = resize_data.geometry.height;
+
+    resize_data.workspace
+        .or_else([&]() {
+            // window is floating
+
+            if (resize_data.resize_edges & WLR_EDGE_TOP) {
+                y = resize_data.ly + dy;
+                height -= dy;
+                if (height < 1) {
+                    y += height;
+                }
+            } else if (resize_data.resize_edges & WLR_EDGE_BOTTOM) {
+                height += dy;
+            }
+            if (resize_data.resize_edges & WLR_EDGE_LEFT) {
+                x = resize_data.lx + dx;
+                width -= dx;
+                if (width < 1) {
+                    x += width;
+                }
+            } else if (resize_data.resize_edges & WLR_EDGE_RIGHT) {
+                width += dx;
+            }
+            grab_state->view->x = x;
+            grab_state->view->y = y;
+            grab_state->view->resize(width, height);
+
+            return NullRef<Workspace>;
+        })
+        .and_then([&](auto& ws) {
+            // window is tiled
+
+            if (resize_data.resize_edges & WLR_EDGE_LEFT) {
+                width -= dx;
+                ws.scroll_x = resize_data.scroll_x - dx;
+            } else if (resize_data.resize_edges & WLR_EDGE_RIGHT) {
+                width += dx;
+            }
+            ws.arrange_tiles();
+            grab_state->view->resize(width, height);
+        });
 }
 
 void Seat::end_interactive()

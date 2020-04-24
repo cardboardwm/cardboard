@@ -12,6 +12,7 @@ extern "C" {
 #include <functional>
 #include <list>
 #include <optional>
+#include <variant>
 #include <vector>
 
 #include "Cursor.h"
@@ -25,14 +26,20 @@ constexpr const char* DEFAULT_SEAT = "seat0";
 
 struct Seat {
     struct GrabState {
-        enum class Mode {
-            MOVE,
-            RESIZE
-        } mode;
+        struct Move {
+            double lx, ly;
+            OptionalRef<Workspace> workspace;
+            int scroll_x;
+        };
+        struct Resize {
+            double lx, ly;
+            struct wlr_box geometry;
+            uint32_t resize_edges;
+            OptionalRef<Workspace> workspace;
+            int scroll_x;
+        };
         View* view;
-        double x, y;
-        int width, height;
-        uint32_t resize_edges;
+        std::variant<Move, Resize> grab_data;
     };
 
     SeatCursor cursor;
@@ -75,10 +82,11 @@ struct Seat {
     /// Removes the \a view from the focus stack.
     void remove_from_focus_stack(View* view);
 
-    void begin_interactive(View* view, GrabState::Mode mode, uint32_t edges);
+    void begin_move(Server* server, View* view);
+    void begin_resize(Server* server, View* view, uint32_t edges);
     void process_cursor_motion(Server* server, uint32_t time);
-    void process_cursor_move();
-    void process_cursor_resize();
+    void process_cursor_move(GrabState::Move move_data);
+    void process_cursor_resize(GrabState::Resize resize_data);
     void end_interactive();
 
     /// Returns the workspace under the cursor.

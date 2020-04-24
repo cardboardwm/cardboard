@@ -108,7 +108,8 @@ void XDGView::close_popups()
         wlr_xdg_popup_destroy(popup->base);
     }
 }
-void XDGView::close() {
+void XDGView::close()
+{
     wlr_xdg_toplevel_send_close(xdg_surface);
 }
 
@@ -205,6 +206,9 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
 
     // unmap handler is guaranteed to be called if the view is mapped
 
+    if (server->seat.grab_state && server->seat.grab_state->view == view) {
+        server->seat.end_interactive();
+    }
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;
 }
@@ -221,9 +225,8 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
-        server->get_views_workspace(view).and_then([server](auto& ws) {
+        server->get_views_workspace(view).and_then([](auto& ws) {
             ws.arrange_tiles();
-            ws.fit_view_on_screen(server->seat.get_focused_view());
         });
     }
     server->get_views_workspace(view).and_then([view](auto& ws) {
@@ -249,7 +252,7 @@ void xdg_toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unu
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
 
-    server->seat.begin_interactive(view, Seat::GrabState::Mode::MOVE, 0);
+    server->seat.begin_move(server, view);
 }
 void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data)
 {
@@ -257,7 +260,7 @@ void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* dat
     auto* server = get_server(listener);
 
     auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
-    server->seat.begin_interactive(view, Seat::GrabState::Mode::RESIZE, event->edges);
+    server->seat.begin_resize(server, view, event->edges);
 }
 
 void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data)

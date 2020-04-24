@@ -18,6 +18,9 @@ XwaylandView::XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland
 void XwaylandView::destroy()
 {
     server->listeners.clear_listeners(this);
+    if (server->seat.grab_state && server->seat.grab_state->view == this) {
+        server->seat.end_interactive();
+    }
     server->views.remove_if([this](const auto x) { return this == x; });
     delete this;
 }
@@ -121,7 +124,8 @@ void XwaylandView::close_popups()
 {
     // nothing!
 }
-void XwaylandView::close() {
+void XwaylandView::close()
+{
     wlr_xwayland_surface_close(xwayland_surface);
 }
 
@@ -207,9 +211,8 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
         view->geometry.width = xsurface->width;
         view->geometry.height = xsurface->height;
 
-        server->get_views_workspace(view).and_then([server](auto& ws) {
+        server->get_views_workspace(view).and_then([](auto& ws) {
             ws.arrange_tiles();
-            ws.fit_view_on_screen(server->seat.get_focused_view());
         });
     }
     server->get_views_workspace(view).and_then([view](auto& ws) {
