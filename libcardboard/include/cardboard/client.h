@@ -9,6 +9,7 @@
 
 #include <sys/un.h>
 
+/// Code for sending commands to Cardboard and receiving responses.
 namespace libcutter
 {
     /**
@@ -32,7 +33,7 @@ namespace libcutter
         tl::expected<std::string, int> wait_response();
     private:
         Client(int, std::unique_ptr<sockaddr_un>);
-    private:
+
         int socket_fd;
         std::unique_ptr<sockaddr_un> socket_address;
 

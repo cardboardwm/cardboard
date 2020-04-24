@@ -1,4 +1,4 @@
-inc = include_directories('include')
+libcardboard_inc = include_directories('include')
 
 expected_proj = subproject('expected', required: true)
 expected = expected_proj.get_variable('expected_dep')
@@ -15,7 +15,7 @@ sources = files(
 libcardboard = library(
     'command_protocol',
     sources,
-    include_directories: inc,
+    include_directories: libcardboard_inc,
     install: true,
     dependencies: [cereal, expected],
     cpp_args: '-Wno-deprecated'

@@ -4,7 +4,7 @@ expected = expected_proj.get_variable('expected_dep')
 executable(
     'cutter',
     files('main.cpp'),
-    include_directories: [include_dir, '../libcardboard/include'],
+    include_directories: [libcardboard_inc],
     install: true,
     link_with: libcardboard,
     dependencies: [expected]

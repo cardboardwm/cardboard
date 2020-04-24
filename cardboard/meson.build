@@ -32,7 +32,7 @@ cardboard_deps = [
   wayland_server,
   wlroots,
   xkbcommon,
-  server_protos
+  server_protos,
 ]
 
 cardboard_sources = files(
@@ -57,10 +57,12 @@ if have_xwayland
     cardboard_sources += 'Xwayland.cpp'
 endif
 
+subdir('wlr_cpp_fixes')
+
 executable(
   'cardboard',
   cardboard_sources,
-  include_directories: [include_dir, '../libcardboard/include'],
+  include_directories: [wlr_cpp_fixes_inc, libcardboard_inc],
   dependencies: cardboard_deps,
   link_with: libcardboard
 )

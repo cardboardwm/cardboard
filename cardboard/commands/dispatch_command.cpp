@@ -14,17 +14,17 @@ overloaded(Ts...)->overloaded<Ts...>;
 Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
-                          [](CommandArguments::focus focus_data) -> Command {
+                          [](command_arguments::focus focus_data) -> Command {
                               return [focus_data](Server* server) {
                                   return commands::focus(
                                       server,
-                                      focus_data.direction == CommandArguments::focus::Direction::Left ? -1 : +1);
+                                      focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
                               };
                           },
-                          [](CommandArguments::quit quit_data) -> Command {
+                          [](command_arguments::quit quit_data) -> Command {
                               return [quit_data](Server* server) { return commands::quit(server, quit_data.code); };
                           },
-                          [](const CommandArguments::bind& bind_data) -> Command {
+                          [](const command_arguments::bind& bind_data) -> Command {
                               static const std::unordered_map<std::string, uint32_t> mod_table = {
                                   { "shift", WLR_MODIFIER_SHIFT },
                                   { "ctrl", WLR_MODIFIER_CTRL },
@@ -50,12 +50,12 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::bind(server, modifiers, sym, command);
                               } };
                           },
-                          [](CommandArguments::exec exec_data) -> Command {
+                          [](command_arguments::exec exec_data) -> Command {
                               return [exec_data](Server* server) {
                                   return commands::exec(server, exec_data.argv);
                               };
                           },
-                          [](CommandArguments::close) -> Command {
+                          [](command_arguments::close) -> Command {
                               return commands::close;
                           },
                       },

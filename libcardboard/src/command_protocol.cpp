@@ -12,36 +12,38 @@
 #include <cardboard/command_protocol.h>
 #include <cardboard/ipc.h>
 
+/// \cond IGNORE
 namespace cereal {
 template <typename Archive>
-void serialize(Archive& ar, CommandArguments::quit& quit)
+void serialize(Archive& ar, command_arguments::quit& quit)
 {
     ar(quit.code);
 }
 
 template <typename Archive>
-void serialize(Archive& ar, CommandArguments::focus& focus)
+void serialize(Archive& ar, command_arguments::focus& focus)
 {
     ar(focus.direction);
 }
 
 template <typename Archive>
-void serialize(Archive& ar, CommandArguments::exec& exec)
+void serialize(Archive& ar, command_arguments::exec& exec)
 {
     ar(exec.argv);
 }
 
 template <typename Archive>
-void serialize(Archive& ar, CommandArguments::bind& bind)
+void serialize(Archive& ar, command_arguments::bind& bind)
 {
     ar(bind.modifiers, bind.key, bind.command);
 }
 
 template <typename Archive>
-void serialize(Archive&, CommandArguments::close&)
+void serialize(Archive&, command_arguments::close&)
 {
 }
 }
+/// \endcond
 
 tl::expected<CommandData, std::string> read_command_data(void* data, size_t size)
 {

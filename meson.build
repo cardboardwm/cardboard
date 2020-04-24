@@ -19,8 +19,6 @@ add_project_arguments(
   language: 'cpp'
 )
 
-include_dir = include_directories('include')
-
 subdir('protocols')
 subdir('libcardboard')
 subdir('cardboard')

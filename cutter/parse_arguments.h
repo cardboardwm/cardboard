@@ -26,7 +26,7 @@ tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>
             return tl::unexpected("malformed exit code '"s + args[0] + "'");
         }
     }
-    return CommandArguments::quit { code };
+    return command_arguments::quit { code };
 }
 
 tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string>& args)
@@ -35,10 +35,10 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
         return tl::unexpected("not enough arguments"s);
 
     if (args[0] == "left") {
-        return CommandArguments::focus { CommandArguments::focus::Direction::Left };
+        return command_arguments::focus { command_arguments::focus::Direction::Left };
     }
     else if (args[0] == "right") {
-        return CommandArguments::focus { CommandArguments::focus::Direction::Right };
+        return command_arguments::focus { command_arguments::focus::Direction::Right };
     }
 
     return tl::unexpected("unrecognized word '"s + args[0] + "'");
@@ -46,7 +46,7 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
 
 tl::expected<CommandData, std::string> parse_exec(const std::vector<std::string>& args)
 {
-    return CommandArguments::exec { args };
+    return command_arguments::exec { args };
 }
 
 tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>& args)
@@ -93,7 +93,7 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
     if (!command_data.has_value())
         return tl::unexpected("could not parse sub command: \n"s + command_data.error());
 
-    return CommandArguments::bind {
+    return command_arguments::bind {
         std::move(modifiers),
         std::move(key),
         std::move(*command_data)
@@ -102,7 +102,7 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
 
 tl::expected<CommandData, std::string> parse_close(const std::vector<std::string>&)
 {
-    return CommandArguments::close{};
+    return command_arguments::close{};
 }
 
 

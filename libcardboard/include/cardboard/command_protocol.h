@@ -9,7 +9,8 @@
 
 #include <tl/expected.hpp>
 
-namespace CommandArguments {
+/// Structs representing arguments for IPC commands.
+namespace command_arguments {
 struct quit {
     int code;
 };
@@ -35,13 +36,13 @@ struct close {
  * \brief Variant that contains the arguments of each accepted command, as a different type.
  */
 using CommandData = std::variant<
-    CommandArguments::quit,
-    CommandArguments::focus,
-    CommandArguments::exec,
-    CommandArguments::bind,
-    CommandArguments::close>;
+    command_arguments::quit,
+    command_arguments::focus,
+    command_arguments::exec,
+    command_arguments::bind,
+    command_arguments::close>;
 
-namespace CommandArguments {
+namespace command_arguments {
 struct bind {
     std::vector<std::string> modifiers;
     std::string key;
