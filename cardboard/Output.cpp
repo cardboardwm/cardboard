@@ -24,7 +24,7 @@ extern "C" {
 struct RenderData {
     struct wlr_output* output;
     struct wlr_renderer* renderer;
-    int ox, oy;
+    int lx, ly;
     const struct timespec* when;
     Server* server;
 };
@@ -79,8 +79,8 @@ void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
         return;
     }
 
-    // translate surface coordinates to output coordinates
-    double ox = rdata->ox + sx, oy = rdata->oy + sy;
+    // translate surface coordinates from layout-relative to output-relative coordinates
+    double ox = rdata->lx + sx, oy = rdata->ly + sy;
     wlr_output_layout_output_coords(server->output_layout, output, &ox, &oy);
 
     // apply scale factor for HiDPI outputs
@@ -112,8 +112,8 @@ static void render_workspace(Server* server, Workspace& ws, struct wlr_output* w
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = tile.view->x,
-            .oy = tile.view->y,
+            .lx = tile.view->x,
+            .ly = tile.view->y,
             .when = now,
             .server = server
         };
@@ -126,8 +126,8 @@ static void render_workspace(Server* server, Workspace& ws, struct wlr_output* w
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = focused_view->x,
-            .oy = focused_view->y,
+            .lx = focused_view->x,
+            .ly = focused_view->y,
             .when = now,
             .server = server
         };
@@ -149,8 +149,8 @@ static void render_floating(Server* server, View* ancestor, struct wlr_output* w
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = view->x,
-            .oy = view->y,
+            .lx = view->x,
+            .ly = view->y,
             .when = now,
             .server = server
         };
@@ -170,8 +170,8 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = surface.geometry.x + output_box->x,
-            .oy = surface.geometry.y + output_box->y,
+            .lx = surface.geometry.x + output_box->x,
+            .ly = surface.geometry.y + output_box->y,
             .when = now,
             .server = server
         };
@@ -188,8 +188,8 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .ox = xwayland_or_surface->lx - output_box->x,
-            .oy = xwayland_or_surface->ly - output_box->y,
+            .lx = xwayland_or_surface->lx - output_box->x,
+            .ly = xwayland_or_surface->ly - output_box->y,
             .when = now,
             .server = server
         };
