@@ -14,9 +14,8 @@ extern "C" {
 void create_layer(Server* server, LayerSurface&& layer_surface_)
 {
     auto layer = layer_surface_.surface->client_pending.layer;
-    auto* output = static_cast<Output*>(layer_surface_.surface->output->data);
-    output->layers[layer].push_back(layer_surface_);
-    auto& layer_surface = output->layers[layer].back();
+    server->layers[layer].push_back(layer_surface_);
+    auto& layer_surface = server->layers[layer].back();
     layer_surface.layer = layer;
     layer_surface.surface->data = &layer_surface;
 
@@ -42,7 +41,7 @@ void create_layer(Server* server, LayerSurface&& layer_surface_)
     // to easily arrange it.
     auto old_state = layer_surface.surface->current;
     layer_surface.surface->current = layer_surface.surface->client_pending;
-    arrange_layers(server, output);
+    arrange_layers(server, &layer_surface.output.unwrap());
     layer_surface.surface->current = old_state;
 }
 
@@ -86,6 +85,11 @@ bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_sur
     }
 
     return false;
+}
+
+bool LayerSurface::is_on_output(Output* out) const
+{
+    return output && &output.unwrap() == out;
 }
 
 void LayerSurfacePopup::unconstrain(Server* server)
@@ -165,6 +169,10 @@ static void arrange_layer(Output* output, LayerArray::value_type& layer_surfaces
     wlr_output_effective_resolution(output->wlr_output, &full_area.width, &full_area.height);
 
     for (auto& layer_surface : layer_surfaces) {
+        if (!layer_surface.is_on_output(output)) {
+            continue;
+        }
+
         const auto* state = &layer_surface.surface->current;
         if (exclusive != (state->exclusive_zone > 0)) {
             continue;
@@ -242,10 +250,10 @@ void arrange_layers(Server* server, Output* output)
     wlr_output_effective_resolution(output->wlr_output, &usable_area.width, &usable_area.height);
 
     // arrange exclusive surfaces from top to bottom
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, true);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, true);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, true);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, true);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, true);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, true);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, true);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, true);
 
     if (memcmp(&usable_area, &output->usable_area, sizeof(struct wlr_box)) != 0) {
         output->usable_area = usable_area;
@@ -260,10 +268,10 @@ void arrange_layers(Server* server, Output* output)
     }
 
     // arrange non-exclusive surfaces from top to bottom
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, false);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, false);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, false);
-    arrange_layer(output, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, false);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, false);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, false);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, false);
+    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, false);
 
     // finds top-most layer surface, if it exists
 
@@ -274,8 +282,8 @@ void arrange_layers(Server* server, Output* output)
     };
     LayerSurface* topmost = nullptr;
     for (const auto layer : layers_above_shell) {
-        for (auto& layer_surface : output->layers[layer]) {
-            if (layer_surface.surface->current.keyboard_interactive && layer_surface.surface->mapped) {
+        for (auto& layer_surface : server->layers[layer]) {
+            if (layer_surface.surface->current.keyboard_interactive && layer_surface.is_on_output(output) && layer_surface.mapped) {
                 topmost = &layer_surface;
                 break;
             }
@@ -305,8 +313,8 @@ void layer_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]]
 
     bool layer_changed = layer_surface->layer != layer_surface->surface->current.layer;
     if (layer_changed) {
-        auto& old_layer = output->layers[layer_surface->layer];
-        auto& new_layer = output->layers[layer_surface->surface->current.layer];
+        auto& old_layer = server->layers[layer_surface->layer];
+        auto& new_layer = server->layers[layer_surface->surface->current.layer];
 
         auto old_layer_it = std::find_if(old_layer.begin(), old_layer.end(), [layer_surface](const auto& other) { return &other == layer_surface; });
         if (old_layer_it != old_layer.end()) {
@@ -324,17 +332,16 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     wlr_log(WLR_DEBUG, "destroyed layer surface: namespace %s layer %d", layer_surface->surface->namespace_, layer_surface->surface->current.layer);
     server->listeners.clear_listeners(layer_surface);
 
-    if (layer_surface->surface->output != nullptr) {
-        auto* output = static_cast<Output*>(layer_surface->surface->output->data);
-        output->remove_layer_surface(layer_surface);
-        arrange_layers(server, output);
-    }
+    auto output = layer_surface->output;
+    server->layers[layer_surface->layer].remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
+    output.and_then([server](auto& out) { arrange_layers(server, &out); });
 }
 
 void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
+    layer_surface->mapped = true;
     wlr_surface_send_enter(layer_surface->surface->surface, layer_surface->surface->output);
 }
 
@@ -343,6 +350,7 @@ void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, 
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
+    layer_surface->mapped = false;
     if (server->seat.focused_layer == layer_surface->surface) {
         server->seat.focus_layer(server, nullptr);
     }
@@ -359,10 +367,12 @@ void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listen
 
 void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
-    auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
+    auto* server = get_server(listener);
 
     auto* client = wl_resource_get_client(layer_surface->surface->resource);
+
+    layer_surface->mapped = false;
 
     // if the layer's client has exclusivity, we must focus the first mapped layer of the client,
     // now that this layer is getting unmapped.
@@ -371,15 +381,10 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
     if (client == server->seat.exclusive_client) {
         LayerSurface* layer_surface_to_focus = nullptr;
         if (client == server->seat.exclusive_client) {
-            for (auto& output : server->outputs) {
-                for (auto& layer : output.layers) {
-                    for (auto& layer_surface : layer) {
-                        if (wl_resource_get_client(layer_surface.surface->resource) == client && layer_surface.surface->mapped) {
-                            layer_surface_to_focus = &layer_surface;
-                        }
-                    }
-                    if (layer_surface_to_focus != nullptr) {
-                        break;
+            for (auto& layer : server->layers) {
+                for (auto& lf : layer) {
+                    if (wl_resource_get_client(lf.surface->resource) == client && lf.mapped) {
+                        layer_surface_to_focus = &lf;
                     }
                 }
                 if (layer_surface_to_focus != nullptr) {
@@ -394,6 +399,7 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
     // we don't have to remove the layer surface from the layer list of the output
     // because the list is destroyed either way in Output.cpp:output_destroy_handler
     layer_surface->surface->output = nullptr;
+    layer_surface->output = NullRef<Output>;
     wlr_layer_surface_v1_close(layer_surface->surface);
 }
 

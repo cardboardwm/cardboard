@@ -21,10 +21,8 @@ extern "C" {
 struct Output {
     struct wlr_output* wlr_output;
 
-    LayerArray layers;
     struct wlr_box usable_area;
 
-    void remove_layer_surface(LayerSurface* layer_surface);
     struct wlr_box* get_box();
 };
 

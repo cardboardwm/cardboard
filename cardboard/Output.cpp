@@ -29,12 +29,6 @@ struct RenderData {
     Server* server;
 };
 
-void Output::remove_layer_surface(LayerSurface* layer_surface)
-{
-    auto& layer = layers[layer_surface->layer];
-    layer.remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
-}
-
 void register_output(Server* server, Output&& output_)
 {
     server->outputs.emplace_back(output_);
@@ -163,7 +157,7 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
 {
     auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
     for (const auto& surface : surfaces) {
-        if (!surface.surface->mapped) {
+        if (!surface.mapped || !surface.is_on_output(static_cast<Output*>(wlr_output->data))) {
             continue;
         }
 
@@ -230,8 +224,8 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
 #endif
         render_floating(server, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
     } else {
-        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
-        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
         render_workspace(server, ws, wlr_output, renderer, &now);
@@ -242,9 +236,9 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
 #endif
 
         render_floating(server, nullptr, wlr_output, renderer, &now);
-        render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
     }
-    render_layer(server, output->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
+    render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
 
     // in case of software rendered cursor, render it
     wlr_output_render_software_cursors(wlr_output, nullptr);

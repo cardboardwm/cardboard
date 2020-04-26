@@ -77,6 +77,7 @@ struct Server {
 #if HAVE_XWAYLAND
     std::list<XwaylandORSurface*> xwayland_or_surfaces;
 #endif
+    LayerArray layers;
 
     std::vector<Workspace> workspaces;
 

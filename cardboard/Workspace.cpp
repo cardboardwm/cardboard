@@ -118,6 +118,10 @@ void Workspace::fit_view_on_screen(View* view)
         return;
     }
 
+    if (!output) {
+        return;
+    }
+
     const auto& output = this->output.unwrap();
     const auto* output_box = wlr_output_layout_get_box(output_layout, output.wlr_output);
     if (output_box == nullptr) {

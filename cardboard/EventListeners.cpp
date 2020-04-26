@@ -102,23 +102,29 @@ void new_layer_surface_handler(struct wl_listener* listener, void* data)
             layer_surface->client_pending.margin.bottom,
             layer_surface->client_pending.margin.left);
 
-    if (!layer_surface->output) {
+    OptionalRef<Output> output_to_assign;
+    if (layer_surface->output) {
+        output_to_assign = OptionalRef(static_cast<Output*>(layer_surface->output->data));
+    } else {
         // Assigns output of the focused workspace
-        server->seat.get_focused_workspace(server)
-            .and_then<Output>([](auto& ws) { return ws.output; })
-            .or_else([server]() {
-                if (server->outputs.empty()) {
-                    return OptionalRef<Output>(nullptr);
-                }
-                return OptionalRef(server->outputs.front());
-            })
-            .and_then<Output>([layer_surface](auto& output) { layer_surface->output = output.wlr_output; return OptionalRef(output); })
-            .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullRef<Output>; });
+        output_to_assign = server->seat.get_focused_workspace(server)
+                               .and_then<Output>([](auto& ws) { return ws.output; })
+                               .or_else([server]() {
+                                   if (server->outputs.empty()) {
+                                       return OptionalRef<Output>(nullptr);
+                                   }
+                                   return OptionalRef(server->outputs.front());
+                               })
+                               .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullRef<Output>; });
     }
 
-    LayerSurface ls;
-    ls.surface = layer_surface;
-    create_layer(server, std::move(ls));
+    output_to_assign.and_then([output_to_assign, layer_surface, server](auto& output) {
+        LayerSurface ls;
+        ls.output = output_to_assign;
+        ls.surface = layer_surface;
+        ls.surface->output = output.wlr_output;
+        create_layer(server, std::move(ls));
+    });
 }
 
 #if HAVE_XWAYLAND

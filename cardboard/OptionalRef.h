@@ -16,7 +16,7 @@
 template <typename T>
 class OptionalRef {
 public:
-    explicit OptionalRef()
+    OptionalRef()
         : ptr(nullptr)
     {
     }
