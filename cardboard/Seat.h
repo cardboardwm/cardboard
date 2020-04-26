@@ -102,6 +102,9 @@ struct Seat {
      */
     bool is_input_allowed(struct wlr_surface* surface);
 
+    /// Returns true if the mod key is pressed on any of this seat's keyboards.
+    bool is_mod_pressed();
+
 private:
     /// Sets keyboard focus on a \a surface.
     void keyboard_notify_enter(struct wlr_surface* surface);

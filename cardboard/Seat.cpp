@@ -279,16 +279,17 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
 void Seat::process_cursor_motion(Server* server, uint32_t time)
 {
     if (grab_state) {
-        std::visit([this](auto&& arg) {
-            using T = std::decay_t<decltype(arg)>;
+        std::visit(
+            [this](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
 
-            if constexpr (std::is_same_v<T, GrabState::Move>) {
-                process_cursor_move(arg);
-            } else if constexpr (std::is_same_v<T, GrabState::Resize>) {
-                process_cursor_resize(arg);
-            }
-        },
-                   grab_state->grab_data);
+                if constexpr (std::is_same_v<T, GrabState::Move>) {
+                    process_cursor_move(arg);
+                } else if constexpr (std::is_same_v<T, GrabState::Resize>) {
+                    process_cursor_resize(arg);
+                }
+            },
+            grab_state->grab_data);
         return;
     }
     double sx, sy;
@@ -447,6 +448,16 @@ bool Seat::is_input_allowed(struct wlr_surface* surface)
 {
     auto* client = wl_resource_get_client(surface->resource);
     return !exclusive_client || *exclusive_client == client;
+}
+
+bool Seat::is_mod_pressed()
+{
+    auto* keyboard = wlr_seat_get_keyboard(wlr_seat);
+    if (!keyboard) {
+        return false;
+    }
+
+    return wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_ALT;
 }
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)

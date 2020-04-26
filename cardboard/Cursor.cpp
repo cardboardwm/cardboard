@@ -1,7 +1,9 @@
 extern "C" {
+#include <linux/input-event-codes.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/util/log.h>
 }
 
 #include "Cursor.h"
@@ -61,15 +63,33 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
     auto* cursor = get_listener_data<SeatCursor*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_button*>(data);
 
-    wlr_seat_pointer_notify_button(cursor->seat->wlr_seat, event->time_msec, event->button, event->state);
+    if (event->state == WLR_BUTTON_RELEASED) {
+        wlr_seat_pointer_notify_button(cursor->seat->wlr_seat, event->time_msec, event->button, event->state);
+        // end grabbing
+        cursor->seat->end_interactive();
+        return;
+    }
+
     double sx, sy;
     struct wlr_surface* surface;
     View* view = server->get_surface_under_cursor(cursor->wlr_cursor->x, cursor->wlr_cursor->y, surface, sx, sy);
-    if (event->state == WLR_BUTTON_RELEASED) {
-        // end grabbing
-        cursor->seat->end_interactive();
-    } else if (view != cursor->seat->get_focused_view() && view != nullptr) {
-        cursor->seat->focus_view(server, view);
+    if (!view) {
+        return;
+    }
+    if (cursor->seat->is_mod_pressed()) {
+        if (event->button == BTN_LEFT) {
+            cursor->seat->begin_move(server, view);
+        } else if (event->button == BTN_RIGHT) {
+            uint32_t edge = 0;
+            edge |= cursor->wlr_cursor->x > view->x + view->geometry.x + view->geometry.width / 2 ? WLR_EDGE_RIGHT : WLR_EDGE_LEFT;
+            edge |= cursor->wlr_cursor->y > view->y + view->geometry.y + view->geometry.height / 2 ? WLR_EDGE_BOTTOM : WLR_EDGE_TOP;
+            cursor->seat->begin_resize(server, view, edge);
+        }
+    } else {
+        wlr_seat_pointer_notify_button(cursor->seat->wlr_seat, event->time_msec, event->button, event->state);
+        if (view != cursor->seat->get_focused_view()) {
+            cursor->seat->focus_view(server, view);
+        }
     }
 }
 
