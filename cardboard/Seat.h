@@ -87,7 +87,7 @@ struct Seat {
     void process_cursor_motion(Server* server, uint32_t time);
     void process_cursor_move(GrabState::Move move_data);
     void process_cursor_resize(GrabState::Resize resize_data);
-    void end_interactive();
+    void end_interactive(Server* server);
 
     /// Returns the workspace under the cursor.
     OptionalRef<Workspace> get_focused_workspace(Server* server);

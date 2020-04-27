@@ -179,7 +179,9 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [wlr_output](const auto& other) {
         return other.output && other.output.unwrap().wlr_output == wlr_output;
     });
-    assert(ws_it != workspaces.end());
+    if (ws_it == workspaces.end()) {
+        return nullptr;
+    }
 
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP }) {
         // fullscreen views render on top of the TOP layer

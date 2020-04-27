@@ -1,15 +1,34 @@
 #ifndef __CARDBOARD_CURSOR_H_
 #define __CARDBOARD_CURSOR_H_
 
+extern "C" {
+#include <wayland-server.h>
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_xcursor_manager.h>
+}
+
+#include <cstdint>
+
+#include "OptionalRef.h"
+
 struct Server;
 struct Seat;
 
 // TODO: rename to Cursor after namespacing all structs
 struct SeatCursor {
     struct wlr_cursor* wlr_cursor;
-    struct wlr_xcursor_manager* wlr_cursor_manager;
+    struct wlr_xcursor_manager* wlr_xcursor_manager;
+    OptionalRef<struct wl_listener> image_surface_destroy_listener;
 
     Seat* seat;
+
+    void set_image(Server* server, const char* image);
+    void set_image_surface(Server* server, struct wlr_surface* surface, int32_t hotspot_x, int32_t hotspot_y);
+    /// Sets the cursor image according to the surface underneath.
+    void rebase(Server* server, uint32_t time = 0);
+
+private:
+    void register_image_surface(Server* server, struct wlr_surface* surface);
 };
 
 void init_cursor(Server* server, Seat* seat, SeatCursor* cursor);
@@ -53,5 +72,8 @@ void cursor_axis_handler(struct wl_listener* listener, void* data);
  * won't be sent in between.
  */
 void cursor_frame_handler(struct wl_listener* listener, void* data);
+
+/// Called when the surface of the mouse pointer is destroyed by the client.
+void cursor_image_surface_destroy_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_CURSOR_H_

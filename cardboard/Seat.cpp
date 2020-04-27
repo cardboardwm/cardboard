@@ -292,26 +292,7 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
             grab_state->grab_data);
         return;
     }
-    double sx, sy;
-    struct wlr_surface* surface = nullptr;
-    server->get_surface_under_cursor(cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
-    if (!surface) {
-        // set the cursor to default
-        wlr_xcursor_manager_set_cursor_image(cursor.wlr_cursor_manager, "left_ptr", cursor.wlr_cursor);
-    }
-    if (surface && is_input_allowed(surface)) {
-        bool focus_changed = wlr_seat->pointer_state.focused_surface != surface;
-        // Gives pointer focus when the cursor enters the surface
-        wlr_seat_pointer_notify_enter(wlr_seat, surface, sx, sy);
-        if (!focus_changed) {
-            // the enter event contains coordinates, so we notify on motion only
-            // if the focus did not change
-            wlr_seat_pointer_notify_motion(wlr_seat, time, sx, sy);
-        }
-    } else {
-        // Clear focus so pointer events are not sent to the last entered surface
-        wlr_seat_pointer_clear_focus(wlr_seat);
-    }
+    cursor.rebase(server, time);
 }
 
 void Seat::process_cursor_move(GrabState::Move move_data)
@@ -385,9 +366,10 @@ void Seat::process_cursor_resize(GrabState::Resize resize_data)
         });
 }
 
-void Seat::end_interactive()
+void Seat::end_interactive(Server* server)
 {
     grab_state = std::nullopt;
+    cursor.rebase(server);
 }
 
 OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
@@ -462,13 +444,14 @@ bool Seat::is_mod_pressed(uint32_t mods)
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)
 {
-    Server* server = get_server(listener);
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
 
     auto* event = static_cast<wlr_seat_pointer_request_set_cursor_event*>(data);
-    struct wlr_seat_client* focused_client = server->seat.wlr_seat->pointer_state.focused_client;
+    struct wlr_seat_client* focused_client = seat->wlr_seat->pointer_state.focused_client;
 
-    if (focused_client == event->seat_client) {
-        wlr_cursor_set_surface(server->seat.cursor.wlr_cursor, event->surface, event->hotspot_x, event->hotspot_y);
+    if (focused_client == event->seat_client && !seat->grab_state) {
+        server->seat.cursor.set_image_surface(server, event->surface, event->hotspot_x, event->hotspot_y);
     }
 }
 

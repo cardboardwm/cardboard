@@ -207,7 +207,7 @@ void xdg_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] 
     // unmap handler is guaranteed to be called if the view is mapped
 
     if (server->seat.grab_state && server->seat.grab_state->view == view) {
-        server->seat.end_interactive();
+        server->seat.end_interactive(server);
     }
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;

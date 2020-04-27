@@ -339,10 +339,12 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
 
 void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
+    auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
     layer_surface->mapped = true;
     wlr_surface_send_enter(layer_surface->surface->surface, layer_surface->surface->output);
+    server->seat.cursor.rebase(server);
 }
 
 void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -354,6 +356,7 @@ void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, 
     if (server->seat.focused_layer == layer_surface->surface) {
         server->seat.focus_layer(server, nullptr);
     }
+    //server->seat.cursor.rebase(server);
 }
 
 void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)

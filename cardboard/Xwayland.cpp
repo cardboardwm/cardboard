@@ -19,7 +19,7 @@ void XwaylandView::destroy()
 {
     server->listeners.clear_listeners(this);
     if (server->seat.grab_state && server->seat.grab_state->view == this) {
-        server->seat.end_interactive();
+        server->seat.end_interactive(server);
     }
     server->views.remove_if([this](const auto x) { return this == x; });
     delete this;
