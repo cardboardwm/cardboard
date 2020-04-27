@@ -15,6 +15,40 @@
 namespace detail {
 using namespace std::string_literals;
 
+static auto find_mod_key(const std::string& key)
+{
+    static const std::unordered_set<std::string> mod_keys = { "shift", "ctrl", "alt", "super", "caps", "mod2", "mod3", "mod5" };
+    return mod_keys.find(key) != mod_keys.end();
+};
+
+tl::expected<command_arguments::config_mouse_mod, std::string> parse_mouse_mod(const std::vector<std::string>& args)
+{
+    if (args.size() != 1) {
+        return tl::unexpected("malformed config value"s);
+    }
+
+    std::vector<std::string> modifiers;
+    auto locale = std::locale("");
+
+    size_t pos = 0;
+    while (pos < args[0].size()) {
+        auto plus_index = args[0].find('+', pos);
+        auto token = args[0].substr(pos, plus_index - pos);
+
+        if (!find_mod_key(token)) {
+            return tl::unexpected("token '"s + token + "' is not a modifier");
+        }
+        modifiers.push_back(token);
+        if (plus_index == args[0].npos) {
+            pos = args[0].size();
+        } else {
+            pos = plus_index + 1;
+        }
+    }
+
+    return command_arguments::config_mouse_mod { std::move(modifiers) };
+}
+
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments);
 
 tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>& args)
@@ -36,12 +70,11 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
 
     if (args[0] == "left") {
         return command_arguments::focus { command_arguments::focus::Direction::Left };
-    }
-    else if (args[0] == "right") {
+    } else if (args[0] == "right") {
         return command_arguments::focus { command_arguments::focus::Direction::Right };
     }
 
-    return tl::unexpected("unrecognized word '"s + args[0] + "'");
+    return tl::unexpected("invalid direction '"s + args[0] + "'");
 }
 
 tl::expected<CommandData, std::string> parse_exec(const std::vector<std::string>& args)
@@ -51,17 +84,12 @@ tl::expected<CommandData, std::string> parse_exec(const std::vector<std::string>
 
 tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>& args)
 {
-    static const auto find_mod_key = [](const std::string& key) {
-        static const std::unordered_set<std::string> mod_keys = { "shift", "ctrl", "alt", "super", "caps", "mod2", "mod3", "mod5" };
-        return mod_keys.find(key) != mod_keys.end();
-    };
-
     std::vector<std::string> modifiers;
     std::string key;
 
     auto locale = std::locale("");
 
-    if (args.size() < 2){
+    if (args.size() < 2) {
         return tl::unexpected("not enough arguments"s);
     }
 
@@ -72,17 +100,15 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
 
         if (find_mod_key(token)) {
             modifiers.push_back(token);
-        }
-        else {
+        } else {
             for (char& c : token)
                 c = std::tolower(c, locale);
             key = token;
         }
 
-        if (plus_index == args[1].npos) {
+        if (plus_index == args[0].npos) {
             pos = args[0].size();
-        }
-        else {
+        } else {
             pos = plus_index + 1;
         }
     }
@@ -102,9 +128,23 @@ tl::expected<CommandData, std::string> parse_bind(const std::vector<std::string>
 
 tl::expected<CommandData, std::string> parse_close(const std::vector<std::string>&)
 {
-    return command_arguments::close{};
+    return command_arguments::close {};
 }
 
+tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
+{
+    if (args.empty()) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    std::string key = args[0];
+    auto new_args = std::vector<std::string>(std::next(args.begin()), args.end());
+    if (key == "mouse_mod") {
+        return parse_mouse_mod(new_args);
+    }
+
+    return tl::unexpected("invalid config key '"s + key + "''");
+}
 
 using parse_f = tl::expected<CommandData, std::string> (*)(const std::vector<std::string>&);
 static std::unordered_map<std::string, parse_f> parse_table = {
@@ -113,6 +153,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "exec", parse_exec },
     { "bind", parse_bind },
     { "close", parse_close },
+    { "config", parse_config },
 };
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments)

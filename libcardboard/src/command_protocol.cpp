@@ -14,6 +14,13 @@
 
 /// \cond IGNORE
 namespace cereal {
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)
+{
+    ar(mouse_mod.modifiers);
+}
+
 template <typename Archive>
 void serialize(Archive& ar, command_arguments::quit& quit)
 {

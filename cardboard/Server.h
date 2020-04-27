@@ -28,6 +28,7 @@ extern "C" {
 #include <unordered_map>
 #include <vector>
 
+#include "Config.h"
 #include "EventListeners.h"
 #include "IPC.h"
 #include "Keyboard.h"
@@ -86,6 +87,7 @@ struct Server {
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
+    Config config;
 
     Seat seat;
 

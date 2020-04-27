@@ -450,14 +450,14 @@ bool Seat::is_input_allowed(struct wlr_surface* surface)
     return !exclusive_client || *exclusive_client == client;
 }
 
-bool Seat::is_mod_pressed()
+bool Seat::is_mod_pressed(uint32_t mods)
 {
     auto* keyboard = wlr_seat_get_keyboard(wlr_seat);
     if (!keyboard) {
         return false;
     }
 
-    return wlr_keyboard_get_modifiers(keyboard) & WLR_MODIFIER_ALT;
+    return (wlr_keyboard_get_modifiers(keyboard) & mods) == mods;
 }
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)

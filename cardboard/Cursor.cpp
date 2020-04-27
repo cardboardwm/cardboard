@@ -76,7 +76,7 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
     if (!view) {
         return;
     }
-    if (cursor->seat->is_mod_pressed()) {
+    if (cursor->seat->is_mod_pressed(server->config.mouse_mods)) {
         if (event->button == BTN_LEFT) {
             cursor->seat->begin_move(server, view);
         } else if (event->button == BTN_RIGHT) {

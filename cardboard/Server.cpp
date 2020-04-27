@@ -66,6 +66,10 @@ bool Server::init()
 
     init_seat(this, &seat, DEFAULT_SEAT);
 
+    config = Config {
+        .mouse_mods = WLR_MODIFIER_LOGO,
+    };
+
     for (int i = 0; i < WORKSPACE_NR; i++) {
         workspaces.push_back(Workspace(i));
         workspaces.back().set_output_layout(output_layout);

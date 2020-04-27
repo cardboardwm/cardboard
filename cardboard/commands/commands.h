@@ -16,6 +16,12 @@ extern char** environ;
 
 namespace commands {
 
+inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
+{
+    server->config.mouse_mods = modifiers;
+    return { "" };
+}
+
 inline CommandResult focus(Server* server, int focus_direction)
 {
     server->seat.focus_by_offset(server, focus_direction);

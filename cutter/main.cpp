@@ -1,9 +1,9 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <cardboard/client.h>
 #include <cardboard/command_protocol.h>
 #include <cardboard/ipc.h>
-#include <cardboard/client.h>
 
 #include "parse_arguments.h"
 
