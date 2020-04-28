@@ -332,9 +332,9 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     wlr_log(WLR_DEBUG, "destroyed layer surface: namespace %s layer %d", layer_surface->surface->namespace_, layer_surface->surface->current.layer);
     server->listeners.clear_listeners(layer_surface);
 
-    auto output = layer_surface->output;
     server->layers[layer_surface->layer].remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
-    output.and_then([server](auto& out) { arrange_layers(server, &out); });
+    // we arrange in destroy and not in unmap because unmapping is always preceded by a commit event which should take care of it
+    layer_surface->output.and_then([server](auto& out) { arrange_layers(server, &out); });
 }
 
 void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
