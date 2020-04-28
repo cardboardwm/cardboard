@@ -169,8 +169,7 @@ static void arrange_layer(Output* output, LayerArray::value_type& layer_surfaces
     wlr_output_effective_resolution(output->wlr_output, &full_area.width, &full_area.height);
 
     for (auto& layer_surface : layer_surfaces) {
-        // unmapped surfaces might need their initial configuration so we don't skip them
-        if (!layer_surface.is_on_output(output) || (!layer_surface.surface->mapped && layer_surface.surface->configured)) {
+        if (!layer_surface.is_on_output(output)) {
             continue;
         }
 
@@ -333,7 +332,9 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     wlr_log(WLR_DEBUG, "destroyed layer surface: namespace %s layer %d", layer_surface->surface->namespace_, layer_surface->surface->current.layer);
     server->listeners.clear_listeners(layer_surface);
 
+    auto output = layer_surface->output;
     server->layers[layer_surface->layer].remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
+    output.and_then([server](auto& out) { arrange_layers(server, &out); });
 }
 
 void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -345,7 +346,7 @@ void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] vo
     server->seat.cursor.rebase(server);
 }
 
-void layer_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -353,10 +354,7 @@ void layer_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] 
     if (server->seat.focused_layer == layer_surface->surface) {
         server->seat.focus_layer(server, nullptr);
     }
-
-    layer_surface->output.and_then([server](auto& out) { arrange_layers(server, &out); });
-
-    server->seat.cursor.rebase(server);
+    //server->seat.cursor.rebase(server);
 }
 
 void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
