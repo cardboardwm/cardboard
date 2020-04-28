@@ -170,7 +170,7 @@ static void arrange_layer(Output* output, LayerArray::value_type& layer_surfaces
 
     for (auto& layer_surface : layer_surfaces) {
         // unmapped surfaces might need their initial configuration so we don't skip them
-        if (!layer_surface.is_on_output(output) || (!layer_surface.mapped && layer_surface.surface->configured)) {
+        if (!layer_surface.is_on_output(output) || (!layer_surface.surface->mapped && layer_surface.surface->configured)) {
             continue;
         }
 
@@ -284,7 +284,7 @@ void arrange_layers(Server* server, Output* output)
     LayerSurface* topmost = nullptr;
     for (const auto layer : layers_above_shell) {
         for (auto& layer_surface : server->layers[layer]) {
-            if (layer_surface.surface->current.keyboard_interactive && layer_surface.is_on_output(output) && layer_surface.mapped) {
+            if (layer_surface.surface->current.keyboard_interactive && layer_surface.is_on_output(output) && layer_surface.surface->mapped) {
                 topmost = &layer_surface;
                 break;
             }
@@ -341,7 +341,6 @@ void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] vo
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
-    layer_surface->mapped = true;
     wlr_surface_send_enter(layer_surface->surface->surface, layer_surface->surface->output);
     server->seat.cursor.rebase(server);
 }
@@ -351,7 +350,6 @@ void layer_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] 
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
-    layer_surface->mapped = false;
     if (server->seat.focused_layer == layer_surface->surface) {
         server->seat.focus_layer(server, nullptr);
     }
@@ -377,7 +375,7 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
 
     auto* client = wl_resource_get_client(layer_surface->surface->resource);
 
-    layer_surface->mapped = false;
+    layer_surface->surface->mapped = false;
 
     // if the layer's client has exclusivity, we must focus the first mapped layer of the client,
     // now that this layer is getting unmapped.
@@ -388,7 +386,7 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
         if (client == server->seat.exclusive_client) {
             for (auto& layer : server->layers) {
                 for (auto& lf : layer) {
-                    if (wl_resource_get_client(lf.surface->resource) == client && lf.mapped) {
+                    if (wl_resource_get_client(lf.surface->resource) == client && lf.surface->mapped) {
                         layer_surface_to_focus = &lf;
                     }
                 }

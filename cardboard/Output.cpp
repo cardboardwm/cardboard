@@ -157,7 +157,7 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
 {
     auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
     for (const auto& surface : surfaces) {
-        if (!surface.mapped || !surface.is_on_output(static_cast<Output*>(wlr_output->data))) {
+        if (!surface.surface->mapped || !surface.is_on_output(static_cast<Output*>(wlr_output->data))) {
             continue;
         }
 

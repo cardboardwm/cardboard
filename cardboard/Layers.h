@@ -25,7 +25,6 @@ struct LayerSurface {
     struct wlr_box geometry;
     enum zwlr_layer_shell_v1_layer layer;
     OptionalRef<Output> output;
-    bool mapped;
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
     bool is_on_output(Output* output) const;

@@ -189,7 +189,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
             continue;
         }
         for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.mapped || !layer_surface.is_on_output(&ws_it->output.unwrap())) {
+            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(&ws_it->output.unwrap())) {
                 continue;
             }
 
@@ -222,7 +222,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
 
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND }) {
         for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.mapped) {
+            if (!layer_surface.surface->mapped) {
                 continue;
             }
 
