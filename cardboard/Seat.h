@@ -84,7 +84,7 @@ struct Seat {
 
     void begin_move(Server* server, View* view);
     void begin_resize(Server* server, View* view, uint32_t edges);
-    void process_cursor_motion(Server* server, uint32_t time);
+    void process_cursor_motion(Server* server, uint32_t time = 0);
     void process_cursor_move(GrabState::Move move_data);
     void process_cursor_resize(GrabState::Resize resize_data);
     void end_interactive(Server* server);
