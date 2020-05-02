@@ -66,8 +66,7 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
 
 inline CommandResult close(Server* server)
 {
-    View* active_view = server->views.front();
-    active_view->close();
+    server->seat.get_focused_view()->close();
 
     return { "" };
 }
