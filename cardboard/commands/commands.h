@@ -82,6 +82,20 @@ inline CommandResult workspace_switch(Server* server, int n)
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
+inline CommandResult workspace_move(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if(n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return {"Invalid Workspace number"};
+
+    View* view = server->seat.get_focused_view();
+    server->workspaces[view->workspace_id].remove_view(view);
+    server->workspaces[n].add_view(view, server->workspaces[n].tiles.back().view);
+
+    return { "Moved focused window to workspace "s + std::to_string(n) };
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

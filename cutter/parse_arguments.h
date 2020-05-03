@@ -133,6 +133,8 @@ tl::expected<CommandData, std::string> parse_close(const std::vector<std::string
 
 tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::string>& args)
 {
+    using namespace command_arguments;
+
     if(args.empty()) {
         return tl::unexpected("not enough arguments"s);
     }
@@ -142,7 +144,14 @@ tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::st
             return tl::unexpected("not enough arguments"s);
         }
 
-        return command_arguments::workspace_switch{std::stoi(args[1])};
+        return workspace{ workspace::switch_{std::stoi(args[1])}};
+    }
+    else if(args[0] == "move") {
+        if(args.size() < 2) {
+            return tl::unexpected("not enough arguments"s);
+        }
+
+        return workspace{ workspace::move{std::stoi(args[1])}};
     }
     else {
         return tl::unexpected("unknown workspace sub-command"s);

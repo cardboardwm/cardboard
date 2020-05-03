@@ -45,9 +45,21 @@ void serialize(Archive&, command_arguments::close&)
 }
 
 template <typename Archive>
-void serialize(Archive& ar, command_arguments::workspace_switch& workspace_switch)
+void serialize(Archive& ar, command_arguments::workspace::switch_& switch_)
 {
-    ar(workspace_switch.n);
+    ar(switch_.n);
+}
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::workspace::move& move)
+{
+    ar(move.n);
+}
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::workspace& workspace)
+{
+    ar(workspace.workspace);
 }
 
 

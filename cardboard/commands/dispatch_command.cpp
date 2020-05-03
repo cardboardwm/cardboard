@@ -31,6 +31,22 @@ uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
     return mask;
 }
 
+static Command dispatch_workspace(const command_arguments::workspace& workspace)
+{
+    return std::visit(overloaded {
+            [](command_arguments::workspace::switch_ switch_) -> Command {
+                return [switch_] (Server* server) {
+                    return commands::workspace_switch(server, switch_.n);
+                };
+            },
+            [](command_arguments::workspace::move move) -> Command {
+                return [move] (Server* server) {
+                    return commands::workspace_move(server, move.n);
+                };
+            },
+        }, workspace.workspace);
+}
+
 Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
@@ -65,10 +81,8 @@ Command dispatch_command(const CommandData& command_data)
                           [](const command_arguments::close) -> Command {
                               return commands::close;
                           },
-                          [](const command_arguments::workspace_switch workspace_switch) -> Command {
-                              return [workspace_switch](Server* server) -> CommandResult{
-                                  return commands::workspace_switch(server, workspace_switch.n);
-                              };
+                          [](const command_arguments::workspace& workspace) -> Command {
+                              return dispatch_workspace(workspace);
                           },
                           [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
                               uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
