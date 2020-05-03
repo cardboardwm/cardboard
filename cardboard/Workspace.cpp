@@ -179,6 +179,7 @@ void Workspace::activate(Output& new_output)
 {
     for (const auto& tile : tiles) {
         tile.view->change_output(output, new_output);
+        tile.view->set_activated(true);
     }
 
     output = OptionalRef<Output>(new_output);
@@ -188,6 +189,8 @@ void Workspace::deactivate()
 {
     for (const auto& tile : tiles) {
         tile.view->change_output(output.unwrap(), NullRef<Output>);
+        tile.view->set_activated(false);
+
     }
     output = NullRef<Output>;
 }

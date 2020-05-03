@@ -71,6 +71,17 @@ inline CommandResult close(Server* server)
     return { "" };
 }
 
+inline CommandResult workspace_switch(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if(n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return {"Invalid Workspace number"};
+
+    server->seat.focus(server, &server->workspaces[n]);
+    return { "Changed to workspace: "s + std::to_string(n) };
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

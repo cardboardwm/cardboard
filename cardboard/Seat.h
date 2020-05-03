@@ -92,6 +92,9 @@ struct Seat {
     /// Returns the workspace under the cursor.
     OptionalRef<Workspace> get_focused_workspace(Server* server);
 
+    /// Moves the focus to a different workspace, if the workspace is already on a monitor, it focuses that monitor
+    void focus(Server* server, Workspace* workspace); // TODO: yikes, passing Server*
+
     /// Considers a \a client as exclusive. Only the surfaces of the \a client will get input events.
     void set_exclusive_client(Server* server, struct wl_client* client);
     /**

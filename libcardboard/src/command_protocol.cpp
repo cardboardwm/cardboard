@@ -16,12 +16,6 @@
 namespace cereal {
 
 template <typename Archive>
-void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)
-{
-    ar(mouse_mod.modifiers);
-}
-
-template <typename Archive>
 void serialize(Archive& ar, command_arguments::quit& quit)
 {
     ar(quit.code);
@@ -48,6 +42,19 @@ void serialize(Archive& ar, command_arguments::bind& bind)
 template <typename Archive>
 void serialize(Archive&, command_arguments::close&)
 {
+}
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::workspace_switch& workspace_switch)
+{
+    ar(workspace_switch.n);
+}
+
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)
+{
+    ar(mouse_mod.modifiers);
 }
 }
 /// \endcond

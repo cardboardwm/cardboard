@@ -34,13 +34,6 @@ uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
 Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
-                          [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
-                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
-                              return [modifiers](Server* server) {
-                                  return commands::config_mouse_mod(server, modifiers);
-                              };
-                          },
-
                           [](const command_arguments::focus focus_data) -> Command {
                               return [focus_data](Server* server) {
                                   return commands::focus(
@@ -71,6 +64,17 @@ Command dispatch_command(const CommandData& command_data)
                           },
                           [](const command_arguments::close) -> Command {
                               return commands::close;
+                          },
+                          [](const command_arguments::workspace_switch workspace_switch) -> Command {
+                              return [workspace_switch](Server* server) -> CommandResult{
+                                  return commands::workspace_switch(server, workspace_switch.n);
+                              };
+                          },
+                          [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
+                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
+                              return [modifiers](Server* server) {
+                                  return commands::config_mouse_mod(server, modifiers);
+                              };
                           },
                       },
                       command_data);

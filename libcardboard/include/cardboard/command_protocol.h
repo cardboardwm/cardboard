@@ -31,6 +31,10 @@ struct exec {
 struct close {
 };
 
+struct workspace_switch {
+    int n;
+};
+
 struct config_mouse_mod {
     std::vector<std::string> modifiers;
 };
@@ -45,6 +49,7 @@ using CommandData = std::variant<
     command_arguments::exec,
     command_arguments::bind,
     command_arguments::close,
+    command_arguments::workspace_switch,
     command_arguments::config_mouse_mod>;
 
 namespace command_arguments {

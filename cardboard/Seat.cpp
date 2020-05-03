@@ -442,6 +442,38 @@ bool Seat::is_mod_pressed(uint32_t mods)
     return (wlr_keyboard_get_modifiers(keyboard) & mods) == mods;
 }
 
+void Seat::focus(Server* server, Workspace* workspace)
+{
+    if(workspace == get_focused_workspace(server).raw_pointer()) {
+        return ;
+    }
+
+    if(!workspace->output.has_value()) {
+        Workspace& previous_workspace = get_focused_workspace(server).unwrap();
+        workspace->activate(previous_workspace.output.unwrap());
+        previous_workspace.deactivate();
+
+        Output& output = workspace->output.unwrap();
+
+        cursor.move(
+            server,
+            output.usable_area.x + output.usable_area.width / 2,
+            output.usable_area.y + output.usable_area.height / 2
+        );
+    }
+
+    if(auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view){
+            return view->workspace_id == workspace->index;
+        }); last_focused_view != focus_stack.end()) {
+        focus_view(
+            server,
+            *std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view){
+                return view->workspace_id == workspace->index;
+            })
+        );
+    }
+}
+
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);

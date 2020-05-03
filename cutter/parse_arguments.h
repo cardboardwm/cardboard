@@ -131,6 +131,24 @@ tl::expected<CommandData, std::string> parse_close(const std::vector<std::string
     return command_arguments::close {};
 }
 
+tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::string>& args)
+{
+    if(args.empty()) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    if(args[0] == "switch") {
+        if(args.size() < 2) {
+            return tl::unexpected("not enough arguments"s);
+        }
+
+        return command_arguments::workspace_switch{std::stoi(args[1])};
+    }
+    else {
+        return tl::unexpected("unknown workspace sub-command"s);
+    }
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -153,6 +171,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "exec", parse_exec },
     { "bind", parse_bind },
     { "close", parse_close },
+    { "workspace", parse_workspace },
     { "config", parse_config },
 };
 
