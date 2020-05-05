@@ -1,0 +1,43 @@
+#ifndef BUILD_CARDBOARD_NOTNULL_H
+#define BUILD_CARDBOARD_NOTNULL_H
+
+template<typename Type>
+class NotNullPointer
+{
+public:
+    using pointer_type = Type*;
+
+    template<typename T>
+    explicit NotNullPointer(T* t):
+        pointer{t}
+    {
+        static_assert(!std::is_same_v<std::remove_cvref_t<T>, std::nullopt>, "Trying to assign nullptr to NotNullPointer");
+        assert(t != nullptr && "Trying to assign null value to NotNullPointer");
+    }
+
+    NotNullPointer(const NotNullPointer&) noexcept = default;
+    NotNullPointer(NotNullPointer&&) noexcept = default;
+
+    NotNullPointer& operator=(const NotNullPointer&) noexcept = default;
+    NotNullPointer& operator=(NotNullPointer&&) noexcept = default;
+
+    Type* operator->()
+    {
+        return pointer;
+    }
+
+    explicit operator pointer_type()
+    {
+        return pointer;
+    }
+
+    pointer_type get()
+    {
+        return pointer;
+    }
+
+private:
+    pointer_type pointer;
+};
+
+#endif //BUILD_CARDBOARD_NOTNULL_H
