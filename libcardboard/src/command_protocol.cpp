@@ -24,7 +24,7 @@ void serialize(Archive& ar, command_arguments::quit& quit)
 template <typename Archive>
 void serialize(Archive& ar, command_arguments::focus& focus)
 {
-    ar(focus.direction);
+    ar(focus.direction, focus.cycle);
 }
 
 template <typename Archive>
@@ -61,7 +61,6 @@ void serialize(Archive& ar, command_arguments::workspace& workspace)
 {
     ar(workspace.workspace);
 }
-
 
 template <typename Archive>
 void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)

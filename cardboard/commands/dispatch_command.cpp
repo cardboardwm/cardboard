@@ -51,11 +51,15 @@ Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
                           [](const command_arguments::focus focus_data) -> Command {
-                              return [focus_data](Server* server) {
-                                  return commands::focus(
-                                      server,
-                                      focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
-                              };
+                              if (!focus_data.cycle) {
+                                  return [focus_data](Server* server) {
+                                      return commands::focus(
+                                          server,
+                                          focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
+                                  };
+                              } else {
+                                  return commands::focus_cycle;
+                              }
                           },
                           [](const command_arguments::quit quit_data) -> Command {
                               return [quit_data](Server* server) { return commands::quit(server, quit_data.code); };

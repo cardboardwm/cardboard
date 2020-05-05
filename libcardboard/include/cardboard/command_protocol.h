@@ -20,6 +20,8 @@ struct focus {
         Left,
         Right
     } direction;
+
+    bool cycle;
 };
 
 struct bind;

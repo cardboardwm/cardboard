@@ -69,9 +69,11 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
         return tl::unexpected("not enough arguments"s);
 
     if (args[0] == "left") {
-        return command_arguments::focus { command_arguments::focus::Direction::Left };
+        return command_arguments::focus { command_arguments::focus::Direction::Left, false };
     } else if (args[0] == "right") {
-        return command_arguments::focus { command_arguments::focus::Direction::Right };
+        return command_arguments::focus { command_arguments::focus::Direction::Right, false };
+    } else if (args[0] == "cycle") {
+        return command_arguments::focus { {}, true };
     }
 
     return tl::unexpected("invalid direction '"s + args[0] + "'");
