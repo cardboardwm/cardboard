@@ -77,6 +77,11 @@ void SeatCursor::rebase(Server* server, uint32_t time)
         wlr_seat_pointer_clear_focus(seat->wlr_seat);
     }
 }
+void SeatCursor::move(Server* server, int x, int y) const
+{
+    wlr_cursor_warp(wlr_cursor, nullptr, x, y);
+    seat->process_cursor_motion(server, 0);
+}
 
 void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
 {

@@ -37,9 +37,11 @@ void Workspace::add_view(View* view, View* next_to)
     }
     auto tile = tiles.insert(it, { view });
 
-    assert(output.has_value());
-
     tile->view->workspace_id = index;
+
+    if(output) {
+        view->set_activated(true);
+    }
 
     arrange_tiles();
 }
@@ -50,6 +52,7 @@ void Workspace::remove_view(View* view)
         fullscreen_view = NullRef<View>;
     }
     tiles.remove_if([view](auto& other) { return other.view == view; });
+    view->set_activated(false);
 
     arrange_tiles();
 }
@@ -179,6 +182,7 @@ void Workspace::activate(Output& new_output)
 {
     for (const auto& tile : tiles) {
         tile.view->change_output(output, new_output);
+        tile.view->set_activated(true);
     }
 
     output = OptionalRef<Output>(new_output);
@@ -188,6 +192,8 @@ void Workspace::deactivate()
 {
     for (const auto& tile : tiles) {
         tile.view->change_output(output.unwrap(), NullRef<Output>);
+        tile.view->set_activated(false);
+
     }
     output = NullRef<Output>;
 }

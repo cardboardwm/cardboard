@@ -84,13 +84,16 @@ struct Seat {
 
     void begin_move(Server* server, View* view);
     void begin_resize(Server* server, View* view, uint32_t edges);
-    void process_cursor_motion(Server* server, uint32_t time);
+    void process_cursor_motion(Server* server, uint32_t time = 0);
     void process_cursor_move(GrabState::Move move_data);
     void process_cursor_resize(GrabState::Resize resize_data);
     void end_interactive(Server* server);
 
     /// Returns the workspace under the cursor.
     OptionalRef<Workspace> get_focused_workspace(Server* server);
+
+    /// Moves the focus to a different workspace, if the workspace is already on a monitor, it focuses that monitor
+    void focus(Server* server, Workspace* workspace); // TODO: yikes, passing Server*
 
     /// Considers a \a client as exclusive. Only the surfaces of the \a client will get input events.
     void set_exclusive_client(Server* server, struct wl_client* client);

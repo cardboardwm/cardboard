@@ -66,10 +66,62 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
 
 inline CommandResult close(Server* server)
 {
-    View* active_view = server->views.front();
-    active_view->close();
+    server->seat.get_focused_view()->close();
 
     return { "" };
+}
+
+inline CommandResult workspace_switch(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return { "Invalid Workspace number" };
+
+    server->seat.focus(server, &server->workspaces[n]);
+    return { "Changed to workspace: "s + std::to_string(n) };
+}
+
+inline CommandResult workspace_move(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return { "Invalid Workspace number" };
+
+    View* view = server->seat.get_focused_view();
+    server->workspaces[view->workspace_id].remove_view(view);
+    server->workspaces[n].add_view(view, server->workspaces[n].tiles.back().view);
+
+    return { "Moved focused window to workspace "s + std::to_string(n) };
+}
+
+inline CommandResult focus_cycle(Server* server)
+{
+    auto& focus_stack = server->seat.focus_stack;
+    auto current_workspace = server->seat.get_focused_workspace(server);
+
+    if(!current_workspace) {
+        return {""};
+    }
+
+    if(auto it = std::find_if(
+            ++focus_stack.begin(),
+            focus_stack.end(),
+            [current_workspace](View* view) {
+                return view->workspace_id == current_workspace.unwrap().index;
+            }); it != focus_stack.end())
+    {
+        View* view = *it;
+        server->seat.focus_view(server, view);
+
+        auto previous_view_it = ++server->seat.focus_stack.begin();
+        auto previous_view = *previous_view_it;
+        server->seat.focus_stack.erase(previous_view_it);
+        server->seat.focus_stack.push_back(previous_view);
+    }
+
+    return {""};
 }
 
 };

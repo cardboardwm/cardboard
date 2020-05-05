@@ -115,6 +115,14 @@ public:
         return *this;
     }
 
+    /**
+     * \brief Gets the raw_pointer, could be useful
+     */
+    T* raw_pointer()
+    {
+        return ptr;
+    }
+
 private:
     T* ptr;
 };

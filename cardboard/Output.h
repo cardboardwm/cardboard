@@ -22,8 +22,6 @@ struct Output {
     struct wlr_output* wlr_output;
 
     struct wlr_box usable_area;
-
-    struct wlr_box* get_box();
 };
 
 /// Executed for each frame render per output.
