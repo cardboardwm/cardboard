@@ -276,6 +276,19 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
     };
 }
 
+void Seat::begin_workspace_scroll(Server* server, Workspace* workspace)
+{
+    end_interactive(server);
+
+    grab_state = {
+        .view = nullptr,
+        .grab_data = GrabState::WorkspaceScroll {
+            .workspace = workspace,
+            .scroll_x = workspace->scroll_x,
+        },
+    };
+}
+
 void Seat::process_cursor_motion(Server* server, uint32_t time)
 {
     if (grab_state) {
@@ -366,10 +379,51 @@ void Seat::process_cursor_resize(GrabState::Resize resize_data)
         });
 }
 
+void Seat::process_swipe_begin(Server* server, uint32_t fingers)
+{
+    end_touchpad_swipe(server);
+    if (fingers == WORKSPACE_SCROLL_FINGERS) {
+        get_focused_workspace(server).and_then([this, server](auto& ws) {
+            begin_workspace_scroll(server, &ws);
+        });
+    }
+}
+
+void Seat::process_swipe_update(Server* server, uint32_t fingers, double dx, double)
+{
+    GrabState::WorkspaceScroll* data;
+    if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
+        return;
+    }
+    if (fingers < WORKSPACE_SCROLL_FINGERS) {
+        end_touchpad_swipe(server);
+        return;
+    }
+
+    data->workspace->scroll_x -= dx;
+    data->workspace->arrange_tiles();
+}
+
+void Seat::process_swipe_end(Server* server)
+{
+    end_touchpad_swipe(server);
+}
+
 void Seat::end_interactive(Server* server)
 {
     grab_state = std::nullopt;
     cursor.rebase(server);
+}
+
+/**
+ * \brief During a touchpad swipe event, for some reason, we don't get a swipe end event if we lift less than the three fingers.
+ * So we have to check for this situation in scrolling (usually happens with two fingers) and cursor moving (one finger) events.
+ */
+void Seat::end_touchpad_swipe(Server* server)
+{
+    if (grab_state && std::holds_alternative<Seat::GrabState::WorkspaceScroll>(grab_state->grab_data)) {
+        end_interactive(server);
+    }
 }
 
 OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)

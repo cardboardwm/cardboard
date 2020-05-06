@@ -98,6 +98,10 @@ void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
         { &cursor->wlr_cursor->events.button, cursor_button_handler },
         { &cursor->wlr_cursor->events.axis, cursor_axis_handler },
         { &cursor->wlr_cursor->events.frame, cursor_frame_handler },
+
+        { &cursor->wlr_cursor->events.swipe_begin, cursor_swipe_begin_handler },
+        { &cursor->wlr_cursor->events.swipe_update, cursor_swipe_update_handler },
+        { &cursor->wlr_cursor->events.swipe_end, cursor_swipe_end_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -111,6 +115,9 @@ void cursor_motion_handler(struct wl_listener* listener, void* data)
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_motion*>(data);
+
+    // in case the user was doing a three finger swipe and lifted two fingers.
+    cursor->seat->end_touchpad_swipe(server);
 
     wlr_cursor_move(cursor->wlr_cursor, event->device, event->delta_x, event->delta_y);
     cursor->seat->process_cursor_motion(server, event->time_msec);
@@ -180,8 +187,12 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
 
 void cursor_axis_handler(struct wl_listener* listener, void* data)
 {
+    auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
+
+    // in case the user was doing a three finger swipe and lifted a finger
+    cursor->seat->end_touchpad_swipe(server);
 
     wlr_seat_pointer_notify_axis(cursor->seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
@@ -200,4 +211,30 @@ void cursor_image_surface_destroy_handler(struct wl_listener* listener, void*)
 
     cursor->set_image(server, nullptr);
     cursor->rebase(server);
+}
+
+void cursor_swipe_begin_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* cursor = get_listener_data<SeatCursor*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_swipe_begin*>(data);
+
+    cursor->seat->process_swipe_begin(server, event->fingers);
+}
+
+void cursor_swipe_update_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* cursor = get_listener_data<SeatCursor*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_swipe_update*>(data);
+
+    cursor->seat->process_swipe_update(server, event->fingers, event->dx, event->dy);
+}
+
+void cursor_swipe_end_handler(struct wl_listener* listener, void*)
+{
+    auto* server = get_server(listener);
+    auto* cursor = get_listener_data<SeatCursor*>(listener);
+
+    cursor->seat->process_swipe_end(server);
 }

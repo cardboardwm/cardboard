@@ -23,6 +23,7 @@ extern "C" {
 struct Server;
 
 constexpr const char* DEFAULT_SEAT = "seat0";
+const int WORKSPACE_SCROLL_FINGERS = 3;
 
 struct Seat {
     struct GrabState {
@@ -38,8 +39,12 @@ struct Seat {
             OptionalRef<Workspace> workspace;
             int scroll_x;
         };
+        struct WorkspaceScroll {
+            Workspace* workspace;
+            int scroll_x;
+        };
         View* view;
-        std::variant<Move, Resize> grab_data;
+        std::variant<Move, Resize, WorkspaceScroll> grab_data;
     };
 
     SeatCursor cursor;
@@ -84,10 +89,15 @@ struct Seat {
 
     void begin_move(Server* server, View* view);
     void begin_resize(Server* server, View* view, uint32_t edges);
+    void begin_workspace_scroll(Server* server, Workspace* workspace);
     void process_cursor_motion(Server* server, uint32_t time);
     void process_cursor_move(GrabState::Move move_data);
     void process_cursor_resize(GrabState::Resize resize_data);
+    void process_swipe_begin(Server* server, uint32_t fingers);
+    void process_swipe_update(Server* server, uint32_t fingers, double dx, double dy);
+    void process_swipe_end(Server* server);
     void end_interactive(Server* server);
+    void end_touchpad_swipe(Server* server);
 
     /// Returns the workspace under the cursor.
     OptionalRef<Workspace> get_focused_workspace(Server* server);

@@ -76,4 +76,8 @@ void cursor_frame_handler(struct wl_listener* listener, void* data);
 /// Called when the surface of the mouse pointer is destroyed by the client.
 void cursor_image_surface_destroy_handler(struct wl_listener* listener, void* data);
 
+void cursor_swipe_update_handler(struct wl_listener* listener, void* data);
+void cursor_swipe_begin_handler(struct wl_listener* listener, void* data);
+void cursor_swipe_end_handler(struct wl_listener* listener, void* data);
+
 #endif // __CARDBOARD_CURSOR_H_
