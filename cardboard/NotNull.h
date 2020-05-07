@@ -7,6 +7,11 @@ class NotNullPointer
 public:
     using pointer_type = Type*;
 
+    NotNullPointer(Type* t):
+        pointer(t)
+    {
+    }
+
     template<typename T>
     explicit NotNullPointer(T* t):
         pointer{t}

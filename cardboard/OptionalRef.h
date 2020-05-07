@@ -29,6 +29,11 @@ public:
     {
     }
 
+    OptionalRef(std::nullptr_t)
+        : ptr(nullptr)
+    {
+    }
+
     T& unwrap()
     {
         if (ptr == nullptr) {

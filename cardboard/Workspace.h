@@ -35,6 +35,7 @@ struct Workspace {
     };
 
     std::list<Tile> tiles;
+    std::list<View*> floating_views;
     struct wlr_output_layout* output_layout;
 
     /**
@@ -67,9 +68,14 @@ struct Workspace {
     std::list<Tile>::iterator find_tile(View* view);
 
     /**
+     * Returns an iterator to the a floating view.
+     */
+    std::list<View*>::iterator find_floating(View* view);
+
+    /**
     * Adds the \a view to the right of the \a next_to view and tiles it accordingly.
     */
-    void add_view(View* view, View* next_to);
+    void add_view(View* view, View* next_to, bool floating = false);
 
     /**
     * Removes \a view from the workspace and tiles the others accordingly.
