@@ -28,8 +28,7 @@ struct Seat {
     struct GrabState {
         struct Move {
             double lx, ly;
-            OptionalRef<Workspace> workspace;
-            int scroll_x;
+            int view_x, view_y;
         };
         struct Resize {
             double lx, ly;
@@ -37,6 +36,7 @@ struct Seat {
             uint32_t resize_edges;
             OptionalRef<Workspace> workspace;
             int scroll_x;
+            int view_x, view_y;
         };
         View* view;
         std::variant<Move, Resize> grab_data;
@@ -85,8 +85,8 @@ struct Seat {
     void begin_move(Server* server, View* view);
     void begin_resize(Server* server, View* view, uint32_t edges);
     void process_cursor_motion(Server* server, uint32_t time = 0);
-    void process_cursor_move(GrabState::Move move_data);
-    void process_cursor_resize(GrabState::Resize resize_data);
+    void process_cursor_move(Server*, GrabState::Move move_data);
+    void process_cursor_resize(Server*, GrabState::Resize resize_data);
     void end_interactive(Server* server);
 
     /// Returns the workspace under the cursor.

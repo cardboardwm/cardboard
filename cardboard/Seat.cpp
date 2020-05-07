@@ -11,6 +11,7 @@ extern "C" {
 #include "Listener.h"
 #include "Seat.h"
 #include "Server.h"
+#include "ViewManager.h"
 
 void init_seat(Server* server, Seat* seat, const char* name)
 {
@@ -232,7 +233,7 @@ void Seat::remove_from_focus_stack(View* view)
     focus_stack.remove(view);
 }
 
-void Seat::begin_move(Server* server, View* view)
+void Seat::begin_move(Server*, View* view)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
@@ -241,14 +242,13 @@ void Seat::begin_move(Server* server, View* view)
         return;
     }
 
-    auto workspace = server->get_views_workspace(view);
     grab_state = {
         .view = view,
         .grab_data = GrabState::Move {
             .lx = cursor.wlr_cursor->x,
             .ly = cursor.wlr_cursor->y,
-            .workspace = workspace,
-            .scroll_x = workspace ? workspace.unwrap().scroll_x : 0,
+            .view_x = view->x,
+            .view_y = view->y,
         },
     };
 }
@@ -272,6 +272,8 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
             .resize_edges = edges,
             .workspace = workspace,
             .scroll_x = workspace ? workspace.unwrap().scroll_x : 0,
+            .view_x = view->x,
+            .view_y = view->y
         },
     };
 }
@@ -280,13 +282,13 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
 {
     if (grab_state) {
         std::visit(
-            [this](auto&& arg) {
+            [this, server](auto&& arg) {
                 using T = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<T, GrabState::Move>) {
-                    process_cursor_move(arg);
+                    process_cursor_move(server, arg);
                 } else if constexpr (std::is_same_v<T, GrabState::Resize>) {
-                    process_cursor_resize(arg);
+                    process_cursor_resize(server, arg);
                 }
             },
             grab_state->grab_data);
@@ -295,25 +297,19 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
     cursor.rebase(server, time);
 }
 
-void Seat::process_cursor_move(GrabState::Move move_data)
+void Seat::process_cursor_move(Server* server, GrabState::Move move_data)
 {
     assert(grab_state.has_value());
 
     double dx = cursor.wlr_cursor->x - move_data.lx;
     double dy = cursor.wlr_cursor->y - move_data.ly;
-    move_data.workspace
-        .or_else([&]() {
-            grab_state->view->x = move_data.lx + dx;
-            grab_state->view->y = move_data.ly + dy;
-            return NullRef<Workspace>;
-        })
-        .and_then([&](auto& ws) {
-            ws.scroll_x = move_data.scroll_x - dx;
-            ws.arrange_tiles();
-        });
+
+    View* view = grab_state->view;
+
+    reconfigure_view_position(server, view, move_data.view_x + dx, move_data.view_y + dy);
 }
 
-void Seat::process_cursor_resize(GrabState::Resize resize_data)
+void Seat::process_cursor_resize(Server* server, GrabState::Resize resize_data)
 {
     assert(grab_state.has_value());
 
@@ -324,46 +320,25 @@ void Seat::process_cursor_resize(GrabState::Resize resize_data)
     double width = resize_data.geometry.width;
     double height = resize_data.geometry.height;
 
-    resize_data.workspace
-        .or_else([&]() {
-            // window is floating
+    if (resize_data.resize_edges & WLR_EDGE_TOP) {
+        if(height - dy > 1) {
+            y = resize_data.view_y + dy;
+            height -= dy;
+        }
+    } else if (resize_data.resize_edges & WLR_EDGE_BOTTOM) {
+        height += dy;
+    }
+    if (resize_data.resize_edges & WLR_EDGE_LEFT) {
+        if(width - dx > 1) {
+            x = resize_data.view_x + dx;
+            width -= dx;
+        }
+    } else if (resize_data.resize_edges & WLR_EDGE_RIGHT) {
+        width += dx;
+    }
 
-            if (resize_data.resize_edges & WLR_EDGE_TOP) {
-                y = resize_data.ly + dy;
-                height -= dy;
-                if (height < 1) {
-                    y += height;
-                }
-            } else if (resize_data.resize_edges & WLR_EDGE_BOTTOM) {
-                height += dy;
-            }
-            if (resize_data.resize_edges & WLR_EDGE_LEFT) {
-                x = resize_data.lx + dx;
-                width -= dx;
-                if (width < 1) {
-                    x += width;
-                }
-            } else if (resize_data.resize_edges & WLR_EDGE_RIGHT) {
-                width += dx;
-            }
-            grab_state->view->x = x;
-            grab_state->view->y = y;
-            grab_state->view->resize(width, height);
-
-            return NullRef<Workspace>;
-        })
-        .and_then([&](auto& ws) {
-            // window is tiled
-
-            if (resize_data.resize_edges & WLR_EDGE_LEFT) {
-                width -= dx;
-                ws.scroll_x = resize_data.scroll_x - dx;
-            } else if (resize_data.resize_edges & WLR_EDGE_RIGHT) {
-                width += dx;
-            }
-            ws.arrange_tiles();
-            grab_state->view->resize(width, height);
-        });
+    reconfigure_view_position(server, grab_state->view, x, y);
+    reconfigure_view_size(server, grab_state->view, width, height);
 }
 
 void Seat::end_interactive(Server* server)
