@@ -4,8 +4,24 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
 {
     Workspace& workspace = server->workspaces[view->workspace_id];
 
-    workspace.remove_view(static_cast<View*>(view));
-    new_workspace->add_view(static_cast<View*>(view), nullptr);
+    if(workspace.find_tile(view.get()) != workspace.tiles.end()) {
+        workspace.remove_view(static_cast<View*>(view));
+        new_workspace->add_view(static_cast<View*>(view), nullptr);
+    } else {
+        if(new_workspace->output.has_value()) {
+            auto output_area = new_workspace->output.unwrap().usable_area;
+
+            if(view->x < output_area.x || view->x >= output_area.x + output_area.width ||
+               view->y < output_area.y || view->y >= output_area.y + output_area.height) {
+                view->move(
+                    output_area.x + output_area.width / 2,
+                    output_area.y + output_area.height / 2);
+            }
+        }
+
+        workspace.remove_view(static_cast<View*>(view));
+        new_workspace->add_view(static_cast<View*>(view), nullptr, true);
+    }
 }
 
 

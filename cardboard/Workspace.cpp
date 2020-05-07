@@ -72,6 +72,7 @@ void Workspace::remove_view(View* view)
         fullscreen_view = NullRef<View>;
     }
     tiles.remove_if([view](auto& other) { return other.view == view; });
+    floating_views.remove(view);
     view->set_activated(false);
     view->change_output(output, nullptr);
 
