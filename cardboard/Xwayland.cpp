@@ -58,13 +58,8 @@ void XwaylandView::resize(int width, int height)
 {
     assert(mapped);
 
-    server->get_views_workspace(this)
-        .and_then<Output>([](const auto& ws) { return ws.output; })
-        .and_then([this, width, height](const auto& output) {
-            auto* output_box = wlr_output_layout_get_box(server->output_layout, output.wlr_output);
-            wlr_xwayland_surface_configure(
-                xwayland_surface, x + output_box->x, y + output_box->y, width, height);
-        });
+    wlr_xwayland_surface_configure(
+        xwayland_surface, x, y, width, height);
 }
 
 void XwaylandView::prepare(Server* server)

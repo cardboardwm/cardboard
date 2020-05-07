@@ -178,13 +178,12 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, struc
 #if HAVE_XWAYLAND
 static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
     for (const auto xwayland_or_surface : server->xwayland_or_surfaces) {
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .lx = xwayland_or_surface->lx - output_box->x,
-            .ly = xwayland_or_surface->ly - output_box->y,
+            .lx = xwayland_or_surface->lx,
+            .ly = xwayland_or_surface->ly,
             .when = now,
             .server = server
         };
