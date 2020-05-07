@@ -11,6 +11,7 @@
 #include "../IPC.h"
 #include "../Server.h"
 #include "../Spawn.h"
+#include "../ViewManager.h"
 
 extern char** environ;
 
@@ -90,8 +91,7 @@ inline CommandResult workspace_move(Server* server, int n)
         return { "Invalid Workspace number" };
 
     View* view = server->seat.get_focused_view();
-    server->workspaces[view->workspace_id].remove_view(view);
-    server->workspaces[n].add_view(view, server->workspaces[n].tiles.back().view);
+    change_view_workspace(server, view, &server->workspaces[n]);
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
