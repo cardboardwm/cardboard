@@ -13,7 +13,6 @@ extern "C" {
 #include <utility>
 
 #include "Workspace.h"
-#include "NotNull.h"
 
 struct Server;
 
@@ -139,11 +138,5 @@ protected:
 
 /// Registers a view to the server and attaches the event handlers.
 void create_view(Server* server, View* view);
-
-/// Sends a view to another workspace
-void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> view, NotNullPointer<Workspace> new_workspace);
-
-///
-void reconfigure_view(NotNullPointer<Server> server, NotNullPointer<View> view, wlr_box logical_geometry);
 
 #endif // __CARDBOARD_VIEW_H_
