@@ -161,6 +161,13 @@ inline CommandResult move(Server* server, int dx, int dy)
     return {""};
 }
 
+inline CommandResult resize(Server* server, int width, int height)
+{
+    View* view = server->seat.get_focused_view();
+    reconfigure_view_size(server, view, width, height);
+    return {""};
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

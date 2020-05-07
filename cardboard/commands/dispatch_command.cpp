@@ -96,6 +96,11 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::move(server, move.dx, move.dy);
                               };
                           },
+                          [](const command_arguments::resize& resize) -> Command {
+                              return [resize](Server* server) {
+                                  return commands::resize(server, resize.width, resize.height);
+                              };
+                          },
                           [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
                               uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
                               return [modifiers](Server* server) {

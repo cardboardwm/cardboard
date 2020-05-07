@@ -179,6 +179,15 @@ tl::expected<CommandData, std::string> parse_move(const std::vector<std::string>
     }
 }
 
+tl::expected<CommandData, std::string> parse_resize(const std::vector<std::string>& args)
+{
+    if(args.size() < 2) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    return command_arguments::resize {std::stoi(args[0]), std::stoi(args[1])};
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -204,6 +213,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "workspace", parse_workspace },
     { "toggle_floating", parse_toggle_floating },
     { "move", parse_move },
+    { "resize", parse_resize },
     { "config", parse_config },
 };
 

@@ -74,6 +74,12 @@ void serialize(Archive& ar, command_arguments::move& move)
 }
 
 template <typename Archive>
+void serialize(Archive& ar, command_arguments::resize& resize)
+{
+    ar(resize.width, resize.height);
+}
+
+template <typename Archive>
 void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)
 {
     ar(mouse_mod.modifiers);

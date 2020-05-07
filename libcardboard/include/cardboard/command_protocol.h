@@ -52,6 +52,10 @@ struct move {
     int dx, dy;
 };
 
+struct resize {
+    int width, height;
+};
+
 struct config_mouse_mod {
     std::vector<std::string> modifiers;
 };
@@ -69,6 +73,7 @@ using CommandData = std::variant<
     command_arguments::workspace,
     command_arguments::toggle_floating,
     command_arguments::move,
+    command_arguments::resize,
     command_arguments::config_mouse_mod>;
 
 namespace command_arguments {
