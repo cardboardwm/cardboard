@@ -40,6 +40,7 @@ void register_output(Server* server, Output&& output_)
         wl_notify_func_t notify;
     } to_add_listeners[] = {
         { &output.wlr_output->events.frame, output_frame_handler },
+        { &output.wlr_output->events.present, output_present_handler },
         { &output.wlr_output->events.mode, output_mode_handler },
         { &output.wlr_output->events.transform, output_transform_handler },
         { &output.wlr_output->events.scale, output_scale_handler },
@@ -193,6 +194,31 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
 }
 #endif
 
+/// Not used yet but it's going to be useful one day.
+[[maybe_unused]] static double delta_time(struct timespec& x, struct timespec& y)
+{
+    struct timespec delta;
+
+    // the numbers with many zeros are one billion.
+    // we are dealing with nanoseconds.
+    if (x.tv_nsec < y.tv_nsec) {
+        int secs = (y.tv_nsec - x.tv_nsec) / 1000000000 + 1;
+        y.tv_nsec -= 1000000000 * secs;
+        y.tv_sec += secs;
+    }
+
+    if (x.tv_nsec - y.tv_nsec > 1000000000) {
+        int secs = (x.tv_nsec - y.tv_nsec) / 1000000000;
+        y.tv_nsec += 1000000000 * secs;
+        y.tv_sec -= secs;
+    }
+
+    delta.tv_sec = x.tv_sec - y.tv_sec;
+    delta.tv_nsec = x.tv_nsec - y.tv_nsec;
+
+    return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
+}
+
 void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
@@ -202,6 +228,8 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
 
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
+
+    server->seat.update_swipe(server);
 
     // make the OpenGL context current
     if (!wlr_output_attach_render(wlr_output, nullptr)) {
@@ -246,6 +274,14 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     // swap buffers and show frame
     wlr_renderer_end(renderer);
     wlr_output_commit(wlr_output);
+}
+
+void output_present_handler(struct wl_listener* listener, void* data)
+{
+    auto* output = get_listener_data<Output*>(listener);
+    auto* event = static_cast<struct wlr_output_event_present*>(data);
+
+    output->last_present = *event->when;
 }
 
 void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)

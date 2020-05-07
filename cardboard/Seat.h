@@ -24,6 +24,8 @@ struct Server;
 
 constexpr const char* DEFAULT_SEAT = "seat0";
 const int WORKSPACE_SCROLL_FINGERS = 3;
+const double WORKSPACE_SCROLL_SENSITIVITY = 2.0; ///< sensitivity multiplier
+const double WORKSPACE_SCROLL_FRICTION = 0.9; ///< friction multiplier
 
 struct Seat {
     struct GrabState {
@@ -41,7 +43,11 @@ struct Seat {
         };
         struct WorkspaceScroll {
             Workspace* workspace;
-            int scroll_x;
+            double speed; ///< scrolling speed
+            double delta_since_update; ///< how much the fingers moved since the last update
+            double scroll_x; ///< the scroll of the workspace stored as a double
+            bool ready; ///< set to true after the fingers move for the first time
+            bool wants_to_stop; ///< set to true after lifting the fingers off the touchpad
         };
         View* view;
         std::variant<Move, Resize, WorkspaceScroll> grab_data;
@@ -98,6 +104,9 @@ struct Seat {
     void process_swipe_end(Server* server);
     void end_interactive(Server* server);
     void end_touchpad_swipe(Server* server);
+
+    /// Updates the scroll of the workspace during three-finger swipe, taking in account speed and friction.
+    void update_swipe(Server* server);
 
     /// Returns the workspace under the cursor.
     OptionalRef<Workspace> get_focused_workspace(Server* server);

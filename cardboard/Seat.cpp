@@ -284,7 +284,11 @@ void Seat::begin_workspace_scroll(Server* server, Workspace* workspace)
         .view = nullptr,
         .grab_data = GrabState::WorkspaceScroll {
             .workspace = workspace,
-            .scroll_x = workspace->scroll_x,
+            .speed = 0,
+            .delta_since_update = 0,
+            .scroll_x = static_cast<double>(workspace->scroll_x),
+            .ready = false,
+            .wants_to_stop = false,
         },
     };
 }
@@ -400,13 +404,19 @@ void Seat::process_swipe_update(Server* server, uint32_t fingers, double dx, dou
         return;
     }
 
-    data->workspace->scroll_x -= dx;
-    data->workspace->arrange_tiles();
+    data->delta_since_update += dx * WORKSPACE_SCROLL_SENSITIVITY;
+    data->ready = true;
 }
 
-void Seat::process_swipe_end(Server* server)
+void Seat::process_swipe_end(Server*)
 {
-    end_touchpad_swipe(server);
+    GrabState::WorkspaceScroll* data;
+    if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
+        return;
+    }
+
+    data->wants_to_stop = true;
+    wlr_log(WLR_DEBUG, "fingers were lifted - swipe stopping");
 }
 
 void Seat::end_interactive(Server* server)
@@ -423,6 +433,34 @@ void Seat::end_touchpad_swipe(Server* server)
 {
     if (grab_state && std::holds_alternative<Seat::GrabState::WorkspaceScroll>(grab_state->grab_data)) {
         end_interactive(server);
+        wlr_log(WLR_DEBUG, "stopped swipe");
+    }
+}
+
+void Seat::update_swipe(Server* server)
+{
+    GrabState::WorkspaceScroll* data;
+    if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
+        return;
+    }
+
+    if (!data->ready) {
+        return;
+    }
+
+    if (data->delta_since_update != 0) {
+        data->speed = data->delta_since_update;
+        data->delta_since_update = 0;
+    }
+
+    data->scroll_x -= data->speed;
+    data->workspace->scroll_x = static_cast<int>(data->scroll_x);
+    data->workspace->arrange_tiles();
+
+    data->speed *= WORKSPACE_SCROLL_FRICTION;
+
+    if (data->wants_to_stop && fabs(data->speed) < 1) {
+        end_touchpad_swipe(server);
     }
 }
 

@@ -20,14 +20,18 @@ extern "C" {
 
 struct Output {
     struct wlr_output* wlr_output;
-
     struct wlr_box usable_area;
+
+    /// Time of last presentation. Use it to calculate the delta time.
+    struct timespec last_present;
 
     struct wlr_box* get_box();
 };
 
 /// Executed for each frame render per output.
 void output_frame_handler(struct wl_listener* listener, void* data);
+/// Executed as soon as the first pixel is put on the screen;
+void output_present_handler(struct wl_listener* listener, void* data);
 /// Executed when the output is detached.
 void output_destroy_handler(struct wl_listener* listener, void* data);
 /// Executed when the output changes its mode (resolution, color depth and/or refresh rate).
