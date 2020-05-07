@@ -39,9 +39,17 @@ static void validate_output(NotNullPointer<Server> server, NotNullPointer<View> 
     if(
         server->workspaces[view->workspace_id].find_floating(view.get()) !=
             server->workspaces[view->workspace_id].floating_views.end() ) {
-        auto* current_output = static_cast<Output*>(wlr_output_layout_output_at(server->output_layout, view->x, view->y)->data);
 
-        if(current_output != server->workspaces[view->workspace_id].output.raw_pointer()) {
+        Output* current_output;
+
+        if(auto wlr_output = wlr_output_layout_output_at(server->output_layout, view->x, view->y); wlr_output) {
+            current_output = static_cast<Output*>(wlr_output->data);
+        }
+        else {
+            return ;
+        }
+
+        if(current_output && current_output != server->workspaces[view->workspace_id].output.raw_pointer()) {
             auto workspace = std::find_if(server->workspaces.begin(), server->workspaces.end(), [current_output](auto& w){
                 return  w.output.raw_pointer() == current_output;
             });
