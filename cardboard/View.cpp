@@ -39,6 +39,12 @@ void View::save_size(std::pair<int, int>&& to_save)
     wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_size->first, saved_size->second);
 }
 
+void View::move(int x_, int y_)
+{
+    x = x_;
+    y = y_;
+}
+
 void create_view(Server* server, View* view_)
 {
     server->views.push_back(view_);

@@ -94,6 +94,9 @@ public:
     /// Requests the resize to the client. Do not assume that the client is resized afterwards.
     virtual void resize(int width, int height) = 0;
 
+    /// Requests the move to the client. Do not assume that the client is resized afterwards.
+    virtual void move(int x, int y);
+
     /// Prepares the view before registering to the server by attaching some handlers and doing shell-specific stuff.
     virtual void prepare(Server* server) = 0;
 

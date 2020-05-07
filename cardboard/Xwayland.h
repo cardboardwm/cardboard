@@ -25,6 +25,7 @@ public:
     struct wlr_surface* get_surface() override;
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) override;
     void resize(int width, int height) override;
+    void move(int x, int y) override;
     void prepare(Server* server) override;
     void set_activated(bool activated) override;
     void set_fullscreen(bool fullscreen) override;
