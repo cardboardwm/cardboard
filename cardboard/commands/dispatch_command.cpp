@@ -88,6 +88,9 @@ Command dispatch_command(const CommandData& command_data)
                           [](const command_arguments::workspace& workspace) -> Command {
                               return dispatch_workspace(workspace);
                           },
+                          [](const command_arguments::toggle_floating&) -> Command {
+                              return commands::toggle_floating;
+                          },
                           [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
                               uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
                               return [modifiers](Server* server) {

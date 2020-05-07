@@ -124,6 +124,20 @@ inline CommandResult focus_cycle(Server* server)
     return {""};
 }
 
+inline CommandResult toggle_floating(Server* server)
+{
+    View* view = server->seat.get_focused_view();
+
+    bool floating =
+        server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
+
+    server->workspaces[view->workspace_id].remove_view(view);
+    server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !floating);
+
+    return {""};
+
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

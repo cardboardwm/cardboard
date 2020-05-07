@@ -160,6 +160,11 @@ tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::st
     }
 }
 
+tl::expected<CommandData, std::string> parse_toggle_floating(const std::vector<std::string>&)
+{
+    return command_arguments::toggle_floating {};
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -183,6 +188,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "bind", parse_bind },
     { "close", parse_close },
     { "workspace", parse_workspace },
+    { "toggle_floating", parse_toggle_floating },
     { "config", parse_config },
 };
 
