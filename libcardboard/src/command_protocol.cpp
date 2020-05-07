@@ -67,6 +67,11 @@ void serialize(Archive&, command_arguments::toggle_floating&)
 {
 }
 
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::move& move)
+{
+    ar(move.dx, move.dy);
+}
 
 template <typename Archive>
 void serialize(Archive& ar, command_arguments::config_mouse_mod& mouse_mod)

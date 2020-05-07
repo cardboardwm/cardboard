@@ -165,6 +165,20 @@ tl::expected<CommandData, std::string> parse_toggle_floating(const std::vector<s
     return command_arguments::toggle_floating {};
 }
 
+tl::expected<CommandData, std::string> parse_move(const std::vector<std::string>& args)
+{
+    if(args.empty()) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    if(args.size() == 1) {
+        return command_arguments::move {std::stoi(args[0]), 0};
+    }
+    else {
+        return command_arguments::move {std::stoi(args[0]), std::stoi(args[1])};
+    }
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -189,6 +203,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "close", parse_close },
     { "workspace", parse_workspace },
     { "toggle_floating", parse_toggle_floating },
+    { "move", parse_move },
     { "config", parse_config },
 };
 

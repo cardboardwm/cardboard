@@ -138,6 +138,29 @@ inline CommandResult toggle_floating(Server* server)
 
 }
 
+inline CommandResult move(Server* server, int dx, int dy)
+{
+    View* view = server->seat.get_focused_view();
+    Workspace& workspace = server->workspaces[view->workspace_id];
+
+    if(auto it = workspace.find_tile(view); it != workspace.tiles.end()) {
+        auto other = it;
+
+        std::advance(other, dx / abs(dx));
+
+        if((it == workspace.tiles.begin() && dx < 0) || other == workspace.tiles.end()) {
+            return {""};
+        }
+
+        std::swap(*other, *it);
+        workspace.arrange_tiles();
+    } else {
+        reconfigure_view_position(server, view, view->x + dx, view->y + dy);
+    }
+
+    return {""};
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
