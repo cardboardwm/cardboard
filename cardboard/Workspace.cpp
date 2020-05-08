@@ -108,32 +108,11 @@ void Workspace::arrange_workspace()
     }
 }
 
-bool Workspace::is_spanning()
-{
-    if (tiles.empty()) {
-        return false;
-    }
-
-    const auto& output = this->output.unwrap();
-    const auto& usable_area = output.usable_area;
-
-    for (const auto& tile : tiles) {
-        double ox = tile.view->x + tile.view->geometry.x, oy = tile.view->y + tile.view->geometry.y;
-        wlr_output_layout_output_coords(output_layout, output.wlr_output, &ox, &oy);
-
-        if (ox < usable_area.x || ox + tile.view->geometry.width > usable_area.x + usable_area.width) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void Workspace::fit_view_on_screen(View* view)
+void Workspace::fit_view_on_screen(View* view, bool condense)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
-    if (view->expansion_state != View::ExpansionState::NORMAL) {
+    if (fullscreen_view || view->expansion_state != View::ExpansionState::NORMAL) {
         return;
     }
 
@@ -158,16 +137,17 @@ void Workspace::fit_view_on_screen(View* view)
     int wx = get_view_wx(view);
     int vx = view->x + view->geometry.x;
 
-    bool spanning = is_spanning();
-    if (view == tiles.begin()->view) {
+    bool overflowing = vx < 0 || view->x + view->geometry.x + view->geometry.width > usable_area.x + usable_area.width;
+    wlr_log(WLR_DEBUG, "overflowing %d", overflowing);
+    if (condense && view == tiles.begin()->view) {
         // align first window to the display's left edge
         scroll_x = -usable_area.x;
-    } else if (spanning && view == tiles.rbegin()->view) {
+    } else if (condense && view == tiles.rbegin()->view) {
         // align last window to the display's right edge
         scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
-    } else if (vx < output_box->x + usable_area.x) {
+    } else if (overflowing && vx < output_box->x + usable_area.x) {
         scroll_x = wx - usable_area.x;
-    } else if (vx + view->geometry.width >= output_box->x + usable_area.x + usable_area.width) {
+    } else if (overflowing && vx + view->geometry.width >= output_box->x + usable_area.x + usable_area.width) {
         scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
     }
 

@@ -91,15 +91,12 @@ struct Workspace {
     void arrange_workspace();
 
     /**
-    * \brief Returns \c true if the views of the workspace overflow the output \a output.
-    */
-    bool is_spanning();
-
-    /**
-    * \brief Scrolls the viewport of the workspace just enough to make the
-    * entirety of \a view visible, i.e. there are no off-screen parts of it.
-    */
-    void fit_view_on_screen(View* view);
+     * \brief Scrolls the viewport of the workspace just enough to make the
+     * entirety of \a view visible, i.e. there are no off-screen parts of it.
+     *
+     * \param condense - if true, if \a view is the first or last in the sequence, align it to the border
+     */
+    void fit_view_on_screen(View* view, bool condense = false);
 
     /**
      * \brief From the currently visible view (those that are inside the viewport), return the one that has

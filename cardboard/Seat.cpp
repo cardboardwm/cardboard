@@ -108,7 +108,7 @@ void Seat::hide_view(Server* server, View* view)
             return v != view && v->mapped;
         });
         if (to_focus != focus_stack.end()) {
-            focus_view(server, *to_focus);
+            focus_view(server, *to_focus, true);
         }
     }
 }
@@ -118,20 +118,20 @@ void Seat::focus_surface([[maybe_unused]] Server* server, struct wlr_surface* su
     keyboard_notify_enter(surface);
 }
 
-void Seat::focus_view(Server* server, View* view)
+void Seat::focus_view(Server* server, View* view, bool condense_workspace)
 {
     if (focused_layer) {
         auto* layer = *focused_layer;
         // this is to exchange the keyboard focus
         focus_layer(server, nullptr);
-        focus_view(server, view);
+        focus_view(server, view, condense_workspace);
         focus_layer(server, layer);
         return;
     }
     // unfocus the currently focused view
     View* prev_view = get_focused_view();
     if (prev_view == view) {
-        return; // already focused
+        goto fit_on_screen;
     }
 
     if (view) {
@@ -176,8 +176,9 @@ void Seat::focus_view(Server* server, View* view)
     // the seat will send keyboard events to the view automatically
     keyboard_notify_enter(view->get_surface());
 
+fit_on_screen:
     // noop if the view is floating
-    server->get_views_workspace(view).fit_view_on_screen(view);
+    server->get_views_workspace(view).fit_view_on_screen(view, condense_workspace);
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)

@@ -83,7 +83,7 @@ struct Seat {
      *
      * If \a view is null, the previously focused view will be unfocused and no other view will be focused.
      */
-    void focus_view(Server* server, View* view);
+    void focus_view(Server* server, View* view, bool condense_workspace = false);
     /// Marks the layer as receiving keyboard focus from this seat.
     void focus_layer(Server* server, struct wlr_layer_surface_v1* layer);
     /**
