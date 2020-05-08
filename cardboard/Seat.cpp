@@ -104,12 +104,8 @@ void Seat::hide_view(Server* server, View* view)
 {
     // focus last focused window mapped to an active workspace
     if (get_focused_view() == view && !focus_stack.empty()) {
-        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [server, view](auto* v) -> bool {
-            if (v == view || !v->mapped) {
-                return false;
-            }
-
-            return server->get_views_workspace(v).template and_then<Output>([](const auto& ws) { return ws.output; }).has_value();
+        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [view](auto* v) -> bool {
+            return v != view && v->mapped;
         });
         if (to_focus != focus_stack.end()) {
             focus_view(server, *to_focus);
@@ -139,11 +135,11 @@ void Seat::focus_view(Server* server, View* view)
     }
 
     // if view is null, ws_ref is NullRef
-    auto ws_ref = server->get_views_workspace(view);
+    auto& ws = server->get_views_workspace(view);
     // deny setting focus to a view which is hidden by a fullscreen view
-    if (ws_ref && ws_ref.unwrap().fullscreen_view && &ws_ref.unwrap().fullscreen_view.unwrap() != view) {
+    if (ws.fullscreen_view && ws.fullscreen_view.raw_pointer() != view) {
         // unless it's transient for the fullscreened view
-        if (!view->is_transient_for(&ws_ref.unwrap().fullscreen_view.unwrap())) {
+        if (!view->is_transient_for(ws.fullscreen_view.raw_pointer())) {
             return;
         }
     }
@@ -179,7 +175,8 @@ void Seat::focus_view(Server* server, View* view)
     // the seat will send keyboard events to the view automatically
     keyboard_notify_enter(view->get_surface());
 
-    ws_ref.and_then([view](auto& ws) { ws.fit_view_on_screen(view); });
+    // noop if the view is floating
+    ws.fit_view_on_screen(view);
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
@@ -214,12 +211,12 @@ void Seat::focus_by_offset(Server* server, int offset)
         return;
     }
     auto ws = server->get_views_workspace(focused_view);
-    if (!ws) {
+    if (ws.is_view_floating(focused_view)) {
         return;
     }
 
-    auto it = ws.unwrap().find_tile(focused_view);
-    if (int index = std::distance(ws.unwrap().tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.unwrap().tiles.size())) {
+    auto it = ws.find_tile(focused_view);
+    if (int index = std::distance(ws.tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.tiles.size())) {
         // out of bounds
         return;
     }
@@ -262,7 +259,7 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
         return;
     }
 
-    auto workspace = server->get_views_workspace(view);
+    auto& workspace = server->get_views_workspace(view);
     grab_state = {
         .view = view,
         .grab_data = GrabState::Resize {
@@ -271,7 +268,7 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
             .geometry = view->geometry,
             .resize_edges = edges,
             .workspace = workspace,
-            .scroll_x = workspace ? workspace.unwrap().scroll_x : 0,
+            .scroll_x = workspace.scroll_x,
             .view_x = view->x,
             .view_y = view->y
         },

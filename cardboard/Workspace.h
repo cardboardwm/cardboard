@@ -108,6 +108,9 @@ struct Workspace {
     /// Sets \a view as the currently fullscreen view. If null, the fullscreen view will be cleared, if any.
     void set_fullscreen_view(View* view);
 
+    /// Returns true if the view is floating in this Workspace.
+    bool is_view_floating(View* view);
+
     /**
      * Assigns the workspace to an \a output.
      */

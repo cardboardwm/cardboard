@@ -199,7 +199,10 @@ void xwayland_surface_request_configure_handler(struct wl_listener* listener, vo
     view->geometry.width = ev->width;
     view->geometry.height = ev->height;
     view->resize(view->geometry.width, view->geometry.height);
-    server->get_views_workspace(view).and_then([](auto& ws) { ws.arrange_tiles(); });
+    auto& ws = server->get_views_workspace(view);
+    if (!ws.is_view_floating(view)) {
+        ws.arrange_tiles();
+    }
 }
 
 void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -208,23 +211,23 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     auto* xsurface = view->xwayland_surface;
+    auto& ws = server->get_views_workspace(view);
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
         view->x = xsurface->x;
         view->y = xsurface->y;
         view->geometry.width = xsurface->width;
         view->geometry.height = xsurface->height;
 
-        server->get_views_workspace(view).and_then([](auto& ws) {
+        if (!ws.is_view_floating(view)) {
             ws.arrange_tiles();
-        });
-    }
-    server->get_views_workspace(view).and_then([view](auto& ws) {
-        if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
-            wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
-            view->resize(view->saved_size->first, view->saved_size->second);
-            view->saved_size = std::nullopt;
         }
-    });
+    }
+
+    if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
+        wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
+        view->resize(view->saved_size->first, view->saved_size->second);
+        view->saved_size = std::nullopt;
+    }
 }
 
 void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
@@ -233,15 +236,7 @@ void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, [
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->get_views_workspace(view)
-        .and_then<Workspace>([view, set](auto& ws) {
-            ws.set_fullscreen_view(set ? view : nullptr);
-            return OptionalRef(ws);
-        })
-        .or_else([view, set]() {
-            view->set_fullscreen(set);
-            return NullRef<Workspace>;
-        });
+    server->get_views_workspace(view).set_fullscreen_view(set ? view : nullptr);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

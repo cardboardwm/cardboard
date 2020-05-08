@@ -265,9 +265,7 @@ void Server::map_view(View* view)
 void Server::unmap_view(View* view)
 {
     view->mapped = false;
-    get_views_workspace(view).and_then([view](Workspace& ws) {
-        ws.remove_view(view);
-    });
+    get_views_workspace(view).remove_view(view);
 
     seat.hide_view(this, view);
     seat.remove_from_focus_stack(view);
@@ -278,12 +276,8 @@ void Server::move_view_to_front(View* view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](const auto x) { return view == x; }));
 }
 
-OptionalRef<Workspace> Server::get_views_workspace(View* view)
+Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 {
-    if (view == nullptr || view->workspace_id < 0) {
-        return NullRef<Workspace>;
-    }
-
     return workspaces[view->workspace_id];
 }
 

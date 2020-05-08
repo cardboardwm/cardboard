@@ -200,6 +200,11 @@ void Workspace::set_fullscreen_view(View* view)
     arrange_tiles();
 }
 
+bool Workspace::is_view_floating(View* view)
+{
+    return std::find(floating_views.begin(), floating_views.end(), view) != floating_views.end();
+}
+
 void Workspace::activate(Output& new_output)
 {
     for (const auto& tile : tiles) {
@@ -219,4 +224,3 @@ void Workspace::deactivate()
     }
     output = NullRef<Output>;
 }
-
