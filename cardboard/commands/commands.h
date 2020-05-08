@@ -94,6 +94,9 @@ inline CommandResult workspace_move(Server* server, int n)
         return { "Invalid Workspace number" };
 
     View* view = server->seat.get_focused_view();
+    if (!view) {
+        return { "No view to move in current workspace"s };
+    }
     change_view_workspace(server, view, &server->workspaces[n]);
     server->workspaces[n].arrange_workspace();
 
@@ -131,6 +134,9 @@ inline CommandResult focus_cycle(Server* server)
 inline CommandResult toggle_floating(Server* server)
 {
     View* view = server->seat.get_focused_view();
+    if (!view) {
+        return { "" };
+    }
     auto& ws = server->get_views_workspace(view);
 
     bool currently_floating = server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
@@ -154,6 +160,9 @@ inline CommandResult toggle_floating(Server* server)
 inline CommandResult move(Server* server, int dx, int dy)
 {
     View* view = server->seat.get_focused_view();
+    if (!view) {
+        return { "" };
+    }
     Workspace& workspace = server->workspaces[view->workspace_id];
 
     if (auto it = workspace.find_tile(view); it != workspace.tiles.end()) {
@@ -177,6 +186,9 @@ inline CommandResult move(Server* server, int dx, int dy)
 inline CommandResult resize(Server* server, int width, int height)
 {
     View* view = server->seat.get_focused_view();
+    if (!view) {
+        return { "" };
+    }
     reconfigure_view_size(server, view, width, height);
     return { "" };
 }

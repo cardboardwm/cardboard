@@ -211,6 +211,10 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 #endif
 
+    if (ws_it->fullscreen_view && ws_it->fullscreen_view.unwrap().get_surface_under_coords(lx, ly, surface, sx, sy)) {
+        return ws_it->fullscreen_view.raw_pointer();
+    }
+
     // third, floating views
     for (auto* floating_view : ws_it->floating_views) {
         if (!floating_view->mapped) {
