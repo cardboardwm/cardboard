@@ -138,7 +138,6 @@ void Workspace::fit_view_on_screen(View* view, bool condense)
     int vx = view->x + view->geometry.x;
 
     bool overflowing = vx < 0 || view->x + view->geometry.x + view->geometry.width > usable_area.x + usable_area.width;
-    wlr_log(WLR_DEBUG, "overflowing %d", overflowing);
     if (condense && view == tiles.begin()->view) {
         // align first window to the display's left edge
         scroll_x = -usable_area.x;
@@ -162,7 +161,7 @@ View* Workspace::find_dominant_view(View* focused_view)
     View* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
-    const auto usable_area = output.unwrap().usable_area;
+    const auto usable_area = get_real_usable_area(output_layout, output.raw_pointer());
     for (auto& tile : tiles) {
         auto* view = tile.view;
         if (!view->mapped) {

@@ -46,4 +46,7 @@ void register_output(Server* server, Output&& output);
 /// Arrange the workspace associated with \a output.
 void arrange_output(Server* server, Output* output);
 
+struct wlr_box get_real_usable_area(NotNullPointer<struct wlr_output_layout> output_layout, NotNullPointer<Output> output);
+struct wlr_box get_real_usable_area(NotNullPointer<Server> server, NotNullPointer<Output> output);
+
 #endif // __CARDBOARD_OUTPUT_H_

@@ -69,12 +69,28 @@ to run commands and set keybindings:
 
 alias cutter=$HOME/src/cardboard/build/cutter/cutter
 
-cutter bind alt+x quit
-cutter bind alt+return exec xfce4-terminal
-cutter bind alt+left focus left
-cutter bind alt+right focus right
-cutter exec swaybg -i ~/wallpapers/coolwall.png
-cutter exec waybar
+mod=alt
+
+cutter config mouse_mod $mod
+
+cutter bind $mod+x quit
+cutter bind $mod+return exec sakura
+cutter bind $mod+left focus left
+cutter bind $mod+right focus right
+cutter bind $mod+shift+left move -10 0
+cutter bind $mod+shift+right move 10 0
+cutter bind $mod+shift+up move 0 -10
+cutter bind $mod+shift+down move 0 10
+cutter bind $mod+w close
+for i in $(seq 1 6); do
+	cutter bind $mod+$i workspace switch $(( i - 1 ))
+	cutter bind $mod+ctrl+$i workspace move $(( i - 1 ))
+done
+
+cutter bind $mod+shift+space toggle_floating
+
+cutter exec toolbox run swaybg -i ~/wallpapers/autobahn.png
+cutter exec toolbox run waybar
 ```
 
 As you can see, to run a program, you need to preffix it with `cutter exec`.

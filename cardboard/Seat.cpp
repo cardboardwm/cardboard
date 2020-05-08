@@ -131,6 +131,9 @@ void Seat::focus_view(Server* server, View* view, bool condense_workspace)
     // unfocus the currently focused view
     View* prev_view = get_focused_view();
     if (prev_view == view) {
+        if (!view) {
+            return;
+        }
         goto fit_on_screen;
     }
 
@@ -526,14 +529,18 @@ void Seat::focus(Server* server, Workspace* workspace)
         Workspace& previous_workspace = get_focused_workspace(server).unwrap();
         workspace->activate(previous_workspace.output.unwrap());
         previous_workspace.deactivate();
-
-        Output& output = workspace->output.unwrap();
-
-        cursor.move(
-            server,
-            output.usable_area.x + output.usable_area.width / 2,
-            output.usable_area.y + output.usable_area.height / 2);
     }
+
+    Output& output = workspace->output.unwrap();
+
+    const auto* output_box = wlr_output_layout_get_box(server->output_layout, output.wlr_output);
+    if (!output_box) {
+        return;
+    }
+    cursor.move(
+        server,
+        output_box->x + output.usable_area.x + output.usable_area.width / 2,
+        output_box->y + output.usable_area.y + output.usable_area.height / 2);
 
     if (auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view) {
             return view->workspace_id == workspace->index;

@@ -340,3 +340,17 @@ void output_scale_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     arrange_layers(server, output);
     arrange_output(server, output);
 }
+
+struct wlr_box get_real_usable_area(NotNullPointer<struct wlr_output_layout> output_layout, NotNullPointer<Output> output)
+{
+    const auto* output_box = wlr_output_layout_get_box(output_layout.get(), output->wlr_output);
+    auto real_usable_area = output->usable_area;
+    real_usable_area.x += output_box->x;
+    real_usable_area.y += output_box->y;
+
+    return real_usable_area;
+}
+struct wlr_box get_real_usable_area(NotNullPointer<Server> server, NotNullPointer<Output> output)
+{
+    return get_real_usable_area(server->output_layout, output);
+}

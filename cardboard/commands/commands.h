@@ -82,6 +82,7 @@ inline CommandResult workspace_switch(Server* server, int n)
         return { "Invalid Workspace number" };
 
     server->seat.focus(server, &server->workspaces[n]);
+    server->workspaces[n].arrange_workspace();
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
@@ -94,6 +95,7 @@ inline CommandResult workspace_move(Server* server, int n)
 
     View* view = server->seat.get_focused_view();
     change_view_workspace(server, view, &server->workspaces[n]);
+    server->workspaces[n].arrange_workspace();
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
