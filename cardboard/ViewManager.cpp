@@ -75,11 +75,11 @@ void reconfigure_view_size(NotNullPointer<Server> server, NotNullPointer<View> v
 void scroll_workspace(NotNullPointer<Workspace> workspace, AbsoluteScroll scroll)
 {
     workspace->scroll_x = scroll.get();
-    workspace->arrange_tiles();
+    workspace->arrange_workspace();
 }
 
 void scroll_workspace(NotNullPointer<Workspace> workspace, RelativeScroll scroll)
 {
     workspace->scroll_x += scroll.get();
-    workspace->arrange_tiles();
+    workspace->arrange_workspace();
 }

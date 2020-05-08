@@ -84,9 +84,9 @@ struct Workspace {
     void remove_view(View* view);
 
     /**
-    * \brief Puts the windows in tiled position.
+    * \brief Puts windows in tiled position and takes care of fullscreen views.
     */
-    void arrange_tiles();
+    void arrange_workspace();
 
     /**
     * \brief Returns \c true if the views of the workspace overflow the output \a output.

@@ -59,7 +59,7 @@ void arrange_output(Server* server, Output* output)
     if (ws_it == server->workspaces.end()) {
         return;
     }
-    ws_it->arrange_tiles();
+    ws_it->arrange_workspace();
 }
 
 void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)

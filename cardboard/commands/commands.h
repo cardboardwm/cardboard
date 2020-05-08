@@ -164,7 +164,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         }
 
         std::swap(*other, *it);
-        workspace.arrange_tiles();
+        workspace.arrange_workspace();
     } else {
         reconfigure_view_position(server, view, view->x + dx, view->y + dy);
     }

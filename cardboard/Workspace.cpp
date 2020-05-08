@@ -64,7 +64,7 @@ void Workspace::add_view(View* view, View* next_to, bool floating)
     }
     view->change_output(nullptr, output);
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
 void Workspace::remove_view(View* view)
@@ -77,10 +77,10 @@ void Workspace::remove_view(View* view)
     view->set_activated(false);
     view->change_output(output, nullptr);
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
-void Workspace::arrange_tiles()
+void Workspace::arrange_workspace()
 {
     if (!output) {
         return;
@@ -95,6 +95,7 @@ void Workspace::arrange_tiles()
         view.resize(output_box->width, output_box->height);
     });
 
+    // arrange tiles
     for (auto& tile : tiles) {
         if (!tile.view->mapped || fullscreen_view.raw_pointer() == tile.view) {
             continue;
@@ -170,7 +171,7 @@ void Workspace::fit_view_on_screen(View* view)
         scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
     }
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
 int Workspace::get_view_wx(View* view)
@@ -206,7 +207,7 @@ void Workspace::set_fullscreen_view(View* view)
     }
     fullscreen_view = OptionalRef(view);
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
 bool Workspace::is_view_floating(View* view)

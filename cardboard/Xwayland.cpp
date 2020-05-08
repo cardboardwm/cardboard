@@ -201,7 +201,7 @@ void xwayland_surface_request_configure_handler(struct wl_listener* listener, vo
     view->resize(view->geometry.width, view->geometry.height);
     auto& ws = server->get_views_workspace(view);
     if (!ws.is_view_floating(view)) {
-        ws.arrange_tiles();
+        ws.arrange_workspace();
     }
 }
 
@@ -218,7 +218,7 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
         view->geometry.width = xsurface->width;
         view->geometry.height = xsurface->height;
 
-        ws.arrange_tiles();
+        ws.arrange_workspace();
     }
 }
 

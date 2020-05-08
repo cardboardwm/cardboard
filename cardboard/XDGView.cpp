@@ -231,7 +231,7 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
-        ws.arrange_tiles();
+        ws.arrange_workspace();
     }
 }
 
