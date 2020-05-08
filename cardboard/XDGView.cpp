@@ -231,14 +231,7 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
 
-        if (!ws.is_view_floating(view)) {
-            ws.arrange_tiles();
-        }
-    }
-    if (ws.fullscreen_view.raw_pointer() != static_cast<View*>(view) && view->saved_size) {
-        wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
-        view->resize(view->saved_size->first, view->saved_size->second);
-        view->saved_size = std::nullopt;
+        ws.arrange_tiles();
     }
 }
 

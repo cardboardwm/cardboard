@@ -2,11 +2,12 @@
 #define CARDBOARD_WINDOWMANAGER_H
 
 #include "View.h"
-#include "Workspace.h"
 #include "Server.h"
 
 #include "NotNull.h"
 #include "StrongAlias.h"
+
+struct Workspace;
 
 using AbsoluteScroll = StrongAlias<int, struct AbsoluteScrollTag>;
 using RelativeScroll = StrongAlias<int, struct RelativeScrollTag>;

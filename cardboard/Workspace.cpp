@@ -9,6 +9,7 @@ extern "C" {
 #include "Output.h"
 #include "View.h"
 #include "Workspace.h"
+#include "ViewManager.h"
 
 Workspace::Workspace(IndexType index)
     : index(index)
@@ -87,17 +88,17 @@ void Workspace::arrange_tiles()
 
     int acc_width = 0;
     const auto* output_box = wlr_output_layout_get_box(output_layout, output.unwrap().wlr_output);
-    if (fullscreen_view) {
-        // make the view fill the screen if fullscreen and return
-        auto& view = fullscreen_view.unwrap();
-        view.x = output_box->x - view.geometry.x;
-        view.y = output_box->y - view.geometry.y;
-        view.resize(output_box->width, output_box->height);
-        return;
-    }
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
+    fullscreen_view.and_then([output_box](auto& view) {
+        view.move(output_box->x - view.geometry.x, output_box->y - view.geometry.y);
+        view.resize(output_box->width, output_box->height);
+    });
+
     for (auto& tile : tiles) {
+        if (!tile.view->mapped || fullscreen_view.raw_pointer() == tile.view) {
+            continue;
+        }
         tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
         tile.view->y = output_box->y + usable_area.y - tile.view->geometry.y;
         tile.view->resize(tile.view->geometry.width, usable_area.height);
@@ -131,7 +132,7 @@ void Workspace::fit_view_on_screen(View* view)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
-    if (fullscreen_view.has_value() || view->saved_size.has_value()) {
+    if (fullscreen_view.has_value() || view->saved_state.has_value()) {
         return;
     }
 
@@ -190,9 +191,17 @@ void Workspace::set_fullscreen_view(View* view)
 {
     fullscreen_view.and_then([](auto& fview) {
         fview.set_fullscreen(false);
+        fview.move(fview.saved_state->x, fview.saved_state->y);
+        fview.resize(fview.saved_state->width, fview.saved_state->height);
+        fview.saved_state = std::nullopt;
     });
     if (view != nullptr) {
-        view->save_size({ view->geometry.width, view->geometry.height });
+        view->save_state({
+            .x = view->x,
+            .y = view->y,
+            .width = view->geometry.width,
+            .height = view->geometry.height,
+        });
         view->set_fullscreen(true);
     }
     fullscreen_view = OptionalRef(view);

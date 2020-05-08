@@ -27,12 +27,12 @@ void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new
     }
 }
 
-void View::save_size(std::pair<int, int>&& to_save)
+void View::save_state(FullscreenSavedState to_save)
 {
-    assert(!saved_size.has_value());
+    assert(!saved_state.has_value());
 
-    saved_size = std::move(to_save);
-    wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_size->first, saved_size->second);
+    saved_state = to_save;
+    wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_state->width, saved_state->height);
 }
 
 void View::move(int x_, int y_)

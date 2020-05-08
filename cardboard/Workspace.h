@@ -14,6 +14,7 @@ extern "C" {
 
 class View;
 struct Output;
+struct Server;
 
 /**
  * \brief A Workspace is a group of tiled windows.
@@ -51,55 +52,55 @@ struct Workspace {
     IndexType index;
 
     /**
-     * The offset of the viewport.
+     * \brief The offset of the viewport.
      */
     int scroll_x = 0;
 
     Workspace(IndexType index);
 
     /**
-     * Sets the wlr_output_layout pointer to \a ol.
+     * \brief Sets the wlr_output_layout pointer to \a ol.
      */
     void set_output_layout(struct wlr_output_layout* ol);
 
     /**
-     * Returns an iterator to the tile containing \a view.
+     * \brief Returns an iterator to the tile containing \a view.
      */
     std::list<Tile>::iterator find_tile(View* view);
 
     /**
-     * Returns an iterator to the a floating view.
+     * \brief Returns an iterator to the a floating view.
      */
     std::list<View*>::iterator find_floating(View* view);
 
     /**
-    * Adds the \a view to the right of the \a next_to view and tiles it accordingly.
+    * \brief Adds the \a view to the right of the \a next_to view and tiles it accordingly.
     */
     void add_view(View* view, View* next_to, bool floating = false);
 
     /**
-    * Removes \a view from the workspace and tiles the others accordingly.
+    * \brief Removes \a view from the workspace and tiles the others accordingly.
     */
     void remove_view(View* view);
 
     /**
-    * Puts the windows in tiled position.
+    * \brief Puts the windows in tiled position.
     */
     void arrange_tiles();
 
     /**
-    * Returns \c true if the views of the workspace overflow the output \a output.
+    * \brief Returns \c true if the views of the workspace overflow the output \a output.
     */
     bool is_spanning();
 
     /**
-    * Scrolls the viewport of the workspace just enough to make the
+    * \brief Scrolls the viewport of the workspace just enough to make the
     * entirety of \a view visible, i.e. there are no off-screen parts of it.
     */
     void fit_view_on_screen(View* view);
 
     /**
-    * Returns the x coordinate of \a view in workspace coordinates.
+    * \brief Returns the x coordinate of \a view in workspace coordinates.
     * The origin of the workspace plane is the top-left corner of the first window,
     * be it off-screen or not.
     */
@@ -112,12 +113,12 @@ struct Workspace {
     bool is_view_floating(View* view);
 
     /**
-     * Assigns the workspace to an \a output.
+     * \brief Assigns the workspace to an \a output.
      */
     void activate(Output& output);
 
     /**
-     * Marks the workspace as inactive: it is not assigned to any output.
+     * \brief Marks the workspace as inactive: it is not assigned to any output.
      */
     void deactivate();
 };

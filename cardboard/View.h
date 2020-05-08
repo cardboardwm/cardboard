@@ -43,6 +43,10 @@ struct Server;
  */
 class View {
 public:
+    struct FullscreenSavedState {
+        int x, y;
+        int width, height;
+    };
     virtual ~View() = default;
     /**
      * \brief The size and offset of the usable working area.
@@ -66,7 +70,7 @@ public:
      */
     struct wlr_box geometry;
     /// Saved size before fullscreen;
-    std::optional<std::pair<int, int>> saved_size;
+    std::optional<FullscreenSavedState> saved_state;
     /// Holds the size from when the view was tiled if it's currently floating, or from when the view was floating if currently tiled.
     std::pair<int, int> previous_size;
 
@@ -122,8 +126,8 @@ public:
     /// Marks the change of output where this view is drawn.
     void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
 
-    /// Saves the size of the view before becoming fullscreen.
-    void save_size(std::pair<int, int>&& to_save);
+    /// Saves the position and size of the view before becoming fullscreen.
+    void save_state(FullscreenSavedState to_save);
 
     /// Closes view
     virtual void close() = 0;

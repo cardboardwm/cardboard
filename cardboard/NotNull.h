@@ -1,6 +1,8 @@
 #ifndef BUILD_CARDBOARD_NOTNULL_H
 #define BUILD_CARDBOARD_NOTNULL_H
 
+#include <type_traits>
+
 template<typename Type>
 class NotNullPointer
 {
@@ -16,7 +18,7 @@ public:
     explicit NotNullPointer(T* t):
         pointer{t}
     {
-        static_assert(!std::is_same_v<std::remove_cvref_t<T>, std::nullopt>, "Trying to assign nullptr to NotNullPointer");
+        static_assert(!std::is_same_v<std::remove_cvref_t<T>, std::nullptr_t>, "Trying to assign nullptr to NotNullPointer");
         assert(t != nullptr && "Trying to assign null value to NotNullPointer");
     }
 
