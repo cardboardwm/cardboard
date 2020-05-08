@@ -137,13 +137,16 @@ inline CommandResult toggle_floating(Server* server)
 
     auto prev_size = view->previous_size;
     view->previous_size = {view->geometry.width, view->geometry.height};
+
     view->resize(prev_size.first, prev_size.second);
+    // HACK: makes the tiling algorithm think that the view already restored its size
+    view->geometry.width = prev_size.first;
+    view->geometry.height = prev_size.second;
 
     server->workspaces[view->workspace_id].remove_view(view);
     server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !currently_floating);
 
     return {""};
-
 }
 
 inline CommandResult move(Server* server, int dx, int dy)
