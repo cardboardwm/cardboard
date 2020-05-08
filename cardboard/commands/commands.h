@@ -128,11 +128,14 @@ inline CommandResult toggle_floating(Server* server)
 {
     View* view = server->seat.get_focused_view();
 
-    bool floating =
+    bool currently_floating =
         server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
 
+    if (!currently_floating) {
+        view->set_fullscreen(false);
+    }
     server->workspaces[view->workspace_id].remove_view(view);
-    server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !floating);
+    server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !currently_floating);
 
     return {""};
 
