@@ -134,13 +134,14 @@ void Seat::focus_view(Server* server, View* view)
         return; // already focused
     }
 
-    // if view is null, ws_ref is NullRef
-    auto& ws = server->get_views_workspace(view);
-    // deny setting focus to a view which is hidden by a fullscreen view
-    if (ws.fullscreen_view && ws.fullscreen_view.raw_pointer() != view) {
-        // unless it's transient for the fullscreened view
-        if (!view->is_transient_for(ws.fullscreen_view.raw_pointer())) {
-            return;
+    if (view) {
+        auto& ws = server->get_views_workspace(view);
+        // deny setting focus to a view which is hidden by a fullscreen view
+        if (ws.fullscreen_view && ws.fullscreen_view.raw_pointer() != view) {
+            // unless it's transient for the fullscreened view
+            if (!view->is_transient_for(ws.fullscreen_view.raw_pointer())) {
+                return;
+            }
         }
     }
 
@@ -176,7 +177,7 @@ void Seat::focus_view(Server* server, View* view)
     keyboard_notify_enter(view->get_surface());
 
     // noop if the view is floating
-    ws.fit_view_on_screen(view);
+    server->get_views_workspace(view).fit_view_on_screen(view);
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
@@ -530,6 +531,8 @@ void Seat::focus(Server* server, Workspace* workspace)
             return view->workspace_id == workspace->index;
         }); last_focused_view != focus_stack.end()) {
         focus_view(server, *last_focused_view);
+    } else {
+        focus_view(server, nullptr);
     }
     server->seat.cursor.rebase(server);
 }

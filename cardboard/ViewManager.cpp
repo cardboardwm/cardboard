@@ -2,26 +2,41 @@
 
 void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> view, NotNullPointer<Workspace> new_workspace)
 {
-    Workspace& workspace = server->workspaces[view->workspace_id];
+    Workspace& workspace = server->get_views_workspace(view);
 
-    if(workspace.find_tile(view.get()) != workspace.tiles.end()) {
-        workspace.remove_view(static_cast<View*>(view));
-        new_workspace->add_view(static_cast<View*>(view), nullptr);
-    } else {
-        if(new_workspace->output.has_value()) {
-            auto output_area = new_workspace->output.unwrap().usable_area;
-
-            if(view->x < output_area.x || view->x >= output_area.x + output_area.width ||
-               view->y < output_area.y || view->y >= output_area.y + output_area.height) {
-                view->move(
-                    output_area.x + output_area.width / 2,
-                    output_area.y + output_area.height / 2);
-            }
-        }
-
-        workspace.remove_view(static_cast<View*>(view));
-        new_workspace->add_view(static_cast<View*>(view), nullptr, true);
+    if (&workspace == new_workspace.get()) {
+        return;
     }
+
+    if (view->expansion_state == View::ExpansionState::FULLSCREEN) {
+        if (new_workspace->fullscreen_view) {
+            new_workspace->set_fullscreen_view(nullptr);
+        }
+        new_workspace->fullscreen_view = OptionalRef(view.get());
+        new_workspace->arrange_workspace();
+    }
+
+    if (workspace.is_view_floating(view.get()) && new_workspace->output.has_value() && view->expansion_state != View::ExpansionState::FULLSCREEN) {
+        auto output_area = new_workspace->output.unwrap().usable_area;
+
+        if(view->x < output_area.x || view->x >= output_area.x + output_area.width ||
+            view->y < output_area.y || view->y >= output_area.y + output_area.height) {
+            view->move(
+                output_area.x + output_area.width / 2,
+                output_area.y + output_area.height / 2);
+        }
+    }
+
+    workspace.remove_view(view.get());
+    new_workspace->add_view(view.get(), nullptr, true);
+
+    if (auto last_focused_view = std::find_if(server->seat.focus_stack.begin(), server->seat.focus_stack.end(), [workspace, view](View* v) {
+                return v->workspace_id == workspace.index && v != view.get();
+            }); last_focused_view != server->seat.focus_stack.end()) {
+        server->seat.focus_view(server.get(), *last_focused_view);
+    } else {
+        server->seat.focus_view(server.get(), nullptr);
+    };
     server->seat.cursor.rebase(server.get());
 }
 

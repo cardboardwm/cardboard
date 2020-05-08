@@ -38,7 +38,7 @@ public:
         return pointer;
     }
 
-    pointer_type get()
+    pointer_type get() const
     {
         return pointer;
     }
