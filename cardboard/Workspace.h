@@ -75,13 +75,15 @@ struct Workspace {
 
     /**
     * \brief Adds the \a view to the right of the \a next_to view and tiles it accordingly.
+    *
+    * \param transfering - set to true if we toggle the floating state
     */
-    void add_view(View* view, View* next_to, bool floating = false);
+    void add_view(View* view, View* next_to, bool floating = false, bool transferring = false);
 
     /**
     * \brief Removes \a view from the workspace and tiles the others accordingly.
     */
-    void remove_view(View* view);
+    void remove_view(View* view, bool transferring = false);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.

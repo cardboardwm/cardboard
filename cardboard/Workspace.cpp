@@ -36,20 +36,17 @@ std::list<View*>::iterator Workspace::find_floating(View* view)
     });;
 }
 
-void Workspace::add_view(View* view, View* next_to, bool floating)
+void Workspace::add_view(View* view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
-    if(floating)
-    {
+    if (floating) {
         auto it = find_floating(next_to);
 
         floating_views.insert(
             it == floating_views.end() ? it : ++it,
             view
         );
-    }
-    else
-    {
+    } else {
         auto it = find_tile(next_to);
         if (it != tiles.end()) {
             std::advance(it, 1);
@@ -57,25 +54,29 @@ void Workspace::add_view(View* view, View* next_to, bool floating)
         tiles.insert(it, { view });
     }
 
-    view->workspace_id = index;
+    if (!transferring) {
+        view->workspace_id = index;
 
-    if(output) {
-        view->set_activated(true);
+        if(output) {
+            view->set_activated(true);
+        }
+        view->change_output(nullptr, output);
     }
-    view->change_output(nullptr, output);
 
     arrange_workspace();
 }
 
-void Workspace::remove_view(View* view)
+void Workspace::remove_view(View* view, bool transferring)
 {
-    if (fullscreen_view && &fullscreen_view.unwrap() == view) {
-        fullscreen_view = NullRef<View>;
+    if (!transferring) {
+        if (fullscreen_view && &fullscreen_view.unwrap() == view) {
+            fullscreen_view = NullRef<View>;
+        }
+        view->set_activated(false);
+        view->change_output(output, nullptr);
     }
     tiles.remove_if([view](auto& other) { return other.view == view; });
     floating_views.remove(view);
-    view->set_activated(false);
-    view->change_output(output, nullptr);
 
     arrange_workspace();
 }

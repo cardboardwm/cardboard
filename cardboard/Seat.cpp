@@ -444,6 +444,7 @@ void Seat::focus(Server* server, Workspace* workspace)
             })
         );
     }
+    server->seat.cursor.rebase(server);
 }
 
 void seat_request_cursor_handler(struct wl_listener* listener, void* data)

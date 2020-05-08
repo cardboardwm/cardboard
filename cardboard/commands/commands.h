@@ -67,7 +67,9 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
 
 inline CommandResult close(Server* server)
 {
-    server->seat.get_focused_view()->close();
+    if (auto* fview = server->seat.get_focused_view(); fview) {
+        fview->close();
+    }
 
     return { "" };
 }
@@ -106,7 +108,7 @@ inline CommandResult focus_cycle(Server* server)
     }
 
     if(auto it = std::find_if(
-            ++focus_stack.begin(),
+            std::next(focus_stack.begin()),
             focus_stack.end(),
             [current_workspace](View* view) {
                 return view->workspace_id == current_workspace.unwrap().index;
@@ -115,7 +117,7 @@ inline CommandResult focus_cycle(Server* server)
         View* view = *it;
         server->seat.focus_view(server, view);
 
-        auto previous_view_it = ++server->seat.focus_stack.begin();
+        auto previous_view_it = std::next(server->seat.focus_stack.begin());
         auto previous_view = *previous_view_it;
         server->seat.focus_stack.erase(previous_view_it);
         server->seat.focus_stack.push_back(previous_view);
@@ -127,24 +129,23 @@ inline CommandResult focus_cycle(Server* server)
 inline CommandResult toggle_floating(Server* server)
 {
     View* view = server->seat.get_focused_view();
+    auto& ws = server->get_views_workspace(view);
 
     bool currently_floating =
         server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
 
-    if (!currently_floating) {
-        view->set_fullscreen(false);
-    }
-
     auto prev_size = view->previous_size;
     view->previous_size = {view->geometry.width, view->geometry.height};
 
-    view->resize(prev_size.first, prev_size.second);
-    // HACK: makes the tiling algorithm think that the view already restored its size
-    view->geometry.width = prev_size.first;
-    view->geometry.height = prev_size.second;
+    if (ws.fullscreen_view.raw_pointer() == view) {
+        view->saved_state->width = prev_size.first;
+        view->saved_state->height = prev_size.second;
+    } else {
+        view->resize(prev_size.first, prev_size.second);
+    }
 
-    server->workspaces[view->workspace_id].remove_view(view);
-    server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !currently_floating);
+    ws.remove_view(view, true);
+    ws.add_view(view, ws.tiles.back().view, !currently_floating, true);
 
     return {""};
 }

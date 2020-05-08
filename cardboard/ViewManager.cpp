@@ -22,6 +22,7 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
         workspace.remove_view(static_cast<View*>(view));
         new_workspace->add_view(static_cast<View*>(view), nullptr, true);
     }
+    server->seat.cursor.rebase(server.get());
 }
 
 static void validate_output(NotNullPointer<Server> server, NotNullPointer<View> view)
