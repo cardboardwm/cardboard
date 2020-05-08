@@ -427,8 +427,7 @@ void Seat::update_swipe(Server* server)
     }
 
     data->scroll_x -= data->speed;
-    data->workspace->scroll_x = static_cast<int>(data->scroll_x);
-    data->workspace->arrange_workspace();
+    scroll_workspace(data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
 
     data->speed *= WORKSPACE_SCROLL_FRICTION;
 

@@ -19,8 +19,7 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
     if (workspace.is_view_floating(view.get()) && new_workspace->output.has_value() && view->expansion_state != View::ExpansionState::FULLSCREEN) {
         auto output_area = new_workspace->output.unwrap().usable_area;
 
-        if(view->x < output_area.x || view->x >= output_area.x + output_area.width ||
-            view->y < output_area.y || view->y >= output_area.y + output_area.height) {
+        if (view->x < output_area.x || view->x >= output_area.x + output_area.width || view->y < output_area.y || view->y >= output_area.y + output_area.height) {
             view->move(
                 output_area.x + output_area.width / 2,
                 output_area.y + output_area.height / 2);
@@ -31,8 +30,9 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
     new_workspace->add_view(view.get(), nullptr, true);
 
     if (auto last_focused_view = std::find_if(server->seat.focus_stack.begin(), server->seat.focus_stack.end(), [workspace, view](View* v) {
-                return v->workspace_id == workspace.index && v != view.get();
-            }); last_focused_view != server->seat.focus_stack.end()) {
+            return v->workspace_id == workspace.index && v != view.get();
+        });
+        last_focused_view != server->seat.focus_stack.end()) {
         server->seat.focus_view(server.get(), *last_focused_view);
     } else {
         server->seat.focus_view(server.get(), nullptr);
