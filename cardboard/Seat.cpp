@@ -437,12 +437,7 @@ void Seat::focus(Server* server, Workspace* workspace)
     if(auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view){
             return view->workspace_id == workspace->index;
         }); last_focused_view != focus_stack.end()) {
-        focus_view(
-            server,
-            *std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view){
-                return view->workspace_id == workspace->index;
-            })
-        );
+        focus_view(server, *last_focused_view);
     }
     server->seat.cursor.rebase(server);
 }
