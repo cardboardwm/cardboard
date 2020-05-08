@@ -183,6 +183,9 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         return nullptr;
     }
 
+    // we are trying surfaces from top to bottom
+
+    // first, overlays and top layers
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP }) {
         // fullscreen views render on top of the TOP layer
         if (ws_it->fullscreen_view && layer == ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
@@ -199,6 +202,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         }
     }
 
+    // second, unmanaged xwayland surfaces
 #if HAVE_XWAYLAND
     for (const auto xwayland_or_surface : xwayland_or_surfaces) {
         if (xwayland_or_surface->get_surface_under_coords(lx, ly, surface, sx, sy)) {
@@ -207,19 +211,30 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 #endif
 
-    for (auto* view : views) {
+    // third, floating views
+    for (auto* floating_view : ws_it->floating_views) {
+        if (!floating_view->mapped) {
+            continue;
+        }
+
+        if (floating_view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+            return floating_view;
+        }
+    }
+
+    // fourth, regular, tiled views
+    for (auto& tile : ws_it->tiles) {
+        auto* view = tile.view;
         if (!view->mapped) {
             continue;
         }
 
-        auto views_output = get_views_workspace(view).and_then<Output>([](const auto& ws) { return ws.output; });
-        // the view is either tiled in the output holding the cursor, or not tiled at all
-        if (((views_output && views_output.unwrap().wlr_output == wlr_output) || !views_output)
-            && view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+        if (view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return view;
         }
     }
 
+    // and the very last, bottom layers and backgrounds
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND }) {
         for (const auto& layer_surface : layers[layer]) {
             if (!layer_surface.surface->mapped) {
