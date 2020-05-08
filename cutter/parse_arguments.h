@@ -69,9 +69,11 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
         return tl::unexpected("not enough arguments"s);
 
     if (args[0] == "left") {
-        return command_arguments::focus { command_arguments::focus::Direction::Left };
+        return command_arguments::focus { command_arguments::focus::Direction::Left, false };
     } else if (args[0] == "right") {
-        return command_arguments::focus { command_arguments::focus::Direction::Right };
+        return command_arguments::focus { command_arguments::focus::Direction::Right, false };
+    } else if (args[0] == "cycle") {
+        return command_arguments::focus { {}, true };
     }
 
     return tl::unexpected("invalid direction '"s + args[0] + "'");
@@ -131,6 +133,61 @@ tl::expected<CommandData, std::string> parse_close(const std::vector<std::string
     return command_arguments::close {};
 }
 
+tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::string>& args)
+{
+    using namespace command_arguments;
+
+    if(args.empty()) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    if(args[0] == "switch") {
+        if(args.size() < 2) {
+            return tl::unexpected("not enough arguments"s);
+        }
+
+        return workspace{ workspace::switch_{std::stoi(args[1])}};
+    }
+    else if(args[0] == "move") {
+        if(args.size() < 2) {
+            return tl::unexpected("not enough arguments"s);
+        }
+
+        return workspace{ workspace::move{std::stoi(args[1])}};
+    }
+    else {
+        return tl::unexpected("unknown workspace sub-command"s);
+    }
+}
+
+tl::expected<CommandData, std::string> parse_toggle_floating(const std::vector<std::string>&)
+{
+    return command_arguments::toggle_floating {};
+}
+
+tl::expected<CommandData, std::string> parse_move(const std::vector<std::string>& args)
+{
+    if(args.empty()) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    if(args.size() == 1) {
+        return command_arguments::move {std::stoi(args[0]), 0};
+    }
+    else {
+        return command_arguments::move {std::stoi(args[0]), std::stoi(args[1])};
+    }
+}
+
+tl::expected<CommandData, std::string> parse_resize(const std::vector<std::string>& args)
+{
+    if(args.size() < 2) {
+        return tl::unexpected("not enough arguments"s);
+    }
+
+    return command_arguments::resize {std::stoi(args[0]), std::stoi(args[1])};
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -153,6 +210,10 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "exec", parse_exec },
     { "bind", parse_bind },
     { "close", parse_close },
+    { "workspace", parse_workspace },
+    { "toggle_floating", parse_toggle_floating },
+    { "move", parse_move },
+    { "resize", parse_resize },
     { "config", parse_config },
 };
 

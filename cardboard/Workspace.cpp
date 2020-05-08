@@ -9,6 +9,7 @@ extern "C" {
 #include "Output.h"
 #include "View.h"
 #include "Workspace.h"
+#include "ViewManager.h"
 
 Workspace::Workspace(IndexType index)
     : index(index)
@@ -28,33 +29,59 @@ std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
     });
 }
 
-void Workspace::add_view(View* view, View* next_to)
+std::list<View*>::iterator Workspace::find_floating(View* view)
+{
+    return std::find_if(floating_views.begin(), floating_views.end(), [view](const auto& v) {
+        return v == view;
+    });;
+}
+
+void Workspace::add_view(View* view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
-    auto it = find_tile(next_to);
-    if (it != tiles.end()) {
-        std::advance(it, 1);
+    if (floating) {
+        auto it = find_floating(next_to);
+
+        floating_views.insert(
+            it == floating_views.end() ? it : ++it,
+            view
+        );
+    } else {
+        auto it = find_tile(next_to);
+        if (it != tiles.end()) {
+            std::advance(it, 1);
+        }
+        tiles.insert(it, { view });
     }
-    auto tile = tiles.insert(it, { view });
 
-    assert(output.has_value());
+    if (!transferring) {
+        view->workspace_id = index;
 
-    tile->view->workspace_id = index;
+        if(output) {
+            view->set_activated(true);
+        }
+        view->change_output(nullptr, output);
+    }
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
-void Workspace::remove_view(View* view)
+void Workspace::remove_view(View* view, bool transferring)
 {
-    if (fullscreen_view && &fullscreen_view.unwrap() == view) {
-        fullscreen_view = NullRef<View>;
+    if (!transferring) {
+        if (fullscreen_view && &fullscreen_view.unwrap() == view) {
+            fullscreen_view = NullRef<View>;
+        }
+        view->set_activated(false);
+        view->change_output(output, nullptr);
     }
     tiles.remove_if([view](auto& other) { return other.view == view; });
+    floating_views.remove(view);
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
-void Workspace::arrange_tiles()
+void Workspace::arrange_workspace()
 {
     if (!output) {
         return;
@@ -62,17 +89,18 @@ void Workspace::arrange_tiles()
 
     int acc_width = 0;
     const auto* output_box = wlr_output_layout_get_box(output_layout, output.unwrap().wlr_output);
-    if (fullscreen_view) {
-        // make the view fill the screen if fullscreen and return
-        auto& view = fullscreen_view.unwrap();
-        view.x = output_box->x - view.geometry.x;
-        view.y = output_box->y - view.geometry.y;
-        view.resize(output_box->width, output_box->height);
-        return;
-    }
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
+    fullscreen_view.and_then([output_box](auto& view) {
+        view.move(output_box->x - view.geometry.x, output_box->y - view.geometry.y);
+        view.resize(output_box->width, output_box->height);
+    });
+
+    // arrange tiles
     for (auto& tile : tiles) {
+        if (!tile.view->mapped || tile.view->expansion_state == View::ExpansionState::FULLSCREEN || tile.view->expansion_state == View::ExpansionState::RECOVERING) {
+            continue;
+        }
         tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
         tile.view->y = output_box->y + usable_area.y - tile.view->geometry.y;
         tile.view->resize(tile.view->geometry.width, usable_area.height);
@@ -106,7 +134,7 @@ void Workspace::fit_view_on_screen(View* view)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
-    if (fullscreen_view.has_value() || view->saved_size.has_value()) {
+    if (view->expansion_state != View::ExpansionState::NORMAL) {
         return;
     }
 
@@ -144,7 +172,7 @@ void Workspace::fit_view_on_screen(View* view)
         scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
     }
 
-    arrange_tiles();
+    arrange_workspace();
 }
 
 int Workspace::get_view_wx(View* view)
@@ -165,20 +193,36 @@ void Workspace::set_fullscreen_view(View* view)
 {
     fullscreen_view.and_then([](auto& fview) {
         fview.set_fullscreen(false);
+        fview.expansion_state = View::ExpansionState::RECOVERING;
+        fview.move(fview.saved_state->x, fview.saved_state->y);
+        fview.resize(fview.saved_state->width, fview.saved_state->height);
+        fview.saved_state = std::nullopt;
     });
     if (view != nullptr) {
-        view->save_size({ view->geometry.width, view->geometry.height });
+        view->save_state({
+            .x = view->x,
+            .y = view->y,
+            .width = view->geometry.width,
+            .height = view->geometry.height,
+        });
+        view->expansion_state = View::ExpansionState::FULLSCREEN;
         view->set_fullscreen(true);
     }
     fullscreen_view = OptionalRef(view);
 
-    arrange_tiles();
+    arrange_workspace();
+}
+
+bool Workspace::is_view_floating(View* view)
+{
+    return std::find(floating_views.begin(), floating_views.end(), view) != floating_views.end();
 }
 
 void Workspace::activate(Output& new_output)
 {
     for (const auto& tile : tiles) {
         tile.view->change_output(output, new_output);
+        tile.view->set_activated(true);
     }
 
     output = OptionalRef<Output>(new_output);
@@ -186,8 +230,13 @@ void Workspace::activate(Output& new_output)
 
 void Workspace::deactivate()
 {
+    if (!output) {
+        return;
+    }
     for (const auto& tile : tiles) {
         tile.view->change_output(output.unwrap(), NullRef<Output>);
+        tile.view->set_activated(false);
+
     }
     output = NullRef<Output>;
 }

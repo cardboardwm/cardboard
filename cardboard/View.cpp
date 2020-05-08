@@ -13,11 +13,7 @@ extern "C" {
 
 OptionalRef<Output> View::get_views_output(Server* server)
 {
-    if (auto ws = server->get_views_workspace(this); ws) {
-        return ws.unwrap().output;
-    }
-
-    return OptionalRef(static_cast<Output*>(wlr_output_layout_output_at(server->output_layout, x, y)->data));
+    return server->get_views_workspace(this).output;
 }
 
 void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output)
@@ -31,12 +27,25 @@ void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new
     }
 }
 
-void View::save_size(std::pair<int, int>&& to_save)
+void View::save_state(ExpansionSavedState to_save)
 {
-    assert(!saved_size.has_value());
+    assert(!saved_state.has_value() && expansion_state == ExpansionState::NORMAL);
 
-    saved_size = std::move(to_save);
-    wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_size->first, saved_size->second);
+    saved_state = to_save;
+    wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_state->width, saved_state->height);
+}
+
+void View::recover()
+{
+    if (expansion_state == ExpansionState::RECOVERING) {
+        expansion_state = ExpansionState::NORMAL;
+    }
+}
+
+void View::move(int x_, int y_)
+{
+    x = x_;
+    y = y_;
 }
 
 void create_view(Server* server, View* view_)

@@ -29,6 +29,11 @@ public:
     {
     }
 
+    OptionalRef(std::nullptr_t)
+        : ptr(nullptr)
+    {
+    }
+
     T& unwrap()
     {
         if (ptr == nullptr) {
@@ -113,6 +118,14 @@ public:
         }
 
         return *this;
+    }
+
+    /**
+     * \brief Gets the raw_pointer, could be useful
+     */
+    T* raw_pointer()
+    {
+        return ptr;
     }
 
 private:

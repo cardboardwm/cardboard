@@ -27,6 +27,8 @@ struct SeatCursor {
     /// Sets the cursor image according to the surface underneath.
     void rebase(Server* server, uint32_t time = 0);
 
+    void move(Server* server, int x, int y) const;
+
 private:
     void register_image_surface(Server* server, struct wlr_surface* surface);
 };

@@ -43,6 +43,15 @@ struct Server;
  */
 class View {
 public:
+    struct ExpansionSavedState {
+        int x, y;
+        int width, height;
+    };
+    enum class ExpansionState {
+        NORMAL,
+        RECOVERING,
+        FULLSCREEN,
+    };
     virtual ~View() = default;
     /**
      * \brief The size and offset of the usable working area.
@@ -65,14 +74,18 @@ public:
      * The change happens in xdg_surface_commit_handler().
      */
     struct wlr_box geometry;
-    /// Saved size before fullscreen;
-    std::optional<std::pair<int, int>> saved_size;
+    /// Saved size before expansion (fullscreen);
+    std::optional<ExpansionSavedState> saved_state;
+    ExpansionState expansion_state;
+    /// Holds the size from when the view was tiled if it's currently floating, or from when the view was floating if currently tiled.
+    std::pair<int, int> previous_size;
 
     /// The id of the workspace this View is assigned to. Set to -1 if none.
     Workspace::IndexType workspace_id;
 
     int x, y; ///< Coordinates of the surface, relative to the output layout (root coordinates).
     bool mapped;
+    bool new_view; ///< True if the view didn't have its first map.
 
     /// Get the top level surface of this view.
     virtual struct wlr_surface* get_surface() = 0;
@@ -92,6 +105,9 @@ public:
 
     /// Requests the resize to the client. Do not assume that the client is resized afterwards.
     virtual void resize(int width, int height) = 0;
+
+    /// Requests the move to the client. Do not assume that the client is resized afterwards.
+    virtual void move(int x, int y);
 
     /// Prepares the view before registering to the server by attaching some handlers and doing shell-specific stuff.
     virtual void prepare(Server* server) = 0;
@@ -116,8 +132,11 @@ public:
     /// Marks the change of output where this view is drawn.
     void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
 
-    /// Saves the size of the view before becoming fullscreen.
-    void save_size(std::pair<int, int>&& to_save);
+    /// Saves the position and size of the view before becoming fullscreen.
+    void save_state(ExpansionSavedState to_save);
+
+    /// Mark view as normal after its size is confirmed recovered after an expansion.
+    void recover();
 
     /// Closes view
     virtual void close() = 0;
@@ -125,10 +144,12 @@ public:
 protected:
     View()
         : geometry { 0, 0, 0, 0 }
+        , expansion_state(ExpansionState::NORMAL)
         , workspace_id(-1)
         , x(0)
         , y(0)
         , mapped(false)
+        , new_view(true)
     {
     }
 };

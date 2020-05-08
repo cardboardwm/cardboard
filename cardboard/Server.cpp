@@ -179,17 +179,20 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [wlr_output](const auto& other) {
         return other.output && other.output.unwrap().wlr_output == wlr_output;
     });
-    if (ws_it == workspaces.end()) {
+    if (ws_it == workspaces.end() || !ws_it->output) {
         return nullptr;
     }
 
+    // we are trying surfaces from top to bottom
+
+    // first, overlays and top layers
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP }) {
         // fullscreen views render on top of the TOP layer
         if (ws_it->fullscreen_view && layer == ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
             continue;
         }
         for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(&ws_it->output.unwrap())) {
+            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(ws_it->output.raw_pointer())) {
                 continue;
             }
 
@@ -199,6 +202,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         }
     }
 
+    // second, unmanaged xwayland surfaces
 #if HAVE_XWAYLAND
     for (const auto xwayland_or_surface : xwayland_or_surfaces) {
         if (xwayland_or_surface->get_surface_under_coords(lx, ly, surface, sx, sy)) {
@@ -207,19 +211,30 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 #endif
 
-    for (auto* view : views) {
+    // third, floating views
+    for (auto* floating_view : ws_it->floating_views) {
+        if (!floating_view->mapped) {
+            continue;
+        }
+
+        if (floating_view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+            return floating_view;
+        }
+    }
+
+    // fourth, regular, tiled views
+    for (auto& tile : ws_it->tiles) {
+        auto* view = tile.view;
         if (!view->mapped) {
             continue;
         }
 
-        auto views_output = get_views_workspace(view).and_then<Output>([](const auto& ws) { return ws.output; });
-        // the view is either tiled in the output holding the cursor, or not tiled at all
-        if (((views_output && views_output.unwrap().wlr_output == wlr_output) || !views_output)
-            && view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+        if (view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return view;
         }
     }
 
+    // and the very last, bottom layers and backgrounds
     for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND }) {
         for (const auto& layer_surface : layers[layer]) {
             if (!layer_surface.surface->mapped) {
@@ -250,9 +265,7 @@ void Server::map_view(View* view)
 void Server::unmap_view(View* view)
 {
     view->mapped = false;
-    get_views_workspace(view).and_then([view](Workspace& ws) {
-        ws.remove_view(view);
-    });
+    get_views_workspace(view).remove_view(view);
 
     seat.hide_view(this, view);
     seat.remove_from_focus_stack(view);
@@ -263,12 +276,8 @@ void Server::move_view_to_front(View* view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [view](const auto x) { return view == x; }));
 }
 
-OptionalRef<Workspace> Server::get_views_workspace(View* view)
+Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 {
-    if (view == nullptr || view->workspace_id < 0) {
-        return NullRef<Workspace>;
-    }
-
     return workspaces[view->workspace_id];
 }
 

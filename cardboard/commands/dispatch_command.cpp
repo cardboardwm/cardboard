@@ -31,22 +31,35 @@ uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
     return mask;
 }
 
+static Command dispatch_workspace(const command_arguments::workspace& workspace)
+{
+    return std::visit(overloaded {
+            [](command_arguments::workspace::switch_ switch_) -> Command {
+                return [switch_] (Server* server) {
+                    return commands::workspace_switch(server, switch_.n);
+                };
+            },
+            [](command_arguments::workspace::move move) -> Command {
+                return [move] (Server* server) {
+                    return commands::workspace_move(server, move.n);
+                };
+            },
+        }, workspace.workspace);
+}
+
 Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
-                          [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
-                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
-                              return [modifiers](Server* server) {
-                                  return commands::config_mouse_mod(server, modifiers);
-                              };
-                          },
-
                           [](const command_arguments::focus focus_data) -> Command {
-                              return [focus_data](Server* server) {
-                                  return commands::focus(
-                                      server,
-                                      focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
-                              };
+                              if (!focus_data.cycle) {
+                                  return [focus_data](Server* server) {
+                                      return commands::focus(
+                                          server,
+                                          focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
+                                  };
+                              } else {
+                                  return commands::focus_cycle;
+                              }
                           },
                           [](const command_arguments::quit quit_data) -> Command {
                               return [quit_data](Server* server) { return commands::quit(server, quit_data.code); };
@@ -71,6 +84,28 @@ Command dispatch_command(const CommandData& command_data)
                           },
                           [](const command_arguments::close) -> Command {
                               return commands::close;
+                          },
+                          [](const command_arguments::workspace& workspace) -> Command {
+                              return dispatch_workspace(workspace);
+                          },
+                          [](const command_arguments::toggle_floating&) -> Command {
+                              return commands::toggle_floating;
+                          },
+                          [](const command_arguments::move& move) -> Command {
+                              return [move](Server* server) {
+                                  return commands::move(server, move.dx, move.dy);
+                              };
+                          },
+                          [](const command_arguments::resize& resize) -> Command {
+                              return [resize](Server* server) {
+                                  return commands::resize(server, resize.width, resize.height);
+                              };
+                          },
+                          [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
+                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
+                              return [modifiers](Server* server) {
+                                  return commands::config_mouse_mod(server, modifiers);
+                              };
                           },
                       },
                       command_data);

@@ -11,6 +11,7 @@
 #include "../IPC.h"
 #include "../Server.h"
 #include "../Spawn.h"
+#include "../ViewManager.h"
 
 extern char** environ;
 
@@ -66,10 +67,117 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
 
 inline CommandResult close(Server* server)
 {
-    View* active_view = server->views.front();
-    active_view->close();
+    if (auto* fview = server->seat.get_focused_view(); fview) {
+        fview->close();
+    }
 
     return { "" };
+}
+
+inline CommandResult workspace_switch(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return { "Invalid Workspace number" };
+
+    server->seat.focus(server, &server->workspaces[n]);
+    return { "Changed to workspace: "s + std::to_string(n) };
+}
+
+inline CommandResult workspace_move(Server* server, int n)
+{
+    using namespace std::string_literals;
+
+    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+        return { "Invalid Workspace number" };
+
+    View* view = server->seat.get_focused_view();
+    change_view_workspace(server, view, &server->workspaces[n]);
+
+    return { "Moved focused window to workspace "s + std::to_string(n) };
+}
+
+inline CommandResult focus_cycle(Server* server)
+{
+    auto& focus_stack = server->seat.focus_stack;
+    auto current_workspace = server->seat.get_focused_workspace(server);
+
+    if(!current_workspace) {
+        return {""};
+    }
+
+    if(auto it = std::find_if(
+            std::next(focus_stack.begin()),
+            focus_stack.end(),
+            [current_workspace](View* view) {
+                return view->workspace_id == current_workspace.unwrap().index;
+            }); it != focus_stack.end())
+    {
+        View* view = *it;
+        server->seat.focus_view(server, view);
+
+        auto previous_view_it = std::next(server->seat.focus_stack.begin());
+        auto previous_view = *previous_view_it;
+        server->seat.focus_stack.erase(previous_view_it);
+        server->seat.focus_stack.push_back(previous_view);
+    }
+
+    return {""};
+}
+
+inline CommandResult toggle_floating(Server* server)
+{
+    View* view = server->seat.get_focused_view();
+    auto& ws = server->get_views_workspace(view);
+
+    bool currently_floating =
+        server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
+
+    auto prev_size = view->previous_size;
+    view->previous_size = {view->geometry.width, view->geometry.height};
+
+    if (ws.fullscreen_view.raw_pointer() == view) {
+        view->saved_state->width = prev_size.first;
+        view->saved_state->height = prev_size.second;
+    } else {
+        view->resize(prev_size.first, prev_size.second);
+    }
+
+    ws.remove_view(view, true);
+    ws.add_view(view, ws.tiles.back().view, !currently_floating, true);
+
+    return {""};
+}
+
+inline CommandResult move(Server* server, int dx, int dy)
+{
+    View* view = server->seat.get_focused_view();
+    Workspace& workspace = server->workspaces[view->workspace_id];
+
+    if(auto it = workspace.find_tile(view); it != workspace.tiles.end()) {
+        auto other = it;
+
+        std::advance(other, dx / abs(dx));
+
+        if((it == workspace.tiles.begin() && dx < 0) || other == workspace.tiles.end()) {
+            return {""};
+        }
+
+        std::swap(*other, *it);
+        workspace.arrange_workspace();
+    } else {
+        reconfigure_view_position(server, view, view->x + dx, view->y + dy);
+    }
+
+    return {""};
+}
+
+inline CommandResult resize(Server* server, int width, int height)
+{
+    View* view = server->seat.get_focused_view();
+    reconfigure_view_size(server, view, width, height);
+    return {""};
 }
 
 };

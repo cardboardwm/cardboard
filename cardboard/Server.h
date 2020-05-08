@@ -39,6 +39,7 @@ extern "C" {
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
+#include "NotNull.h"
 
 #if HAVE_XWAYLAND
 #include <wlr_cpp_fixes/xwayland.h>
@@ -126,7 +127,7 @@ struct Server {
     void move_view_to_front(View* view);
 
     /// Returns the workspace in which the given \a view resides, if any.
-    OptionalRef<Workspace> get_views_workspace(View* view);
+    Workspace& get_views_workspace(NotNullPointer<View> view);
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
 

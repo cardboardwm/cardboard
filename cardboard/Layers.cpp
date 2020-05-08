@@ -263,7 +263,7 @@ void arrange_layers(Server* server, Output* output)
         if (auto focused_view = server->seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
             ws_it->fit_view_on_screen(focused_view);
         } else {
-            ws_it->arrange_tiles();
+            ws_it->arrange_workspace();
         }
     }
 

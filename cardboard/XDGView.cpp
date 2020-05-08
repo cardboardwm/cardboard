@@ -115,7 +115,7 @@ void XDGView::close()
 
 void XDGPopup::unconstrain(Server* server)
 {
-    auto output = server->get_views_workspace(parent).and_then<Output>([](auto& ws) { return ws.output; });
+    auto output = server->get_views_workspace(parent).output;
     if (!output) {
         return;
     }
@@ -165,6 +165,11 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
     if (!view->geometry.width && !view->geometry.height) {
         view->geometry.width = view->xdg_surface->surface->current.width;
         view->geometry.height = view->xdg_surface->surface->current.height;
+    }
+
+    if (view->new_view) {
+        view->previous_size = {view->geometry.width, view->geometry.height};
+        view->new_view = false;
     }
 
     server->map_view(view);
@@ -220,22 +225,15 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
 
     struct wlr_box new_geo;
     wlr_xdg_surface_get_geometry(view->xdg_surface, &new_geo);
+    auto& ws = server->get_views_workspace(view);
     if (memcmp(&new_geo, &view->geometry, sizeof(struct wlr_box)) != 0) {
         // the view has set a new size
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
         view->geometry = new_geo;
+        view->recover();
 
-        server->get_views_workspace(view).and_then([](auto& ws) {
-            ws.arrange_tiles();
-        });
+        ws.arrange_workspace();
     }
-    server->get_views_workspace(view).and_then([view](auto& ws) {
-        if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
-            wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
-            view->resize(view->saved_size->first, view->saved_size->second);
-            view->saved_size = std::nullopt;
-        }
-    });
 }
 
 void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data)
@@ -270,15 +268,8 @@ void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void*
     auto* event = static_cast<struct wlr_xdg_toplevel_set_fullscreen_event*>(data);
 
     bool set = event->fullscreen;
-    server->get_views_workspace(view)
-        .and_then<Workspace>([view, set](auto& ws) {
-            ws.set_fullscreen_view(set ? view : nullptr);
-            return OptionalRef(ws);
-        })
-        .or_else([view, set]() {
-            view->set_fullscreen(set);
-            return NullRef<Workspace>;
-        });
+
+    server->get_views_workspace(view).set_fullscreen_view(set ? view : nullptr);
 }
 
 void xdg_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
