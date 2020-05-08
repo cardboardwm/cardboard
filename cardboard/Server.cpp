@@ -179,7 +179,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [wlr_output](const auto& other) {
         return other.output && other.output.unwrap().wlr_output == wlr_output;
     });
-    if (ws_it == workspaces.end()) {
+    if (ws_it == workspaces.end() || !ws_it->output) {
         return nullptr;
     }
 
@@ -192,7 +192,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
             continue;
         }
         for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(&ws_it->output.unwrap())) {
+            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(ws_it->output.raw_pointer())) {
                 continue;
             }
 

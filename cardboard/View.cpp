@@ -27,12 +27,19 @@ void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new
     }
 }
 
-void View::save_state(FullscreenSavedState to_save)
+void View::save_state(ExpansionSavedState to_save)
 {
-    assert(!saved_state.has_value());
+    assert(!saved_state.has_value() && expansion_state == ExpansionState::NORMAL);
 
     saved_state = to_save;
     wlr_log(WLR_DEBUG, "saved size (%4d, %4d)", saved_state->width, saved_state->height);
+}
+
+void View::recover()
+{
+    if (expansion_state == ExpansionState::RECOVERING) {
+        expansion_state = ExpansionState::NORMAL;
+    }
 }
 
 void View::move(int x_, int y_)

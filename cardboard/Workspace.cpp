@@ -97,7 +97,7 @@ void Workspace::arrange_workspace()
 
     // arrange tiles
     for (auto& tile : tiles) {
-        if (!tile.view->mapped || fullscreen_view.raw_pointer() == tile.view) {
+        if (!tile.view->mapped || tile.view->expansion_state == View::ExpansionState::FULLSCREEN || tile.view->expansion_state == View::ExpansionState::RECOVERING) {
             continue;
         }
         tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
@@ -133,7 +133,7 @@ void Workspace::fit_view_on_screen(View* view)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
-    if (fullscreen_view.has_value() || view->saved_state.has_value()) {
+    if (view->expansion_state != View::ExpansionState::NORMAL) {
         return;
     }
 
@@ -192,6 +192,7 @@ void Workspace::set_fullscreen_view(View* view)
 {
     fullscreen_view.and_then([](auto& fview) {
         fview.set_fullscreen(false);
+        fview.expansion_state = View::ExpansionState::RECOVERING;
         fview.move(fview.saved_state->x, fview.saved_state->y);
         fview.resize(fview.saved_state->width, fview.saved_state->height);
         fview.saved_state = std::nullopt;
@@ -203,6 +204,7 @@ void Workspace::set_fullscreen_view(View* view)
             .width = view->geometry.width,
             .height = view->geometry.height,
         });
+        view->expansion_state = View::ExpansionState::FULLSCREEN;
         view->set_fullscreen(true);
     }
     fullscreen_view = OptionalRef(view);
@@ -227,6 +229,9 @@ void Workspace::activate(Output& new_output)
 
 void Workspace::deactivate()
 {
+    if (!output) {
+        return;
+    }
     for (const auto& tile : tiles) {
         tile.view->change_output(output.unwrap(), NullRef<Output>);
         tile.view->set_activated(false);

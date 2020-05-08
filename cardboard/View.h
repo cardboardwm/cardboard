@@ -43,9 +43,14 @@ struct Server;
  */
 class View {
 public:
-    struct FullscreenSavedState {
+    struct ExpansionSavedState {
         int x, y;
         int width, height;
+    };
+    enum class ExpansionState {
+        NORMAL,
+        RECOVERING,
+        FULLSCREEN,
     };
     virtual ~View() = default;
     /**
@@ -69,8 +74,9 @@ public:
      * The change happens in xdg_surface_commit_handler().
      */
     struct wlr_box geometry;
-    /// Saved size before fullscreen;
-    std::optional<FullscreenSavedState> saved_state;
+    /// Saved size before expansion (fullscreen);
+    std::optional<ExpansionSavedState> saved_state;
+    ExpansionState expansion_state;
     /// Holds the size from when the view was tiled if it's currently floating, or from when the view was floating if currently tiled.
     std::pair<int, int> previous_size;
 
@@ -127,7 +133,10 @@ public:
     void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
 
     /// Saves the position and size of the view before becoming fullscreen.
-    void save_state(FullscreenSavedState to_save);
+    void save_state(ExpansionSavedState to_save);
+
+    /// Mark view as normal after its size is confirmed recovered after an expansion.
+    void recover();
 
     /// Closes view
     virtual void close() = 0;
@@ -135,6 +144,7 @@ public:
 protected:
     View()
         : geometry { 0, 0, 0, 0 }
+        , expansion_state(ExpansionState::NORMAL)
         , workspace_id(-1)
         , x(0)
         , y(0)

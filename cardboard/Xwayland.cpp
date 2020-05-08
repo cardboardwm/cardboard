@@ -217,6 +217,7 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
         view->y = xsurface->y;
         view->geometry.width = xsurface->width;
         view->geometry.height = xsurface->height;
+        view->recover();
 
         ws.arrange_workspace();
     }
