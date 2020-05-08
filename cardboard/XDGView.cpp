@@ -167,6 +167,11 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
         view->geometry.height = view->xdg_surface->surface->current.height;
     }
 
+    if (view->new_view) {
+        view->previous_size = {view->geometry.width, view->geometry.height};
+        view->new_view = false;
+    }
+
     server->map_view(view);
 
     struct {
@@ -230,7 +235,7 @@ void xdg_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] v
         });
     }
     server->get_views_workspace(view).and_then([view](auto& ws) {
-        if (ws.fullscreen_view != OptionalRef(static_cast<View*>(view)) && view->saved_size) {
+        if (ws.fullscreen_view.raw_pointer() != static_cast<View*>(view) && view->saved_size) {
             wlr_log(WLR_DEBUG, "restoring saved size (%4d, %4d)", view->saved_size->first, view->saved_size->second);
             view->resize(view->saved_size->first, view->saved_size->second);
             view->saved_size = std::nullopt;

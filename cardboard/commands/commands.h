@@ -134,6 +134,11 @@ inline CommandResult toggle_floating(Server* server)
     if (!currently_floating) {
         view->set_fullscreen(false);
     }
+
+    auto prev_size = view->previous_size;
+    view->previous_size = {view->geometry.width, view->geometry.height};
+    view->resize(prev_size.first, prev_size.second);
+
     server->workspaces[view->workspace_id].remove_view(view);
     server->workspaces[view->workspace_id].add_view(view, server->workspaces[view->workspace_id].tiles.back().view, !currently_floating);
 

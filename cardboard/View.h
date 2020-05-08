@@ -67,12 +67,15 @@ public:
     struct wlr_box geometry;
     /// Saved size before fullscreen;
     std::optional<std::pair<int, int>> saved_size;
+    /// Holds the size from when the view was tiled if it's currently floating, or from when the view was floating if currently tiled.
+    std::pair<int, int> previous_size;
 
     /// The id of the workspace this View is assigned to. Set to -1 if none.
     Workspace::IndexType workspace_id;
 
     int x, y; ///< Coordinates of the surface, relative to the output layout (root coordinates).
     bool mapped;
+    bool new_view; ///< True if the view didn't have its first map.
 
     /// Get the top level surface of this view.
     virtual struct wlr_surface* get_surface() = 0;
@@ -132,6 +135,7 @@ protected:
         , x(0)
         , y(0)
         , mapped(false)
+        , new_view(true)
     {
     }
 };
