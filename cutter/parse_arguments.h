@@ -137,25 +137,23 @@ tl::expected<CommandData, std::string> parse_workspace(const std::vector<std::st
 {
     using namespace command_arguments;
 
-    if(args.empty()) {
+    if (args.empty()) {
         return tl::unexpected("not enough arguments"s);
     }
 
-    if(args[0] == "switch") {
-        if(args.size() < 2) {
+    if (args[0] == "switch") {
+        if (args.size() < 2) {
             return tl::unexpected("not enough arguments"s);
         }
 
-        return workspace{ workspace::switch_{std::stoi(args[1])}};
-    }
-    else if(args[0] == "move") {
-        if(args.size() < 2) {
+        return workspace { workspace::switch_ { std::stoi(args[1]) } };
+    } else if (args[0] == "move") {
+        if (args.size() < 2) {
             return tl::unexpected("not enough arguments"s);
         }
 
-        return workspace{ workspace::move{std::stoi(args[1])}};
-    }
-    else {
+        return workspace { workspace::move { std::stoi(args[1]) } };
+    } else {
         return tl::unexpected("unknown workspace sub-command"s);
     }
 }
@@ -167,25 +165,24 @@ tl::expected<CommandData, std::string> parse_toggle_floating(const std::vector<s
 
 tl::expected<CommandData, std::string> parse_move(const std::vector<std::string>& args)
 {
-    if(args.empty()) {
+    if (args.empty()) {
         return tl::unexpected("not enough arguments"s);
     }
 
-    if(args.size() == 1) {
-        return command_arguments::move {std::stoi(args[0]), 0};
-    }
-    else {
-        return command_arguments::move {std::stoi(args[0]), std::stoi(args[1])};
+    if (args.size() == 1) {
+        return command_arguments::move { std::stoi(args[0]), 0 };
+    } else {
+        return command_arguments::move { std::stoi(args[0]), std::stoi(args[1]) };
     }
 }
 
 tl::expected<CommandData, std::string> parse_resize(const std::vector<std::string>& args)
 {
-    if(args.size() < 2) {
+    if (args.size() < 2) {
         return tl::unexpected("not enough arguments"s);
     }
 
-    return command_arguments::resize {std::stoi(args[0]), std::stoi(args[1])};
+    return command_arguments::resize { std::stoi(args[0]), std::stoi(args[1]) };
 }
 
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)

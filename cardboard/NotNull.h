@@ -3,20 +3,19 @@
 
 #include <type_traits>
 
-template<typename Type>
-class NotNullPointer
-{
+template <typename Type>
+class NotNullPointer {
 public:
     using pointer_type = Type*;
 
-    NotNullPointer(Type* t):
-        pointer(t)
+    NotNullPointer(Type* t)
+        : pointer(t)
     {
     }
 
-    template<typename T>
-    explicit NotNullPointer(T* t):
-        pointer{t}
+    template <typename T>
+    explicit NotNullPointer(T* t)
+        : pointer { t }
     {
         static_assert(!std::is_same_v<std::remove_cvref_t<T>, std::nullptr_t>, "Trying to assign nullptr to NotNullPointer");
         assert(t != nullptr && "Trying to assign null value to NotNullPointer");

@@ -34,12 +34,12 @@ extern "C" {
 #include "Keyboard.h"
 #include "Layers.h"
 #include "Listener.h"
+#include "NotNull.h"
 #include "OptionalRef.h"
 #include "Output.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
-#include "NotNull.h"
 
 #if HAVE_XWAYLAND
 #include <wlr_cpp_fixes/xwayland.h>

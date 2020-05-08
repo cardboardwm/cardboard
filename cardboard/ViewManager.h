@@ -1,8 +1,8 @@
 #ifndef CARDBOARD_WINDOWMANAGER_H
 #define CARDBOARD_WINDOWMANAGER_H
 
-#include "View.h"
 #include "Server.h"
+#include "View.h"
 
 #include "NotNull.h"
 #include "StrongAlias.h"

@@ -8,8 +8,8 @@ extern "C" {
 #include "OptionalRef.h"
 #include "Output.h"
 #include "View.h"
-#include "Workspace.h"
 #include "ViewManager.h"
+#include "Workspace.h"
 
 Workspace::Workspace(IndexType index)
     : index(index)
@@ -33,7 +33,7 @@ std::list<View*>::iterator Workspace::find_floating(View* view)
 {
     return std::find_if(floating_views.begin(), floating_views.end(), [view](const auto& v) {
         return v == view;
-    });;
+    });
 }
 
 void Workspace::add_view(View* view, View* next_to, bool floating, bool transferring)
@@ -44,8 +44,7 @@ void Workspace::add_view(View* view, View* next_to, bool floating, bool transfer
 
         floating_views.insert(
             it == floating_views.end() ? it : ++it,
-            view
-        );
+            view);
     } else {
         auto it = find_tile(next_to);
         if (it != tiles.end()) {
@@ -57,7 +56,7 @@ void Workspace::add_view(View* view, View* next_to, bool floating, bool transfer
     if (!transferring) {
         view->workspace_id = index;
 
-        if(output) {
+        if (output) {
             view->set_activated(true);
         }
         view->change_output(nullptr, output);
@@ -236,7 +235,6 @@ void Workspace::deactivate()
     for (const auto& tile : tiles) {
         tile.view->change_output(output.unwrap(), NullRef<Output>);
         tile.view->set_activated(false);
-
     }
     output = NullRef<Output>;
 }

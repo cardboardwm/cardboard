@@ -168,7 +168,7 @@ void xdg_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void
     }
 
     if (view->new_view) {
-        view->previous_size = {view->geometry.width, view->geometry.height};
+        view->previous_size = { view->geometry.width, view->geometry.height };
         view->new_view = false;
     }
 

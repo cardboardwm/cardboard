@@ -4,12 +4,16 @@
 #include <utility>
 
 template <typename T, typename Tag>
-class StrongAlias
-{
+class StrongAlias {
 public:
-    explicit StrongAlias(const T& value): m_value{value} {};
-    explicit StrongAlias(T&& value): m_value{std::move(value)} {};
-    explicit StrongAlias(): m_value{} {}
+    explicit StrongAlias(const T& value)
+        : m_value { value } {};
+    explicit StrongAlias(T&& value)
+        : m_value { std::move(value) } {};
+    explicit StrongAlias()
+        : m_value {}
+    {
+    }
 
     T& get() { return m_value; }
     const T& get() const { return m_value; }
@@ -34,7 +38,5 @@ public:
 private:
     T m_value;
 };
-
-
 
 #endif //BUILD_CARDBOARD_STRONGALIAS_H

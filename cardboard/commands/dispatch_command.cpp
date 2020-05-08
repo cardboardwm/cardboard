@@ -9,7 +9,7 @@ struct overloaded : Ts... {
     using Ts::operator()...;
 };
 template <class... Ts>
-overloaded(Ts...)->overloaded<Ts...>;
+overloaded(Ts...) -> overloaded<Ts...>;
 
 uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
 {
@@ -34,17 +34,18 @@ uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
 static Command dispatch_workspace(const command_arguments::workspace& workspace)
 {
     return std::visit(overloaded {
-            [](command_arguments::workspace::switch_ switch_) -> Command {
-                return [switch_] (Server* server) {
-                    return commands::workspace_switch(server, switch_.n);
-                };
-            },
-            [](command_arguments::workspace::move move) -> Command {
-                return [move] (Server* server) {
-                    return commands::workspace_move(server, move.n);
-                };
-            },
-        }, workspace.workspace);
+                          [](command_arguments::workspace::switch_ switch_) -> Command {
+                              return [switch_](Server* server) {
+                                  return commands::workspace_switch(server, switch_.n);
+                              };
+                          },
+                          [](command_arguments::workspace::move move) -> Command {
+                              return [move](Server* server) {
+                                  return commands::workspace_move(server, move.n);
+                              };
+                          },
+                      },
+                      workspace.workspace);
 }
 
 Command dispatch_command(const CommandData& command_data)

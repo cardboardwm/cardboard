@@ -270,7 +270,7 @@ void Seat::begin_resize(Server* server, View* view, uint32_t edges)
             .workspace = workspace,
             .scroll_x = workspace.scroll_x,
             .view_x = view->x,
-            .view_y = view->y
+            .view_y = view->y,
         },
     };
 }
@@ -335,7 +335,7 @@ void Seat::process_cursor_resize(Server* server, GrabState::Resize resize_data)
     double height = resize_data.geometry.height;
 
     if (resize_data.resize_edges & WLR_EDGE_TOP) {
-        if(height - dy > 1) {
+        if (height - dy > 1) {
             y = resize_data.view_y + dy;
             height -= dy;
         }
@@ -343,7 +343,7 @@ void Seat::process_cursor_resize(Server* server, GrabState::Resize resize_data)
         height += dy;
     }
     if (resize_data.resize_edges & WLR_EDGE_LEFT) {
-        if(width - dx > 1) {
+        if (width - dx > 1) {
             x = resize_data.view_x + dx;
             width -= dx;
         }
@@ -508,11 +508,11 @@ bool Seat::is_mod_pressed(uint32_t mods)
 
 void Seat::focus(Server* server, Workspace* workspace)
 {
-    if(workspace == get_focused_workspace(server).raw_pointer()) {
-        return ;
+    if (workspace == get_focused_workspace(server).raw_pointer()) {
+        return;
     }
 
-    if(!workspace->output.has_value()) {
+    if (!workspace->output.has_value()) {
         Workspace& previous_workspace = get_focused_workspace(server).unwrap();
         workspace->activate(previous_workspace.output.unwrap());
         previous_workspace.deactivate();
@@ -522,13 +522,13 @@ void Seat::focus(Server* server, Workspace* workspace)
         cursor.move(
             server,
             output.usable_area.x + output.usable_area.width / 2,
-            output.usable_area.y + output.usable_area.height / 2
-        );
+            output.usable_area.y + output.usable_area.height / 2);
     }
 
-    if(auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view){
+    if (auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view) {
             return view->workspace_id == workspace->index;
-        }); last_focused_view != focus_stack.end()) {
+        });
+        last_focused_view != focus_stack.end()) {
         focus_view(server, *last_focused_view);
     }
     server->seat.cursor.rebase(server);
