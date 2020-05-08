@@ -174,6 +174,50 @@ void Workspace::fit_view_on_screen(View* view)
     arrange_workspace();
 }
 
+View* Workspace::find_dominant_view(View* focused_view)
+{
+    if (!output) {
+        return nullptr;
+    }
+    View* most_visible = nullptr;
+    double maximum_visibility = 0;
+    double focused_view_visibility = 0;
+    const auto usable_area = output.unwrap().usable_area;
+    for (auto& tile : tiles) {
+        auto* view = tile.view;
+        if (!view->mapped) {
+            continue;
+        }
+
+        const struct wlr_box view_box = {
+            .x = view->x + view->geometry.x,
+            .y = view->y + view->geometry.y,
+            .width = view->geometry.width,
+            .height = view->geometry.height,
+        };
+        struct wlr_box intersection;
+        bool ok = wlr_box_intersection(&intersection, &usable_area, &view_box);
+        if (!ok) {
+            // no intersection, view isn't on the screen at all
+            continue;
+        }
+        double visibility = static_cast<double>(intersection.width * intersection.height) / (view_box.width * view_box.height);
+        if (visibility > maximum_visibility) {
+            maximum_visibility = visibility;
+            most_visible = view;
+        }
+        if (view == focused_view) {
+            focused_view_visibility = visibility;
+        }
+    }
+
+    if (!focused_view || (focused_view && maximum_visibility - focused_view_visibility > 0.01)) {
+        return most_visible;
+    }
+
+    return focused_view;
+}
+
 int Workspace::get_view_wx(View* view)
 {
     int acc_wx = 0;

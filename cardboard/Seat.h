@@ -43,6 +43,7 @@ struct Seat {
         };
         struct WorkspaceScroll {
             Workspace* workspace;
+            View* dominant_view;
             double speed; ///< scrolling speed
             double delta_since_update; ///< how much the fingers moved since the last update
             double scroll_x; ///< the scroll of the workspace stored as a double

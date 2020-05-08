@@ -102,6 +102,13 @@ struct Workspace {
     void fit_view_on_screen(View* view);
 
     /**
+     * \brief From the currently visible view (those that are inside the viewport), return the one that has
+     * most coverage as a ratio of its width. There may be more views having the most coverage.
+     * If \a focused_view is one of them, return it directly. Can return nullptr.
+     */
+    View* find_dominant_view(View* focused_view);
+
+    /**
     * \brief Returns the x coordinate of \a view in workspace coordinates.
     * The origin of the workspace plane is the top-left corner of the first window,
     * be it off-screen or not.

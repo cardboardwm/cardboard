@@ -284,6 +284,7 @@ void Seat::begin_workspace_scroll(Server* server, Workspace* workspace)
         .view = nullptr,
         .grab_data = GrabState::WorkspaceScroll {
             .workspace = workspace,
+            .dominant_view = get_focused_view(),
             .speed = 0,
             .delta_since_update = 0,
             .scroll_x = static_cast<double>(workspace->scroll_x),
@@ -428,10 +429,18 @@ void Seat::update_swipe(Server* server)
 
     data->scroll_x -= data->speed;
     scroll_workspace(data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
+    if (auto* dominant = data->workspace->find_dominant_view(get_focused_view()); dominant) {
+        data->dominant_view = dominant;
+    }
+    if (data->dominant_view) {
+        server->seat.get_focused_view()->set_activated(false);
+        data->dominant_view->set_activated(true);
+    }
 
     data->speed *= WORKSPACE_SCROLL_FRICTION;
 
     if (data->wants_to_stop && fabs(data->speed) < 1) {
+        server->seat.focus_view(server, data->dominant_view);
         end_touchpad_swipe(server);
     }
 }
