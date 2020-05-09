@@ -13,6 +13,9 @@ extern "C" {
 
 OptionalRef<Output> View::get_views_output(Server* server)
 {
+    if (workspace_id < 0) {
+        return NullRef<Output>;
+    }
     return server->get_views_workspace(this).output;
 }
 

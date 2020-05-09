@@ -206,6 +206,10 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     auto* xsurface = view->xwayland_surface;
+    // xwayland is weird
+    if (view->workspace_id < 0) {
+        return;
+    }
     auto& ws = server->get_views_workspace(view);
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
         view->x = xsurface->x;

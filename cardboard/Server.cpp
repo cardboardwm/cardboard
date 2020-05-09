@@ -268,8 +268,10 @@ void Server::map_view(View* view)
 
 void Server::unmap_view(View* view)
 {
-    view->mapped = false;
-    get_views_workspace(view).remove_view(view);
+    if (view->mapped) {
+        view->mapped = false;
+        get_views_workspace(view).remove_view(view);
+    }
 
     seat.hide_view(this, view);
     seat.remove_from_focus_stack(view);
@@ -282,6 +284,7 @@ void Server::move_view_to_front(View* view)
 
 Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 {
+    assert(view->workspace_id >= 0);
     return workspaces[view->workspace_id];
 }
 
