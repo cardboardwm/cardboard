@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Cardboard
+Comment=A scrollable tiling Wayland compositor
+Exec=cardboard
+Type=Application

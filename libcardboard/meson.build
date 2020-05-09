@@ -12,8 +12,12 @@ sources = files(
     'src/client.cpp',
 )
 
+install_subdir('include/cardboard',
+               install_dir: get_option('includedir')
+              )
+
 libcardboard = library(
-    'command_protocol',
+    'cardboard',
     sources,
     include_directories: libcardboard_inc,
     install: true,

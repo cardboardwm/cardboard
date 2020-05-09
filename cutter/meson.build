@@ -5,7 +5,7 @@ executable(
     'cutter',
     files('main.cpp'),
     include_directories: [libcardboard_inc],
-    install: true,
     link_with: libcardboard,
-    dependencies: [expected]
+    dependencies: [expected],
+    install: true
 )

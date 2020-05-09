@@ -65,5 +65,6 @@ executable(
   cardboard_sources,
   include_directories: [wlr_cpp_fixes_inc, libcardboard_inc],
   dependencies: cardboard_deps,
-  link_with: libcardboard
+  link_with: libcardboard,
+  install: true
 )

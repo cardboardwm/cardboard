@@ -19,6 +19,10 @@ add_project_arguments(
   language: 'cpp'
 )
 
+datadir = get_option('datadir')
+
+install_data('cardboard.desktop', install_dir: join_paths(datadir, 'wayland-sessions'))
+
 subdir('protocols')
 subdir('libcardboard')
 subdir('cardboard')
