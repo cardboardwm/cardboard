@@ -193,6 +193,20 @@ inline CommandResult resize(Server* server, int width, int height)
     return { "" };
 }
 
+inline CommandResult cycle_width(Server* server)
+{
+    auto* focused_view = server->seat.get_focused_view();
+    if (!focused_view) {
+        return { "" };
+    }
+
+    server->get_views_workspace(focused_view).output.and_then([server, focused_view](const auto& output) {
+        const auto* wlr_box = wlr_output_layout_get_box(server->output_layout, output.wlr_output);
+        focused_view->cycle_width(wlr_box->width);
+    });
+    return { "" };
+}
+
 };
 
 #endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_

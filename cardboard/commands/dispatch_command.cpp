@@ -108,6 +108,9 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::config_mouse_mod(server, modifiers);
                               };
                           },
+                          [](const command_arguments::cycle_width&) -> Command {
+                              return commands::cycle_width;
+                          },
                       },
                       command_data);
 }

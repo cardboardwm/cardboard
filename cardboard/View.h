@@ -138,6 +138,9 @@ public:
     /// Mark view as normal after its size is confirmed recovered after an expansion.
     void recover();
 
+    /// Cycles through predefined widths expressed as ratios of the screen's width.
+    void cycle_width(int screen_width);
+
     /// Closes view
     virtual void close() = 0;
 

@@ -4,7 +4,9 @@ extern "C" {
 #include <wlr/util/log.h>
 }
 
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <limits>
 #include <utility>
 
@@ -43,6 +45,31 @@ void View::recover()
     if (expansion_state == ExpansionState::RECOVERING) {
         expansion_state = ExpansionState::NORMAL;
     }
+}
+
+void View::cycle_width(int screen_width)
+{
+    if (screen_width == 0) {
+        // shouldn't happen, but better safe than sorry
+        return;
+    }
+    static constexpr double golden_ratio = 0x1.3c6ef372fe94fp-1; // 1 / phi
+    constexpr std::array<double, 3> ratios = { 1 - golden_ratio, 0.5, golden_ratio };
+    double current_ratio = static_cast<double>(geometry.width) / static_cast<double>(screen_width);
+
+    decltype(ratios)::size_type i = 0;
+    while (i < ratios.size() && ratios[i] <= current_ratio) {
+        i++;
+    }
+
+    if (fabs(current_ratio - ratios[i]) < 0.01) {
+        i = (i + 1) % ratios.size();
+    }
+
+    if (i == ratios.size()) {
+        i = 0;
+    }
+    resize(static_cast<int>(screen_width * ratios[i]), geometry.height);
 }
 
 void View::move(int x_, int y_)

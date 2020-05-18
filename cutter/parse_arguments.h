@@ -200,6 +200,11 @@ tl::expected<CommandData, std::string> parse_config(const std::vector<std::strin
     return tl::unexpected("invalid config key '"s + key + "''");
 }
 
+tl::expected<CommandData, std::string> parse_cycle_width(const std::vector<std::string>&)
+{
+    return command_arguments::cycle_width {};
+}
+
 using parse_f = tl::expected<CommandData, std::string> (*)(const std::vector<std::string>&);
 static std::unordered_map<std::string, parse_f> parse_table = {
     { "quit", parse_quit },
@@ -212,6 +217,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "move", parse_move },
     { "resize", parse_resize },
     { "config", parse_config },
+    { "cycle_width", parse_cycle_width },
 };
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments)
