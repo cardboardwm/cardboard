@@ -21,7 +21,7 @@ static auto find_mod_key(const std::string& key)
     return mod_keys.find(key) != mod_keys.end();
 };
 
-tl::expected<command_arguments::config_mouse_mod, std::string> parse_mouse_mod(const std::vector<std::string>& args)
+tl::expected<CommandData, std::string> parse_config_mouse_mod(const std::vector<std::string>& args)
 {
     if (args.size() != 1) {
         return tl::unexpected("malformed config value"s);
@@ -46,7 +46,7 @@ tl::expected<command_arguments::config_mouse_mod, std::string> parse_mouse_mod(c
         }
     }
 
-    return command_arguments::config_mouse_mod { std::move(modifiers) };
+    return command_arguments::config { command_arguments::config::mouse_mod { std::move(modifiers) } };
 }
 
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments);
@@ -194,7 +194,7 @@ tl::expected<CommandData, std::string> parse_config(const std::vector<std::strin
     std::string key = args[0];
     auto new_args = std::vector<std::string>(std::next(args.begin()), args.end());
     if (key == "mouse_mod") {
-        return parse_mouse_mod(new_args);
+        return parse_config_mouse_mod(new_args);
     }
 
     return tl::unexpected("invalid config key '"s + key + "''");

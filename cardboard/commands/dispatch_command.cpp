@@ -48,6 +48,18 @@ static Command dispatch_workspace(const command_arguments::workspace& workspace)
                       workspace.workspace);
 }
 
+static Command dispatch_config(const command_arguments::config& config)
+{
+    return std::visit(overloaded {
+                          [](command_arguments::config::mouse_mod mouse_mod) -> Command {
+                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
+                              return [modifiers](Server* server) {
+                                  return commands::config_mouse_mod(server, modifiers);
+                              };
+                          } },
+                      config.config);
+}
+
 Command dispatch_command(const CommandData& command_data)
 {
     return std::visit(overloaded {
@@ -102,11 +114,8 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::resize(server, resize.width, resize.height);
                               };
                           },
-                          [](const command_arguments::config_mouse_mod& mouse_mod) -> Command {
-                              uint32_t modifiers = modifier_array_to_mask(mouse_mod.modifiers);
-                              return [modifiers](Server* server) {
-                                  return commands::config_mouse_mod(server, modifiers);
-                              };
+                          [](const command_arguments::config& config) -> Command {
+                              return dispatch_config(config);
                           },
                           [](const command_arguments::cycle_width&) -> Command {
                               return commands::cycle_width;

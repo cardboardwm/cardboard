@@ -56,8 +56,12 @@ struct resize {
     int width, height;
 };
 
-struct config_mouse_mod {
-    std::vector<std::string> modifiers;
+struct config {
+    struct mouse_mod {
+        std::vector<std::string> modifiers;
+    };
+
+    std::variant<mouse_mod> config;
 };
 
 struct cycle_width {
@@ -77,7 +81,7 @@ using CommandData = std::variant<
     command_arguments::toggle_floating,
     command_arguments::move,
     command_arguments::resize,
-    command_arguments::config_mouse_mod,
+    command_arguments::config,
     command_arguments::cycle_width>;
 
 namespace command_arguments {
