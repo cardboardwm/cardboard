@@ -35,8 +35,6 @@ inline CommandResult quit(Server* server, int code)
     return { "" };
 }
 
-[[maybe_unused]] static std::array<std::pair<std::string_view, uint32_t>, 8> mod_table = {};
-
 inline CommandResult bind(Server* server, uint32_t modifiers, xkb_keysym_t sym, const Command& command)
 {
     server->keybindings_config.map[modifiers].insert({ sym, command });

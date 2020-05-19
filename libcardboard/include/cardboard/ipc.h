@@ -39,7 +39,7 @@ AlignedHeaderBuffer create_header_buffer(const Header&);
 /**
  * \brief The environment variable name where CARDBOARD_SOCKET path will be stored
  */
-[[maybe_unused]] static const char* SOCKET_ENV_VAR = "CARDBOARD_SOCKET";
+static const char* SOCKET_ENV_VAR = "CARDBOARD_SOCKET";
 
 };
 

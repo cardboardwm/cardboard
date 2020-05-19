@@ -300,7 +300,7 @@ void arrange_layers(Server* server, Output* output)
     }
 }
 
-void LayerSurface::commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::commit_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -324,7 +324,7 @@ void LayerSurface::commit_handler(struct wl_listener* listener, [[maybe_unused]]
     }
 }
 
-void LayerSurface::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::destroy_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -337,7 +337,7 @@ void LayerSurface::destroy_handler(struct wl_listener* listener, [[maybe_unused]
     layer_surface->output.and_then([server](auto& out) { arrange_layers(server, &out); });
 }
 
-void LayerSurface::map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::map_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -346,7 +346,7 @@ void LayerSurface::map_handler(struct wl_listener* listener, [[maybe_unused]] vo
     server->seat.cursor.rebase(server);
 }
 
-void LayerSurface::unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::unmap_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -357,7 +357,7 @@ void LayerSurface::unmap_handler([[maybe_unused]] struct wl_listener* listener, 
     //server->seat.cursor.rebase(server);
 }
 
-void LayerSurface::new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::new_popup_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -366,7 +366,7 @@ void LayerSurface::new_popup_handler([[maybe_unused]] struct wl_listener* listen
     create_layer_popup(server, wlr_popup, layer_surface);
 }
 
-void LayerSurface::output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::output_destroy_handler(struct wl_listener* listener, void*)
 {
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
     auto* server = get_server(listener);
@@ -404,7 +404,7 @@ void LayerSurface::output_destroy_handler(struct wl_listener* listener, [[maybe_
     wlr_layer_surface_v1_close(layer_surface->surface);
 }
 
-void LayerSurfacePopup::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurfacePopup::destroy_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
@@ -422,7 +422,7 @@ void LayerSurfacePopup::new_popup_handler(struct wl_listener* listener, void* da
     create_layer_popup(server, wlr_popup, popup->parent);
 }
 
-void LayerSurfacePopup::map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurfacePopup::map_handler(struct wl_listener* listener, void*)
 {
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
 

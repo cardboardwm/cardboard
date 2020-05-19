@@ -70,14 +70,14 @@ struct Seat {
     /// Sets up a new keyboard device, with events and keymap.
     void add_keyboard(Server* server, struct wlr_input_device* device);
     /// Attaches a new pointer device (Server* server, e.g. mouse) to the cursor.
-    void add_pointer(Server* server, struct wlr_input_device* device);
+    void add_pointer(struct wlr_input_device* device);
 
     /// Returns the currently focused View. It is defined as the View currently holding keyboard focus.
     View* get_focused_view();
     /// Hides the \a view from the screen without unmapping. Happens when a Workspace is deactivated.
     void hide_view(Server* server, View* view);
     /// Gives keyboard focus to a plain surface (OR xwayland usually)
-    void focus_surface(Server* server, struct wlr_surface* surface);
+    void focus_surface(struct wlr_surface* surface);
     /**
      * \brief Sets the focus state on \a view. Auto-scrolls the Workspace if it's tiled.
      *

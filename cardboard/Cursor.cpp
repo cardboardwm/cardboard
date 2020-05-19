@@ -202,7 +202,7 @@ void SeatCursor::axis_handler(struct wl_listener* listener, void* data)
     wlr_seat_pointer_notify_axis(cursor->seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
 
-void SeatCursor::frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void SeatCursor::frame_handler(struct wl_listener* listener, void*)
 {
     auto* cursor = get_listener_data<SeatCursor*>(listener);
 

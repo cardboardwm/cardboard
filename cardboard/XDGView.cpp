@@ -156,7 +156,7 @@ void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* 
     popup->unconstrain(server);
 }
 
-void XDGView::surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGView::surface_map_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
@@ -190,7 +190,7 @@ void XDGView::surface_map_handler(struct wl_listener* listener, [[maybe_unused]]
     }
 }
 
-void XDGView::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGView::surface_unmap_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
@@ -202,7 +202,7 @@ void XDGView::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused
     }
 }
 
-void XDGView::surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGView::surface_destroy_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
@@ -218,7 +218,7 @@ void XDGView::surface_destroy_handler(struct wl_listener* listener, [[maybe_unus
     delete view;
 }
 
-void XDGView::surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
@@ -245,7 +245,7 @@ void XDGView::surface_new_popup_handler(struct wl_listener* listener, void* data
     create_xdg_popup(server, wlr_popup, view);
 }
 
-void XDGView::toplevel_request_move_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGView::toplevel_request_move_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
@@ -272,7 +272,7 @@ void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, 
     server->get_views_workspace(view).set_fullscreen_view(set ? view : nullptr);
 }
 
-void XDGPopup::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGPopup::destroy_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* popup = get_listener_data<XDGPopup*>(listener);
@@ -290,7 +290,7 @@ void XDGPopup::new_popup_handler(struct wl_listener* listener, void* data)
     create_xdg_popup(server, wlr_popup, popup->parent);
 }
 
-void XDGPopup::map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XDGPopup::map_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* popup = get_listener_data<XDGPopup*>(listener);

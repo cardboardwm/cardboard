@@ -43,7 +43,7 @@ void Seat::add_input_device(Server* server, struct wlr_input_device* device)
         add_keyboard(server, device);
         break;
     case WLR_INPUT_DEVICE_POINTER:
-        add_pointer(server, device);
+        add_pointer(device);
         break;
     default:
         // TODO: touchscreens and drawing tablets
@@ -83,7 +83,7 @@ void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
     wlr_seat_set_keyboard(wlr_seat, device);
 }
 
-void Seat::add_pointer([[maybe_unused]] Server* server, struct wlr_input_device* device)
+void Seat::add_pointer(struct wlr_input_device* device)
 {
     wlr_cursor_attach_input_device(cursor.wlr_cursor, device);
 }
@@ -113,7 +113,7 @@ void Seat::hide_view(Server* server, View* view)
     }
 }
 
-void Seat::focus_surface([[maybe_unused]] Server* server, struct wlr_surface* surface)
+void Seat::focus_surface(struct wlr_surface* surface)
 {
     keyboard_notify_enter(surface);
 }

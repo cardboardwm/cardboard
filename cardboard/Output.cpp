@@ -234,7 +234,7 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
     return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
 }
 
-void Output::frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::frame_handler(struct wl_listener* listener, void*)
 {
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -299,7 +299,7 @@ void Output::present_handler(struct wl_listener* listener, void* data)
     output->last_present = *event->when;
 }
 
-void Output::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::destroy_handler(struct wl_listener* listener, void*)
 {
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -315,7 +315,7 @@ void Output::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void
     server->outputs.remove_if([output](auto& other) { return &other == output; });
 }
 
-void Output::mode_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::mode_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -324,7 +324,7 @@ void Output::mode_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     arrange_output(server, output);
 }
 
-void Output::transform_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::transform_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -333,7 +333,7 @@ void Output::transform_handler(struct wl_listener* listener, [[maybe_unused]] vo
     arrange_output(server, output);
 }
 
-void Output::scale_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::scale_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);

@@ -133,7 +133,7 @@ void XwaylandView::close()
     wlr_xwayland_surface_close(xwayland_surface);
 }
 
-void XwaylandView::surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -165,7 +165,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, [[maybe_unu
     server->map_view(view);
 }
 
-void XwaylandView::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_unmap_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -177,7 +177,7 @@ void XwaylandView::surface_unmap_handler(struct wl_listener* listener, [[maybe_u
     }
 }
 
-void XwaylandView::surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_destroy_handler(struct wl_listener* listener, void*)
 {
     auto* view = get_listener_data<XwaylandView*>(listener);
 
@@ -201,7 +201,7 @@ void XwaylandView::surface_request_configure_handler(struct wl_listener* listene
     view->resize(view->geometry.width, view->geometry.height);
 }
 
-void XwaylandView::surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -223,7 +223,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, [[maybe_
     }
 }
 
-void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -262,7 +262,7 @@ void XwaylandORSurface::map(Server* server)
 
     if (wlr_xwayland_or_surface_wants_focus(xwayland_surface)) {
         wlr_xwayland_set_seat(server->xwayland, server->seat.wlr_seat);
-        server->seat.focus_surface(server, xwayland_surface->surface);
+        server->seat.focus_surface(xwayland_surface->surface);
     }
 }
 
@@ -291,7 +291,7 @@ XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwaylan
     return xwayland_or_surface;
 }
 
-void XwaylandORSurface::surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_map_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -299,7 +299,7 @@ void XwaylandORSurface::surface_map_handler(struct wl_listener* listener, [[mayb
     xwayland_or_surface->map(server);
 }
 
-void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -315,7 +315,7 @@ void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, [[ma
     }
 }
 
-void XwaylandORSurface::surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_destroy_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -332,7 +332,7 @@ void XwaylandORSurface::surface_request_configure_handler(struct wl_listener* li
     wlr_xwayland_surface_configure(xwayland_or_surface->xwayland_surface, ev->x, ev->y, ev->width, ev->height);
 }
 
-void XwaylandORSurface::surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_commit_handler(struct wl_listener* listener, void*)
 {
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 

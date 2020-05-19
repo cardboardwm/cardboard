@@ -8,7 +8,7 @@ extern "C" {
 #include "Keyboard.h"
 #include "Server.h"
 
-void Keyboard::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Keyboard::destroy_handler(struct wl_listener* listener, void*)
 {
     Server* server = get_server(listener);
     auto* keyboard = get_listener_data<Keyboard*>(listener);
@@ -24,7 +24,7 @@ void Keyboard::destroy_handler(struct wl_listener* listener, [[maybe_unused]] vo
                           server->seat.keyboards.end());
 }
 
-void Keyboard::modifiers_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Keyboard::modifiers_handler(struct wl_listener* listener, void*)
 {
     auto* keyboard = get_listener_data<Keyboard*>(listener);
 
