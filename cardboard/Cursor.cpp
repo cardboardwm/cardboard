@@ -19,7 +19,7 @@ void SeatCursor::register_image_surface(Server* server, struct wlr_surface* surf
     if (surface) {
         image_surface_destroy_listener = OptionalRef(
             server->listeners.add_listener(&surface->events.destroy,
-                                           Listener { cursor_image_surface_destroy_handler, server, this }));
+                                           Listener { SeatCursor::image_surface_destroy_handler, server, this }));
     }
 }
 
@@ -77,10 +77,10 @@ void SeatCursor::rebase(Server* server, uint32_t time)
         wlr_seat_pointer_clear_focus(seat->wlr_seat);
     }
 }
-void SeatCursor::move(Server* server, int x, int y) const
+void SeatCursor::warp(Server* server, int lx, int ly) const
 {
-    wlr_cursor_warp(wlr_cursor, nullptr, x, y);
-    seat->process_cursor_motion(server, 0);
+    wlr_cursor_warp(wlr_cursor, nullptr, lx, ly);
+    seat->process_cursor_motion(server);
 }
 
 void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
@@ -98,15 +98,15 @@ void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &cursor->wlr_cursor->events.motion, cursor_motion_handler },
-        { &cursor->wlr_cursor->events.motion_absolute, cursor_motion_absolute_handler },
-        { &cursor->wlr_cursor->events.button, cursor_button_handler },
-        { &cursor->wlr_cursor->events.axis, cursor_axis_handler },
-        { &cursor->wlr_cursor->events.frame, cursor_frame_handler },
+        { &cursor->wlr_cursor->events.motion, SeatCursor::motion_handler },
+        { &cursor->wlr_cursor->events.motion_absolute, SeatCursor::motion_absolute_handler },
+        { &cursor->wlr_cursor->events.button, SeatCursor::button_handler },
+        { &cursor->wlr_cursor->events.axis, SeatCursor::axis_handler },
+        { &cursor->wlr_cursor->events.frame, SeatCursor::frame_handler },
 
-        { &cursor->wlr_cursor->events.swipe_begin, cursor_swipe_begin_handler },
-        { &cursor->wlr_cursor->events.swipe_update, cursor_swipe_update_handler },
-        { &cursor->wlr_cursor->events.swipe_end, cursor_swipe_end_handler },
+        { &cursor->wlr_cursor->events.swipe_begin, SeatCursor::swipe_begin_handler },
+        { &cursor->wlr_cursor->events.swipe_update, SeatCursor::swipe_update_handler },
+        { &cursor->wlr_cursor->events.swipe_end, SeatCursor::swipe_end_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -115,7 +115,7 @@ void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
     }
 }
 
-void cursor_motion_handler(struct wl_listener* listener, void* data)
+void SeatCursor::motion_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -128,7 +128,7 @@ void cursor_motion_handler(struct wl_listener* listener, void* data)
     cursor->seat->process_cursor_motion(server, event->time_msec);
 }
 
-void cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
+void SeatCursor::motion_absolute_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -138,7 +138,7 @@ void cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
     cursor->seat->process_cursor_motion(server, event->time_msec);
 }
 
-void cursor_button_handler(struct wl_listener* listener, void* data)
+void SeatCursor::button_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -190,7 +190,7 @@ void cursor_button_handler(struct wl_listener* listener, void* data)
     }
 }
 
-void cursor_axis_handler(struct wl_listener* listener, void* data)
+void SeatCursor::axis_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -202,14 +202,14 @@ void cursor_axis_handler(struct wl_listener* listener, void* data)
     wlr_seat_pointer_notify_axis(cursor->seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
 
-void cursor_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void SeatCursor::frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* cursor = get_listener_data<SeatCursor*>(listener);
 
     wlr_seat_pointer_notify_frame(cursor->seat->wlr_seat);
 }
 
-void cursor_image_surface_destroy_handler(struct wl_listener* listener, void*)
+void SeatCursor::image_surface_destroy_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -218,7 +218,7 @@ void cursor_image_surface_destroy_handler(struct wl_listener* listener, void*)
     cursor->rebase(server);
 }
 
-void cursor_swipe_begin_handler(struct wl_listener* listener, void* data)
+void SeatCursor::swipe_begin_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -227,7 +227,7 @@ void cursor_swipe_begin_handler(struct wl_listener* listener, void* data)
     cursor->seat->process_swipe_begin(server, event->fingers);
 }
 
-void cursor_swipe_update_handler(struct wl_listener* listener, void* data)
+void SeatCursor::swipe_update_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);
@@ -236,7 +236,7 @@ void cursor_swipe_update_handler(struct wl_listener* listener, void* data)
     cursor->seat->process_swipe_update(server, event->fingers, event->dx, event->dy);
 }
 
-void cursor_swipe_end_handler(struct wl_listener* listener, void*)
+void SeatCursor::swipe_end_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* cursor = get_listener_data<SeatCursor*>(listener);

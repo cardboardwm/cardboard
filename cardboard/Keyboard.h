@@ -23,10 +23,13 @@ struct Seat;
 struct Keyboard {
     Seat* seat; ///< The seat that manages this keyboard.
     struct wlr_input_device* device;
-};
 
-/// Notifies the currently focused surface about the pressed state of the modifier keys.
-void modifiers_handler(struct wl_listener* listener, void* data);
+    /// Signals that a keyboard has been disconnected.
+    static void destroy_handler(struct wl_listener* listener, void* data);
+
+    /// Notifies the currently focused surface about the pressed state of the modifier keys.
+    static void modifiers_handler(struct wl_listener* listener, void* data);
+};
 
 /**
  * \brief This structure holds the configured key bindings.
@@ -89,8 +92,5 @@ struct KeyHandleData {
  * modifiers match. Else, sends the key to the surface currently holding keyboard focus.
  */
 void key_handler(struct wl_listener* listener, void* data);
-
-/// Signals that a keyboard has been disconnected.
-void keyboard_destroy_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_KEYBOARD_H_

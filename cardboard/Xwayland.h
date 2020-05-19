@@ -36,14 +36,17 @@ public:
 
     void destroy();
     void unmap();
-};
 
-void xwayland_surface_map_handler(struct wl_listener* listener, void* data);
-void xwayland_surface_unmap_handler(struct wl_listener* listener, void* data);
-void xwayland_surface_destroy_handler(struct wl_listener* listener, void* data);
-void xwayland_surface_request_configure_handler(struct wl_listener* listener, void* data);
-void xwayland_surface_commit_handler(struct wl_listener* listener, void* data);
-void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, void* data);
+public:
+    static void surface_map_handler(struct wl_listener* listener, void* data);
+    static void surface_unmap_handler(struct wl_listener* listener, void* data);
+    static void surface_destroy_handler(struct wl_listener* listener, void* data);
+    static void surface_request_configure_handler(struct wl_listener* listener, void* data);
+
+private:
+    static void surface_commit_handler(struct wl_listener* listener, void* data);
+    static void surface_request_fullscreen_handler(struct wl_listener* listener, void* data);
+};
 
 /// An "unmanaged" Xwayland surface. The "OR" stands for Override Redirect. Stuff like menus and tooltips.
 struct XwaylandORSurface {
@@ -54,15 +57,18 @@ struct XwaylandORSurface {
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
     void map(Server* server);
+
+public:
+    static void surface_map_handler(struct wl_listener* listener, void* data);
+    static void surface_unmap_handler(struct wl_listener* listener, void* data);
+    static void surface_destroy_handler(struct wl_listener* listener, void* data);
+    static void surface_request_configure_handler(struct wl_listener* listener, void* data);
+
+private:
+    static void surface_commit_handler(struct wl_listener* listener, void* data);
 };
 
 /// Registers an XwaylandORSurface.
 XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwayland_surface* xwayland_surface);
-
-void xwayland_or_surface_map_handler(struct wl_listener* listener, void* data);
-void xwayland_or_surface_unmap_handler(struct wl_listener* listener, void* data);
-void xwayland_or_surface_destroy_handler(struct wl_listener* listener, void* data);
-void xwayland_or_surface_request_configure_handler(struct wl_listener* listener, void* data);
-void xwayland_or_surface_commit_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_XWAYLAND_H_

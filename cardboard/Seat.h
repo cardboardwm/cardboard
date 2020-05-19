@@ -131,23 +131,24 @@ struct Seat {
 private:
     /// Sets keyboard focus on a \a surface.
     void keyboard_notify_enter(struct wlr_surface* surface);
+
+public:
+    /**
+    * \brief Called when a client wants to set its own mouse cursor image.
+    */
+    static void request_cursor_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Called when a client puts something in the clipboard (Ctrl-C)
+    */
+    static void request_selection_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Called when a client puts something in the primary selection (selects some text).
+    */
+    static void request_primary_selection_handler(struct wl_listener* listener, void* data);
 };
 
 void init_seat(Server* server, Seat* seat, const char* name);
-
-/**
- * \brief Called when a client wants to set its own mouse cursor image.
- */
-void seat_request_cursor_handler(struct wl_listener* listener, void* data);
-
-/**
- * \brief Called when a client puts something in the clipboard (Ctrl-C)
- */
-void seat_request_selection_handler(struct wl_listener* listener, void* data);
-
-/**
- * \brief Called when a client puts something in the primary selection (selects some text).
- */
-void seat_request_primary_selection_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_SEAT_H_

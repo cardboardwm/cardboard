@@ -39,12 +39,12 @@ void register_output(Server* server, Output&& output_)
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &output.wlr_output->events.frame, output_frame_handler },
-        { &output.wlr_output->events.present, output_present_handler },
-        { &output.wlr_output->events.mode, output_mode_handler },
-        { &output.wlr_output->events.transform, output_transform_handler },
-        { &output.wlr_output->events.scale, output_scale_handler },
-        { &output.wlr_output->events.destroy, output_destroy_handler }
+        { &output.wlr_output->events.frame, Output::frame_handler },
+        { &output.wlr_output->events.present, Output::present_handler },
+        { &output.wlr_output->events.mode, Output::mode_handler },
+        { &output.wlr_output->events.transform, Output::transform_handler },
+        { &output.wlr_output->events.scale, Output::scale_handler },
+        { &output.wlr_output->events.destroy, Output::destroy_handler }
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -54,7 +54,8 @@ void register_output(Server* server, Output&& output_)
     }
 }
 
-void arrange_output(Server* server, Output* output)
+/// Arrange the workspace associated with \a output.
+static void arrange_output(Server* server, Output* output)
 {
     auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
     if (ws_it == server->workspaces.end()) {
@@ -63,7 +64,7 @@ void arrange_output(Server* server, Output* output)
     ws_it->arrange_workspace();
 }
 
-void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
+static void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
 {
     auto* rdata = static_cast<RenderData*>(data);
     Server* server = rdata->server;
@@ -233,7 +234,7 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
     return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
 }
 
-void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::frame_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -290,7 +291,7 @@ void output_frame_handler(struct wl_listener* listener, [[maybe_unused]] void* d
     wlr_output_commit(wlr_output);
 }
 
-void output_present_handler(struct wl_listener* listener, void* data)
+void Output::present_handler(struct wl_listener* listener, void* data)
 {
     auto* output = get_listener_data<Output*>(listener);
     auto* event = static_cast<struct wlr_output_event_present*>(data);
@@ -298,7 +299,7 @@ void output_present_handler(struct wl_listener* listener, void* data)
     output->last_present = *event->when;
 }
 
-void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -314,7 +315,7 @@ void output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void*
     server->outputs.remove_if([output](auto& other) { return &other == output; });
 }
 
-void output_mode_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::mode_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -323,7 +324,7 @@ void output_mode_handler(struct wl_listener* listener, [[maybe_unused]] void* da
     arrange_output(server, output);
 }
 
-void output_transform_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::transform_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
@@ -332,7 +333,7 @@ void output_transform_handler(struct wl_listener* listener, [[maybe_unused]] voi
     arrange_output(server, output);
 }
 
-void output_scale_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Output::scale_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);

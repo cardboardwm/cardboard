@@ -24,6 +24,18 @@ public:
     bool is_transient_for(View* ancestor) override;
     void close_popups() override;
     void close() override;
+
+public:
+    static void surface_map_handler(struct wl_listener* listener, void* data);
+    static void surface_unmap_handler(struct wl_listener* listener, void* data);
+    static void surface_destroy_handler(struct wl_listener* listener, void* data);
+    static void surface_new_popup_handler(struct wl_listener* listener, void* data);
+
+private:
+    static void surface_commit_handler(struct wl_listener* listener, void* data);
+    static void toplevel_request_move_handler(struct wl_listener* listener, void* data);
+    static void toplevel_request_resize_handler(struct wl_listener* listener, void* data);
+    static void toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data);
 };
 
 struct XDGPopup {
@@ -31,22 +43,13 @@ struct XDGPopup {
     XDGView* parent;
 
     void unconstrain(Server* server);
+
+public:
+    static void destroy_handler(struct wl_listener* listener, void* data);
+    static void new_popup_handler(struct wl_listener* listener, void* data);
+    static void map_handler(struct wl_listener* listener, void* data);
 };
 
 void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent);
-
-void xdg_surface_map_handler(struct wl_listener* listener, void* data);
-void xdg_surface_unmap_handler(struct wl_listener* listener, void* data);
-void xdg_surface_destroy_handler(struct wl_listener* listener, void* data);
-void xdg_surface_commit_handler(struct wl_listener* listener, void* data);
-void xdg_surface_new_popup_handler(struct wl_listener* listener, void* data);
-
-void xdg_toplevel_request_move_handler(struct wl_listener* listener, void* data);
-void xdg_toplevel_request_resize_handler(struct wl_listener* listener, void* data);
-void xdg_toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data);
-
-void xdg_popup_destroy_handler(struct wl_listener* listener, void* data);
-void xdg_popup_new_popup_handler(struct wl_listener* listener, void* data);
-void xdg_popup_map_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_XDGVIEW_H_

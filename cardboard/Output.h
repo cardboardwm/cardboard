@@ -26,27 +26,28 @@ struct Output {
     struct timespec last_present;
 
     struct wlr_box* get_box();
-};
 
-/// Executed for each frame render per output.
-void output_frame_handler(struct wl_listener* listener, void* data);
-/// Executed as soon as the first pixel is put on the screen;
-void output_present_handler(struct wl_listener* listener, void* data);
-/// Executed when the output is detached.
-void output_destroy_handler(struct wl_listener* listener, void* data);
-/// Executed when the output changes its mode (resolution, color depth and/or refresh rate).
-void output_mode_handler(struct wl_listener* listener, void* data);
-/// Executed when the output is transformed.
-void output_transform_handler(struct wl_listener* listener, void* data);
-/// Executed when the output is scaled.
-void output_scale_handler(struct wl_listener* listener, void* data);
+    /// Executed for each frame render per output.
+    static void frame_handler(struct wl_listener* listener, void* data);
+    /// Executed as soon as the first pixel is put on the screen;
+    static void present_handler(struct wl_listener* listener, void* data);
+    /// Executed when the output is detached.
+    static void destroy_handler(struct wl_listener* listener, void* data);
+    /// Executed when the output changes its mode (resolution, color depth and/or refresh rate).
+    static void mode_handler(struct wl_listener* listener, void* data);
+    /// Executed when the output is transformed.
+    static void transform_handler(struct wl_listener* listener, void* data);
+    /// Executed when the output is scaled.
+    static void scale_handler(struct wl_listener* listener, void* data);
+};
 
 /// Registers event listeners and does bookkeeping for a newly added output.
 void register_output(Server* server, Output&& output);
-/// Arrange the workspace associated with \a output.
-void arrange_output(Server* server, Output* output);
 
+/// Returns the usable area of the \a output as a rectangle with its coordinates placed in the global (output layout) space.
 struct wlr_box get_real_usable_area(NotNullPointer<struct wlr_output_layout> output_layout, NotNullPointer<Output> output);
+
+/// Returns the usable area of the \a output as a rectangle with its coordinates placed in the global (output layout) space.
 struct wlr_box get_real_usable_area(NotNullPointer<Server> server, NotNullPointer<Output> output);
 
 #endif // __CARDBOARD_OUTPUT_H_

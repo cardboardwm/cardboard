@@ -25,9 +25,9 @@ void init_seat(Server* server, Seat* seat, const char* name)
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &seat->wlr_seat->events.request_set_cursor, seat_request_cursor_handler },
-        { &seat->wlr_seat->events.request_set_selection, seat_request_selection_handler },
-        { &seat->wlr_seat->events.request_set_primary_selection, seat_request_primary_selection_handler },
+        { &seat->wlr_seat->events.request_set_cursor, Seat::request_cursor_handler },
+        { &seat->wlr_seat->events.request_set_selection, Seat::request_selection_handler },
+        { &seat->wlr_seat->events.request_set_primary_selection, Seat::request_primary_selection_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -74,12 +74,12 @@ void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
     wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
 
     server->listeners.add_listener(&device->keyboard->events.modifiers,
-                                   Listener { modifiers_handler, server, &keyboard });
+                                   Listener { Keyboard::modifiers_handler, server, &keyboard });
     server->listeners.add_listener(
         &device->keyboard->events.key,
         Listener { key_handler, server, KeyHandleData { &keyboard, &server->keybindings_config } });
     server->listeners.add_listener(&device->keyboard->events.destroy,
-                                   Listener { keyboard_destroy_handler, server, &keyboard });
+                                   Listener { Keyboard::destroy_handler, server, &keyboard });
     wlr_seat_set_keyboard(wlr_seat, device);
 }
 
@@ -537,7 +537,7 @@ void Seat::focus(Server* server, Workspace* workspace)
     if (!output_box) {
         return;
     }
-    cursor.move(
+    cursor.warp(
         server,
         output_box->x + output.usable_area.x + output.usable_area.width / 2,
         output_box->y + output.usable_area.y + output.usable_area.height / 2);
@@ -553,7 +553,7 @@ void Seat::focus(Server* server, Workspace* workspace)
     server->seat.cursor.rebase(server);
 }
 
-void seat_request_cursor_handler(struct wl_listener* listener, void* data)
+void Seat::request_cursor_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* seat = get_listener_data<Seat*>(listener);
@@ -566,7 +566,7 @@ void seat_request_cursor_handler(struct wl_listener* listener, void* data)
     }
 }
 
-void seat_request_selection_handler(struct wl_listener* listener, void* data)
+void Seat::request_selection_handler(struct wl_listener* listener, void* data)
 {
     wlr_log(WLR_DEBUG, "normal selection happening");
     auto* seat = get_listener_data<Seat*>(listener);
@@ -575,7 +575,7 @@ void seat_request_selection_handler(struct wl_listener* listener, void* data)
     wlr_seat_set_selection(seat->wlr_seat, event->source, event->serial);
 }
 
-void seat_request_primary_selection_handler(struct wl_listener* listener, void* data)
+void Seat::request_primary_selection_handler(struct wl_listener* listener, void* data)
 {
     wlr_log(WLR_DEBUG, "primary selection happening");
     auto* seat = get_listener_data<Seat*>(listener);

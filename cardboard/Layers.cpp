@@ -23,12 +23,12 @@ void create_layer(Server* server, LayerSurface&& layer_surface_)
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &layer_surface.surface->surface->events.commit, layer_surface_commit_handler },
-        { &layer_surface.surface->events.destroy, layer_surface_destroy_handler },
-        { &layer_surface.surface->events.map, layer_surface_map_handler },
-        { &layer_surface.surface->events.unmap, layer_surface_unmap_handler },
-        { &layer_surface.surface->events.new_popup, layer_surface_new_popup_handler },
-        { &layer_surface.surface->output->events.destroy, layer_surface_output_destroy_handler },
+        { &layer_surface.surface->surface->events.commit, LayerSurface::commit_handler },
+        { &layer_surface.surface->events.destroy, LayerSurface::destroy_handler },
+        { &layer_surface.surface->events.map, LayerSurface::map_handler },
+        { &layer_surface.surface->events.unmap, LayerSurface::unmap_handler },
+        { &layer_surface.surface->events.new_popup, LayerSurface::new_popup_handler },
+        { &layer_surface.surface->output->events.destroy, LayerSurface::output_destroy_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -54,9 +54,9 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &popup->wlr_popup->base->events.destroy, &layer_surface_popup_destroy_handler },
-        { &popup->wlr_popup->base->events.new_popup, &layer_surface_popup_new_popup_handler },
-        { &popup->wlr_popup->base->events.map, &layer_surface_popup_map_handler },
+        { &popup->wlr_popup->base->events.destroy, &LayerSurfacePopup::destroy_handler },
+        { &popup->wlr_popup->base->events.new_popup, &LayerSurfacePopup::new_popup_handler },
+        { &popup->wlr_popup->base->events.map, &LayerSurfacePopup::map_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -300,7 +300,7 @@ void arrange_layers(Server* server, Output* output)
     }
 }
 
-void layer_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -324,7 +324,7 @@ void layer_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]]
     }
 }
 
-void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -337,7 +337,7 @@ void layer_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]
     layer_surface->output.and_then([server](auto& out) { arrange_layers(server, &out); });
 }
 
-void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -346,7 +346,7 @@ void layer_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] vo
     server->seat.cursor.rebase(server);
 }
 
-void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::unmap_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -357,7 +357,7 @@ void layer_surface_unmap_handler([[maybe_unused]] struct wl_listener* listener, 
     //server->seat.cursor.rebase(server);
 }
 
-void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::new_popup_handler([[maybe_unused]] struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
@@ -366,7 +366,7 @@ void layer_surface_new_popup_handler([[maybe_unused]] struct wl_listener* listen
     create_layer_popup(server, wlr_popup, layer_surface);
 }
 
-void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurface::output_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
     auto* server = get_server(listener);
@@ -404,7 +404,7 @@ void layer_surface_output_destroy_handler(struct wl_listener* listener, [[maybe_
     wlr_layer_surface_v1_close(layer_surface->surface);
 }
 
-void layer_surface_popup_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurfacePopup::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
@@ -413,7 +413,7 @@ void layer_surface_popup_destroy_handler(struct wl_listener* listener, [[maybe_u
     delete popup;
 }
 
-void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* data)
+void LayerSurfacePopup::new_popup_handler(struct wl_listener* listener, void* data)
 {
     auto* server = get_server(listener);
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
@@ -422,7 +422,7 @@ void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* d
     create_layer_popup(server, wlr_popup, popup->parent);
 }
 
-void layer_surface_popup_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void LayerSurfacePopup::map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
 

@@ -27,7 +27,15 @@ struct LayerSurface {
     OptionalRef<Output> output;
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
+    /// Returns true if \a output is the output of this layer surface.
     bool is_on_output(Output* output) const;
+
+    static void commit_handler(struct wl_listener* listener, void* data);
+    static void destroy_handler(struct wl_listener* listener, void* data);
+    static void map_handler(struct wl_listener* listener, void* data);
+    static void unmap_handler(struct wl_listener* listener, void* data);
+    static void new_popup_handler(struct wl_listener* listener, void* data);
+    static void output_destroy_handler(struct wl_listener* listener, void* data);
 };
 
 struct LayerSurfacePopup {
@@ -35,6 +43,10 @@ struct LayerSurfacePopup {
     LayerSurface* parent;
 
     void unconstrain(Server* server);
+
+    static void destroy_handler(struct wl_listener* listener, void* data);
+    static void new_popup_handler(struct wl_listener* listener, void* data);
+    static void map_handler(struct wl_listener* listener, void* data);
 };
 
 using LayerArray = std::array<std::list<LayerSurface>, 4>;
@@ -47,16 +59,5 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
 
 /// Arranges all the layers of an \a output.
 void arrange_layers(Server* server, Output* output);
-
-void layer_surface_commit_handler(struct wl_listener* listener, void* data);
-void layer_surface_destroy_handler(struct wl_listener* listener, void* data);
-void layer_surface_map_handler(struct wl_listener* listener, void* data);
-void layer_surface_unmap_handler(struct wl_listener* listener, void* data);
-void layer_surface_new_popup_handler(struct wl_listener* listener, void* data);
-void layer_surface_output_destroy_handler(struct wl_listener* listener, void* data);
-
-void layer_surface_popup_destroy_handler(struct wl_listener* listener, void* data);
-void layer_surface_popup_new_popup_handler(struct wl_listener* listener, void* data);
-void layer_surface_popup_map_handler(struct wl_listener* listener, void* data);
 
 #endif // __CARDBOARD_LAYERS_H_

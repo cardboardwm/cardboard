@@ -11,6 +11,7 @@ public:
     NotNullPointer(Type* t)
         : pointer(t)
     {
+        assert(t != nullptr && "Trying to assign null value to NotNullPointer");
     }
 
     template <typename T>

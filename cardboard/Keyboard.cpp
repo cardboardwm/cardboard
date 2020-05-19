@@ -8,7 +8,23 @@ extern "C" {
 #include "Keyboard.h"
 #include "Server.h"
 
-void modifiers_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void Keyboard::destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+{
+    Server* server = get_server(listener);
+    auto* keyboard = get_listener_data<Keyboard*>(listener);
+
+    auto* seat = keyboard->seat;
+
+    server->listeners.clear_listeners(keyboard);
+    server->listeners.clear_listeners(KeyHandleData { keyboard, &server->keybindings_config });
+
+    seat->keyboards.erase(std::remove_if(seat->keyboards.begin(), seat->keyboards.end(), [keyboard](const auto& other) {
+                              return keyboard == &other;
+                          }),
+                          server->seat.keyboards.end());
+}
+
+void Keyboard::modifiers_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* keyboard = get_listener_data<Keyboard*>(listener);
 
@@ -66,20 +82,4 @@ void key_handler(struct wl_listener* listener, void* data)
         wlr_seat_set_keyboard(handle_data.keyboard->seat->wlr_seat, handle_data.keyboard->device);
         wlr_seat_keyboard_notify_key(handle_data.keyboard->seat->wlr_seat, event->time_msec, event->keycode, event->state);
     }
-}
-
-void keyboard_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
-{
-    Server* server = get_server(listener);
-    auto* keyboard = get_listener_data<Keyboard*>(listener);
-
-    auto* seat = keyboard->seat;
-
-    server->listeners.clear_listeners(keyboard);
-    server->listeners.clear_listeners(KeyHandleData { keyboard, &server->keybindings_config });
-
-    seat->keyboards.erase(std::remove_if(seat->keyboards.begin(), seat->keyboards.end(), [keyboard](const auto& other) {
-                              return keyboard == &other;
-                          }),
-                          server->seat.keyboards.end());
 }

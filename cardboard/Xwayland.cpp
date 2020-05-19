@@ -76,10 +76,10 @@ void XwaylandView::prepare(Server* server)
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &xwayland_surface->events.map, xwayland_surface_map_handler },
-        { &xwayland_surface->events.unmap, xwayland_surface_unmap_handler },
-        { &xwayland_surface->events.destroy, xwayland_surface_destroy_handler },
-        { &xwayland_surface->events.request_configure, xwayland_surface_request_configure_handler },
+        { &xwayland_surface->events.map, XwaylandView::surface_map_handler },
+        { &xwayland_surface->events.unmap, XwaylandView::surface_unmap_handler },
+        { &xwayland_surface->events.destroy, XwaylandView::surface_destroy_handler },
+        { &xwayland_surface->events.request_configure, XwaylandView::surface_request_configure_handler },
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -127,12 +127,13 @@ void XwaylandView::close_popups()
 {
     // nothing!
 }
+
 void XwaylandView::close()
 {
     wlr_xwayland_surface_close(xwayland_surface);
 }
 
-void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -155,16 +156,16 @@ void xwayland_surface_map_handler(struct wl_listener* listener, [[maybe_unused]]
 
     view->map_unmap_listeners[0] = server->listeners.add_listener(
         &view->xwayland_surface->surface->events.commit,
-        Listener { xwayland_surface_commit_handler, server, view });
+        Listener { XwaylandView::surface_commit_handler, server, view });
 
     view->map_unmap_listeners[1] = server->listeners.add_listener(
         &view->xwayland_surface->events.request_fullscreen,
-        Listener { xwayland_surface_request_fullscreen_handler, server, view });
+        Listener { XwaylandView::surface_request_fullscreen_handler, server, view });
 
     server->map_view(view);
 }
 
-void xwayland_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -176,7 +177,7 @@ void xwayland_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused
     }
 }
 
-void xwayland_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* view = get_listener_data<XwaylandView*>(listener);
 
@@ -185,7 +186,7 @@ void xwayland_surface_destroy_handler(struct wl_listener* listener, [[maybe_unus
     view->destroy();
 }
 
-void xwayland_surface_request_configure_handler(struct wl_listener* listener, void* data)
+void XwaylandView::surface_request_configure_handler(struct wl_listener* listener, void* data)
 {
     auto* view = get_listener_data<XwaylandView*>(listener);
     auto* ev = static_cast<wlr_xwayland_surface_configure_event*>(data);
@@ -200,7 +201,7 @@ void xwayland_surface_request_configure_handler(struct wl_listener* listener, vo
     view->resize(view->geometry.width, view->geometry.height);
 }
 
-void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -222,7 +223,7 @@ void xwayland_surface_commit_handler(struct wl_listener* listener, [[maybe_unuse
     }
 }
 
-void xwayland_surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* view = get_listener_data<XwaylandView*>(listener);
@@ -254,7 +255,7 @@ void XwaylandORSurface::map(Server* server)
 {
     server->xwayland_or_surfaces.push_back(this);
     commit_listener = server->listeners.add_listener(&xwayland_surface->surface->events.commit,
-                                                     Listener { xwayland_or_surface_commit_handler, server, this });
+                                                     Listener { XwaylandORSurface::surface_commit_handler, server, this });
 
     lx = xwayland_surface->x;
     ly = xwayland_surface->y;
@@ -276,10 +277,10 @@ XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwaylan
         wl_signal* signal;
         wl_notify_func_t notify;
     } to_add_listeners[] = {
-        { &xwayland_or_surface->xwayland_surface->events.map, xwayland_or_surface_map_handler },
-        { &xwayland_or_surface->xwayland_surface->events.unmap, xwayland_or_surface_unmap_handler },
-        { &xwayland_or_surface->xwayland_surface->events.destroy, xwayland_or_surface_destroy_handler },
-        { &xwayland_or_surface->xwayland_surface->events.request_configure, xwayland_or_surface_request_configure_handler }
+        { &xwayland_or_surface->xwayland_surface->events.map, XwaylandORSurface::surface_map_handler },
+        { &xwayland_or_surface->xwayland_surface->events.unmap, XwaylandORSurface::surface_unmap_handler },
+        { &xwayland_or_surface->xwayland_surface->events.destroy, XwaylandORSurface::surface_destroy_handler },
+        { &xwayland_or_surface->xwayland_surface->events.request_configure, XwaylandORSurface::surface_request_configure_handler }
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
@@ -290,7 +291,7 @@ XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwaylan
     return xwayland_or_surface;
 }
 
-void xwayland_or_surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_map_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -298,7 +299,7 @@ void xwayland_or_surface_map_handler(struct wl_listener* listener, [[maybe_unuse
     xwayland_or_surface->map(server);
 }
 
-void xwayland_or_surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -314,7 +315,7 @@ void xwayland_or_surface_unmap_handler(struct wl_listener* listener, [[maybe_unu
     }
 }
 
-void xwayland_or_surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_destroy_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
@@ -323,7 +324,7 @@ void xwayland_or_surface_destroy_handler(struct wl_listener* listener, [[maybe_u
     delete xwayland_or_surface;
 }
 
-void xwayland_or_surface_request_configure_handler(struct wl_listener* listener, void* data)
+void XwaylandORSurface::surface_request_configure_handler(struct wl_listener* listener, void* data)
 {
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
     auto* ev = static_cast<struct wlr_xwayland_surface_configure_event*>(data);
@@ -331,7 +332,7 @@ void xwayland_or_surface_request_configure_handler(struct wl_listener* listener,
     wlr_xwayland_surface_configure(xwayland_or_surface->xwayland_surface, ev->x, ev->y, ev->width, ev->height);
 }
 
-void xwayland_or_surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
+void XwaylandORSurface::surface_commit_handler(struct wl_listener* listener, [[maybe_unused]] void* data)
 {
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 

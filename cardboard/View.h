@@ -126,6 +126,9 @@ public:
     /// Closes currently active popups.
     virtual void close_popups() = 0;
 
+    /// Closes view
+    virtual void close() = 0;
+
     /// Returns the output where this view is drawn on.
     OptionalRef<Output> get_views_output(Server* server);
 
@@ -140,9 +143,6 @@ public:
 
     /// Cycles through predefined widths expressed as ratios of the screen's width.
     void cycle_width(int screen_width);
-
-    /// Closes view
-    virtual void close() = 0;
 
 protected:
     View()
