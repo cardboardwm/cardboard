@@ -19,6 +19,11 @@ add_project_arguments(
   language: 'cpp'
 )
 
+# workaround for wlroots 0.10.1 on gcc 10
+add_global_arguments(
+  ['-fcommon'], language: 'c'
+)
+
 datadir = get_option('datadir')
 
 install_data('cardboard.desktop', install_dir: join_paths(datadir, 'wayland-sessions'))
