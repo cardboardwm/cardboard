@@ -37,7 +37,6 @@ cardboard_deps = [
 
 cardboard_sources = files(
   'Cursor.cpp',
-  'EventListeners.cpp',
   'IPC.cpp',
   'Keyboard.cpp',
   'Layers.cpp',
