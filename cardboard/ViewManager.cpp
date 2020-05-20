@@ -18,7 +18,7 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
 
     bool floating = workspace.is_view_floating(view.get());
     if (workspace.is_view_floating(view.get()) && new_workspace->output.has_value() && view->expansion_state != View::ExpansionState::FULLSCREEN) {
-        auto output_area = get_real_usable_area(server, new_workspace->output.raw_pointer());
+        auto output_area = server->output_manager.get_output_real_usable_area(new_workspace->output.raw_pointer());
 
         if (view->x < output_area.x || view->x >= output_area.x + output_area.width || view->y < output_area.y || view->y >= output_area.y + output_area.height) {
             view->move(
@@ -46,9 +46,8 @@ static void validate_output(NotNullPointer<Server> server, NotNullPointer<View> 
     if (server->workspaces[view->workspace_id].find_floating(view.get()) != server->workspaces[view->workspace_id].floating_views.end()) {
 
         Output* current_output;
-
-        if (auto wlr_output = wlr_output_layout_output_at(server->output_layout, view->x, view->y); wlr_output) {
-            current_output = static_cast<Output*>(wlr_output->data);
+        if (auto optional_output = server->output_manager.get_output_at(view->x, view->y); optional_output) {
+            current_output = optional_output.raw_pointer();
         } else {
             return;
         }

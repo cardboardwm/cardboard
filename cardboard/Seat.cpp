@@ -36,6 +36,11 @@ void init_seat(Server* server, Seat* seat, const char* name)
     }
 }
 
+Seat::Seat(NotNullPointer<const OutputManager> output_manager)
+    : output_manager(output_manager)
+{
+}
+
 void Seat::add_input_device(Server* server, struct wlr_input_device* device)
 {
     switch (device->type) {
@@ -452,7 +457,7 @@ void Seat::update_swipe(Server* server)
 OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
 {
     for (auto& ws : server->workspaces) {
-        if (ws.output && wlr_output_layout_contains_point(server->output_layout, ws.output.unwrap().wlr_output, cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+        if (ws.output && output_manager->output_contains_point(ws.output.raw_pointer(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
@@ -477,11 +482,9 @@ void Seat::set_exclusive_client(Server* server, struct wl_client* client)
     if (!client) {
         exclusive_client = std::nullopt;
 
-        auto* raw_output_under_cursor = wlr_output_layout_output_at(server->output_layout, cursor.wlr_cursor->x, cursor.wlr_cursor->y);
-        if (raw_output_under_cursor != nullptr) {
-            auto* output_under_cursor = static_cast<Output*>(raw_output_under_cursor->data);
-            arrange_layers(server, output_under_cursor);
-        }
+        output_manager->get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([server](auto& output_under_cursor) {
+            arrange_layers(server, &output_under_cursor);
+        });
         return;
     }
 
@@ -533,10 +536,8 @@ void Seat::focus(Server* server, Workspace* workspace)
 
     Output& output = workspace->output.unwrap();
 
-    const auto* output_box = wlr_output_layout_get_box(server->output_layout, output.wlr_output);
-    if (!output_box) {
-        return;
-    }
+    const struct wlr_box* output_box = output_manager->get_output_box(&output);
+
     cursor.warp(
         server,
         output_box->x + output.usable_area.x + output.usable_area.width / 2,

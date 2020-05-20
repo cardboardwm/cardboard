@@ -42,6 +42,10 @@ struct XDGPopup {
     struct wlr_xdg_popup* wlr_popup;
     XDGView* parent;
 
+    NotNullPointer<const OutputManager> output_manager;
+
+    XDGPopup(NotNullPointer<const OutputManager>, struct wlr_xdg_popup*, NotNullPointer<XDGView>);
+
     void unconstrain(Server* server);
 
 public:

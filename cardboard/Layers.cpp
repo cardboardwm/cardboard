@@ -45,10 +45,18 @@ void create_layer(Server* server, LayerSurface&& layer_surface_)
     layer_surface.surface->current = old_state;
 }
 
+LayerSurface::LayerSurface(NotNullPointer<const OutputManager> output_manager, struct wlr_layer_surface_v1* surface, Output& output)
+    : surface(surface)
+    , output(output)
+    , output_manager(output_manager)
+{
+    this->surface->output = output.wlr_output;
+}
+
 void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSurface* layer_surface)
 {
     wlr_log(WLR_DEBUG, "new layer popup");
-    auto* popup = new LayerSurfacePopup { wlr_popup, layer_surface };
+    auto* popup = new LayerSurfacePopup { &server->output_manager, wlr_popup, layer_surface };
 
     struct {
         wl_signal* signal;
@@ -65,7 +73,7 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
             Listener { to_add_listener.notify, server, popup });
     }
 
-    popup->unconstrain(server);
+    popup->unconstrain();
 }
 
 bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surf, double& sx, double& sy) const
@@ -92,10 +100,17 @@ bool LayerSurface::is_on_output(Output* out) const
     return output && &output.unwrap() == out;
 }
 
-void LayerSurfacePopup::unconstrain(Server* server)
+LayerSurfacePopup::LayerSurfacePopup(NotNullPointer<const OutputManager> output_manager, struct wlr_xdg_popup* wlr_popup, NotNullPointer<LayerSurface> parent)
+    : wlr_popup(wlr_popup)
+    , parent(parent)
+    , output_manager(output_manager)
+{
+}
+
+void LayerSurfacePopup::unconstrain()
 {
     auto* output = static_cast<Output*>(parent->surface->output->data);
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, output->wlr_output);
+    auto* output_box = wlr_output_layout_get_box(output_manager->output_layout, output->wlr_output);
 
     struct wlr_box output_toplevel_sx_box = {
         .x = -parent->geometry.x,

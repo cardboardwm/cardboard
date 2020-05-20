@@ -41,6 +41,7 @@ cardboard_sources = files(
   'Keyboard.cpp',
   'Layers.cpp',
   'Output.cpp',
+  'OutputManager.cpp',
   'Seat.cpp',
   'Server.cpp',
   'Spawn.cpp',

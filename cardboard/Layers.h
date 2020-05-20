@@ -12,10 +12,12 @@ extern "C" {
 #include <array>
 #include <list>
 
+#include "NotNull.h"
 #include "OptionalRef.h"
 
 struct Server;
 struct Output;
+struct OutputManager;
 
 /**
  * \brief Represents a layer_surface from the layer shell in the compositor.
@@ -25,6 +27,10 @@ struct LayerSurface {
     struct wlr_box geometry;
     enum zwlr_layer_shell_v1_layer layer;
     OptionalRef<Output> output;
+
+    NotNullPointer<const OutputManager> output_manager;
+
+    LayerSurface(NotNullPointer<const OutputManager>, struct wlr_layer_surface_v1*, Output&);
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
     /// Returns true if \a output is the output of this layer surface.
@@ -40,9 +46,13 @@ struct LayerSurface {
 
 struct LayerSurfacePopup {
     struct wlr_xdg_popup* wlr_popup;
-    LayerSurface* parent;
+    NotNullPointer<LayerSurface> parent;
 
-    void unconstrain(Server* server);
+    NotNullPointer<const OutputManager> output_manager;
+
+    LayerSurfacePopup(NotNullPointer<const OutputManager>, struct wlr_xdg_popup*, NotNullPointer<LayerSurface>);
+
+    void unconstrain();
 
     static void destroy_handler(struct wl_listener* listener, void* data);
     static void new_popup_handler(struct wl_listener* listener, void* data);

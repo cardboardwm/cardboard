@@ -36,6 +36,7 @@ extern "C" {
 #include "NotNull.h"
 #include "OptionalRef.h"
 #include "Output.h"
+#include "OutputManager.h"
 #include "Seat.h"
 #include "View.h"
 #include "Workspace.h"
@@ -82,8 +83,7 @@ struct Server {
 
     std::vector<Workspace> workspaces;
 
-    struct wlr_output_layout* output_layout;
-    std::list<Output> outputs;
+    OutputManager output_manager;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
@@ -95,7 +95,10 @@ struct Server {
 
     int exit_code = EXIT_SUCCESS;
 
-    Server() {}
+    Server()
+        : seat(&output_manager)
+    {
+    }
     Server(const Server&) = delete;
 
     /// Initializes the Wayland compositor.

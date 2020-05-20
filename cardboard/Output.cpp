@@ -31,8 +31,8 @@ struct RenderData {
 
 void register_output(Server* server, Output&& output_)
 {
-    server->outputs.emplace_back(output_);
-    auto& output = server->outputs.back();
+    server->output_manager.outputs.emplace_back(output_);
+    auto& output = server->output_manager.outputs.back();
     output.wlr_output->data = &output;
 
     struct {
@@ -77,7 +77,7 @@ static void render_surface(struct wlr_surface* surface, int sx, int sy, void* da
 
     // translate surface coordinates from layout-relative to output-relative coordinates
     double ox = rdata->lx + sx, oy = rdata->ly + sy;
-    wlr_output_layout_output_coords(server->output_layout, output, &ox, &oy);
+    wlr_output_layout_output_coords(server->output_manager.output_layout, output, &ox, &oy);
 
     // apply scale factor for HiDPI outputs
     struct wlr_box box = {
@@ -170,16 +170,16 @@ static void render_floating(Server* server, Workspace& ws, View* ancestor, struc
     }
 }
 
-static void render_layer(Server* server, LayerArray::value_type& surfaces, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_layer(Server* server, LayerArray::value_type& surfaces, NotNullPointer<Output> output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, wlr_output);
+    const struct wlr_box* output_box = server->output_manager.get_output_box(output);
     for (const auto& surface : surfaces) {
-        if (!surface.surface->mapped || !surface.is_on_output(static_cast<Output*>(wlr_output->data))) {
+        if (!surface.surface->mapped || !surface.is_on_output(output)) {
             continue;
         }
 
         RenderData rdata = {
-            .output = wlr_output,
+            .output = output->wlr_output,
             .renderer = renderer,
             .lx = surface.geometry.x + output_box->x,
             .ly = surface.geometry.y + output_box->y,
@@ -234,6 +234,12 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
     return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
 }
 
+Output::Output(NotNullPointer<OutputManager> output_manager, struct wlr_output* wlr_output)
+    : wlr_output(wlr_output)
+    , output_manager(output_manager)
+{
+}
+
 void Output::frame_handler(struct wl_listener* listener, void*)
 {
     Server* server = get_server(listener);
@@ -267,8 +273,8 @@ void Output::frame_handler(struct wl_listener* listener, void*)
 #endif
         render_floating(server, ws, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
     } else {
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], wlr_output, renderer, &now);
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], wlr_output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
         render_workspace(server, ws, wlr_output, renderer, &now);
@@ -279,9 +285,9 @@ void Output::frame_handler(struct wl_listener* listener, void*)
 #endif
 
         render_floating(server, ws, nullptr, wlr_output, renderer, &now);
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], wlr_output, renderer, &now);
+        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], output, renderer, &now);
     }
-    render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], wlr_output, renderer, &now);
+    render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], output, renderer, &now);
 
     // in case of software rendered cursor, render it
     wlr_output_render_software_cursors(wlr_output, nullptr);
@@ -312,7 +318,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     }
 
     server->listeners.clear_listeners(output);
-    server->outputs.remove_if([output](auto& other) { return &other == output; });
+    output->output_manager->outputs.remove_if([output](auto& other) { return &other == output; });
 }
 
 void Output::mode_handler(struct wl_listener* listener, void*)
@@ -340,18 +346,4 @@ void Output::scale_handler(struct wl_listener* listener, void*)
 
     arrange_layers(server, output);
     arrange_output(server, output);
-}
-
-struct wlr_box get_real_usable_area(NotNullPointer<struct wlr_output_layout> output_layout, NotNullPointer<Output> output)
-{
-    const auto* output_box = wlr_output_layout_get_box(output_layout.get(), output->wlr_output);
-    auto real_usable_area = output->usable_area;
-    real_usable_area.x += output_box->x;
-    real_usable_area.y += output_box->y;
-
-    return real_usable_area;
-}
-struct wlr_box get_real_usable_area(NotNullPointer<Server> server, NotNullPointer<Output> output)
-{
-    return get_real_usable_area(server->output_layout, output);
 }

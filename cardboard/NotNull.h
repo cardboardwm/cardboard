@@ -1,50 +1,68 @@
 #ifndef BUILD_CARDBOARD_NOTNULL_H
 #define BUILD_CARDBOARD_NOTNULL_H
 
+#include <cassert>
 #include <type_traits>
+#include <utility>
 
-template <typename Type>
+// Adapted from GSL::not_null from Microsoft's GSL library, MIT licensed
+// https://github.com/microsoft/GSL/blob/0843ea444fcdf07868214da171c4fa9d244e7472/include/gsl/pointers
+// https://github.com/microsoft/GSL/blob/0843ea444fcdf07868214da171c4fa9d244e7472/LICENSE
+template <class Type>
 class NotNullPointer {
-public:
     using pointer_type = Type*;
 
-    NotNullPointer(Type* t)
-        : pointer(t)
+public:
+    static_assert(std::is_assignable<pointer_type&, std::nullptr_t>::value, "Type cannot be assigned nullptr.");
+
+    template <typename U, typename = std::enable_if_t<std::is_convertible<U, pointer_type>::value>>
+    constexpr NotNullPointer(U&& u)
+        : ptr_(std::forward<U>(u))
     {
-        assert(t != nullptr && "Trying to assign null value to NotNullPointer");
+        assert(ptr_ != nullptr);
     }
 
-    template <typename T>
-    explicit NotNullPointer(T* t)
-        : pointer { t }
+    template <typename = std::enable_if_t<!std::is_same<std::nullptr_t, pointer_type>::value>>
+    constexpr NotNullPointer(pointer_type u)
+        : ptr_(u)
     {
-        static_assert(!std::is_same_v<std::remove_cvref_t<T>, std::nullptr_t>, "Trying to assign nullptr to NotNullPointer");
-        assert(t != nullptr && "Trying to assign null value to NotNullPointer");
+        assert(ptr_ != nullptr);
     }
 
-    NotNullPointer(const NotNullPointer&) noexcept = default;
-    NotNullPointer(NotNullPointer&&) noexcept = default;
-
-    NotNullPointer& operator=(const NotNullPointer&) noexcept = default;
-    NotNullPointer& operator=(NotNullPointer&&) noexcept = default;
-
-    Type* operator->()
+    template <typename U, typename = std::enable_if_t<std::is_convertible<U, pointer_type>::value>>
+    constexpr NotNullPointer(const NotNullPointer<U>& other)
+        : NotNullPointer(other.get())
     {
-        return pointer;
     }
 
-    explicit operator pointer_type()
+    NotNullPointer(const NotNullPointer& other) = default;
+    NotNullPointer& operator=(const NotNullPointer& other) = default;
+
+    constexpr pointer_type get() const
     {
-        return pointer;
+        assert(ptr_ != nullptr);
+        return ptr_;
     }
 
-    pointer_type get() const
-    {
-        return pointer;
-    }
+    constexpr operator pointer_type() const { return get(); }
+    constexpr pointer_type operator->() const { return get(); }
+    constexpr decltype(auto) operator*() const { return *get(); }
+
+    // prevents compilation when someone attempts to assign a null pointer constant
+    NotNullPointer(std::nullptr_t) = delete;
+    NotNullPointer& operator=(std::nullptr_t) = delete;
+
+    // unwanted operators...pointers only point to single objects!
+    NotNullPointer& operator++() = delete;
+    NotNullPointer& operator--() = delete;
+    NotNullPointer operator++(int) = delete;
+    NotNullPointer operator--(int) = delete;
+    NotNullPointer& operator+=(std::ptrdiff_t) = delete;
+    NotNullPointer& operator-=(std::ptrdiff_t) = delete;
+    void operator[](std::ptrdiff_t) const = delete;
 
 private:
-    pointer_type pointer;
+    pointer_type ptr_;
 };
 
 #endif //BUILD_CARDBOARD_NOTNULL_H

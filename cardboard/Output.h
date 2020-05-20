@@ -25,7 +25,9 @@ struct Output {
     /// Time of last presentation. Use it to calculate the delta time.
     struct timespec last_present;
 
-    struct wlr_box* get_box();
+    NotNullPointer<OutputManager> output_manager;
+
+    Output(NotNullPointer<OutputManager>, struct wlr_output*);
 
     /// Executed for each frame render per output.
     static void frame_handler(struct wl_listener* listener, void* data);
@@ -43,11 +45,5 @@ struct Output {
 
 /// Registers event listeners and does bookkeeping for a newly added output.
 void register_output(Server* server, Output&& output);
-
-/// Returns the usable area of the \a output as a rectangle with its coordinates placed in the global (output layout) space.
-struct wlr_box get_real_usable_area(NotNullPointer<struct wlr_output_layout> output_layout, NotNullPointer<Output> output);
-
-/// Returns the usable area of the \a output as a rectangle with its coordinates placed in the global (output layout) space.
-struct wlr_box get_real_usable_area(NotNullPointer<Server> server, NotNullPointer<Output> output);
 
 #endif // __CARDBOARD_OUTPUT_H_

@@ -10,10 +10,12 @@ extern "C" {
 #include <list>
 #include <optional>
 
+#include "NotNull.h"
 #include "OptionalRef.h"
 
 class View;
 struct Output;
+struct OutputManager;
 struct Server;
 
 /**
@@ -37,7 +39,7 @@ struct Workspace {
 
     std::list<Tile> tiles;
     std::list<View*> floating_views;
-    struct wlr_output_layout* output_layout;
+    NotNullPointer<const OutputManager> output_manager;
 
     /**
      * \brief The output assigned to this workspace (or the output to which this workspace is assigned).
@@ -56,12 +58,7 @@ struct Workspace {
      */
     int scroll_x = 0;
 
-    Workspace(IndexType index);
-
-    /**
-     * \brief Sets the wlr_output_layout pointer to \a ol.
-     */
-    void set_output_layout(struct wlr_output_layout* ol);
+    Workspace(NotNullPointer<const OutputManager> output_manager, IndexType index);
 
     /**
      * \brief Returns an iterator to the tile containing \a view.

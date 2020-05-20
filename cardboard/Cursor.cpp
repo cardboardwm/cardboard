@@ -89,7 +89,7 @@ void init_cursor(Server* server, Seat* seat, SeatCursor* cursor)
 
     cursor->wlr_cursor = wlr_cursor_create();
     cursor->wlr_cursor->data = cursor;
-    wlr_cursor_attach_output_layout(cursor->wlr_cursor, server->output_layout);
+    wlr_cursor_attach_output_layout(cursor->wlr_cursor, server->output_manager.output_layout);
 
     cursor->wlr_xcursor_manager = wlr_xcursor_manager_create(nullptr, 24);
     wlr_xcursor_manager_load(cursor->wlr_xcursor_manager, 1);

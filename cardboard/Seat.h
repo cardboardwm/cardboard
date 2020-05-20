@@ -17,10 +17,12 @@ extern "C" {
 
 #include "Cursor.h"
 #include "Keyboard.h"
+#include "NotNull.h"
 #include "OptionalRef.h"
 #include "View.h"
 
 struct Server;
+struct OutputManager;
 
 constexpr const char* DEFAULT_SEAT = "seat0";
 const int WORKSPACE_SCROLL_FINGERS = 3;
@@ -64,6 +66,10 @@ struct Seat {
 
     std::optional<struct wlr_layer_surface_v1*> focused_layer;
     std::optional<struct wl_client*> exclusive_client;
+
+    NotNullPointer<const OutputManager> output_manager;
+
+    Seat(NotNullPointer<const OutputManager>);
 
     /// Sets up a newly attached input device.
     void add_input_device(Server* server, struct wlr_input_device* device);

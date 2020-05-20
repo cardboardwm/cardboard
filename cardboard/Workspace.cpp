@@ -11,15 +11,11 @@ extern "C" {
 #include "ViewManager.h"
 #include "Workspace.h"
 
-Workspace::Workspace(IndexType index)
-    : index(index)
+Workspace::Workspace(NotNullPointer<const OutputManager> output_manager, IndexType index)
+    : output_manager(output_manager)
+    , index(index)
     , scroll_x(0)
 {
-}
-
-void Workspace::set_output_layout(struct wlr_output_layout* ol)
-{
-    output_layout = ol;
 }
 
 std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
@@ -87,7 +83,7 @@ void Workspace::arrange_workspace()
     }
 
     int acc_width = 0;
-    const auto* output_box = wlr_output_layout_get_box(output_layout, output.unwrap().wlr_output);
+    const struct wlr_box* output_box = output_manager->get_output_box(output.raw_pointer());
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
     fullscreen_view.and_then([output_box](auto& view) {
@@ -129,10 +125,8 @@ void Workspace::fit_view_on_screen(View* view, bool condense)
     }
 
     const auto& output = this->output.unwrap();
-    const auto* output_box = wlr_output_layout_get_box(output_layout, output.wlr_output);
-    if (output_box == nullptr) {
-        return;
-    }
+    const struct wlr_box* output_box = output_manager->get_output_box(&output);
+
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
     int vx = view->x + view->geometry.x;
@@ -161,7 +155,7 @@ View* Workspace::find_dominant_view(View* focused_view)
     View* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
-    const auto usable_area = get_real_usable_area(output_layout, output.raw_pointer());
+    const auto usable_area = output_manager->get_output_real_usable_area(output.raw_pointer());
     for (auto& tile : tiles) {
         auto* view = tile.view;
         if (!view->mapped) {

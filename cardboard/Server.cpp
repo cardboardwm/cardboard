@@ -45,7 +45,8 @@ bool Server::init()
     compositor = wlr_compositor_create(wl_display, renderer);
     wlr_data_device_manager_create(wl_display); // for clipboard managers
 
-    output_layout = wlr_output_layout_create();
+    // FIXME: separate output manager init
+    output_manager.output_layout = wlr_output_layout_create();
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement Xwayland
@@ -53,7 +54,7 @@ bool Server::init()
     layer_shell = wlr_layer_shell_v1_create(wl_display);
 
     // low effort protocol implementations
-    wlr_xdg_output_manager_v1_create(wl_display, output_layout);
+    wlr_xdg_output_manager_v1_create(wl_display, output_manager.output_layout);
     wlr_gamma_control_manager_v1_create(wl_display);
     wlr_export_dmabuf_manager_v1_create(wl_display);
     wlr_screencopy_manager_v1_create(wl_display);
@@ -71,8 +72,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        workspaces.push_back(Workspace(i));
-        workspaces.back().set_output_layout(output_layout);
+        workspaces.emplace_back(&output_manager, i);
     }
 
     struct {
@@ -82,7 +82,7 @@ bool Server::init()
         { &backend->events.new_input, Server::new_input_handler },
         { &backend->events.new_output, Server::new_output_handler },
 
-        { &output_layout->events.add, Server::output_layout_add_handler },
+        { &output_manager.output_layout->events.add, Server::output_layout_add_handler },
 
         { &xdg_shell->events.new_surface, Server::new_xdg_surface_handler },
         { &layer_shell->events.new_surface, Server::new_layer_surface_handler },
@@ -175,9 +175,9 @@ bool Server::load_settings()
 
 View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
-    const auto* wlr_output = wlr_output_layout_output_at(output_layout, lx, ly);
-    const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [wlr_output](const auto& other) {
-        return other.output && other.output.unwrap().wlr_output == wlr_output;
+    OptionalRef<Output> output = output_manager.get_output_at(lx, ly);
+    const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [output](const auto& other) {
+        return other.output == output;
     });
     if (ws_it == workspaces.end() || !ws_it->output) {
         return nullptr;
@@ -290,7 +290,7 @@ Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 
 Workspace& Server::create_workspace()
 {
-    workspaces.push_back(workspaces.size());
+    workspaces.emplace_back(&output_manager, workspaces.size());
     return workspaces.back();
 }
 
@@ -358,7 +358,7 @@ void Server::new_output_handler(struct wl_listener* listener, void* data)
 
     // add output to the layout. add_auto arranges outputs left-to-right
     // in the order they appear.
-    wlr_output_layout_add_auto(server->output_layout, output);
+    wlr_output_layout_add_auto(server->output_manager.output_layout, output);
 }
 
 void Server::output_layout_add_handler(struct wl_listener* listener, void* data)
@@ -366,12 +366,12 @@ void Server::output_layout_add_handler(struct wl_listener* listener, void* data)
     Server* server = get_server(listener);
     auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
 
-    auto output_ = Output {};
-    output_.wlr_output = l_output->output;
+    auto output_ = Output { &server->output_manager, l_output->output };
+    // FIXME: should this go in the constructor?
     wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
     register_output(server, std::move(output_));
 
-    auto& output = server->outputs.back();
+    auto& output = server->output_manager.outputs.back();
 
     Workspace* ws_to_assign = nullptr;
     for (auto& ws : server->workspaces) {
@@ -428,19 +428,16 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
         output_to_assign = server->seat.get_focused_workspace(server)
                                .and_then<Output>([](auto& ws) { return ws.output; })
                                .or_else([server]() {
-                                   if (server->outputs.empty()) {
-                                       return OptionalRef<Output>(nullptr);
+                                   if (server->output_manager.outputs.empty()) {
+                                       return NullRef<Output>;
                                    }
-                                   return OptionalRef(server->outputs.front());
+                                   return OptionalRef(server->output_manager.outputs.front());
                                })
                                .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullRef<Output>; });
     }
 
-    output_to_assign.and_then([output_to_assign, layer_surface, server](auto& output) {
-        LayerSurface ls;
-        ls.output = output_to_assign;
-        ls.surface = layer_surface;
-        ls.surface->output = output.wlr_output;
+    output_to_assign.and_then([layer_surface, server](auto& output) {
+        LayerSurface ls { &server->output_manager, layer_surface, output };
         create_layer(server, std::move(ls));
     });
 }

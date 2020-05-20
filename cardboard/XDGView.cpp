@@ -113,6 +113,13 @@ void XDGView::close()
     wlr_xdg_toplevel_send_close(xdg_surface);
 }
 
+XDGPopup::XDGPopup(NotNullPointer<const OutputManager> output_manager, struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
+    : wlr_popup(wlr_popup)
+    , parent(parent)
+    , output_manager(output_manager)
+{
+}
+
 void XDGPopup::unconstrain(Server* server)
 {
     auto output = server->get_views_workspace(parent).output;
@@ -120,7 +127,7 @@ void XDGPopup::unconstrain(Server* server)
         return;
     }
 
-    auto* output_box = wlr_output_layout_get_box(server->output_layout, output.unwrap().wlr_output);
+    const struct wlr_box* output_box = output_manager->get_output_box(output.raw_pointer());
 
     // the output box expressed in the coordinate system of the
     // toplevel parent of the popup
@@ -136,7 +143,7 @@ void XDGPopup::unconstrain(Server* server)
 
 void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent)
 {
-    auto* popup = new XDGPopup { wlr_popup, parent };
+    auto* popup = new XDGPopup { &server->output_manager, wlr_popup, parent };
 
     struct {
         wl_signal* signal;
