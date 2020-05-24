@@ -12,6 +12,7 @@ extern "C" {
 
 #include <algorithm>
 #include <cassert>
+#include <initializer_list>
 #include <variant>
 
 #include "Cursor.h"
@@ -33,6 +34,7 @@ using ListenerData = std::variant<
     LayerSurface*,
     LayerSurfacePopup*,
     Output*,
+    OutputManager*,
     Keyboard*,
     SeatCursor*,
     Seat*,
@@ -135,6 +137,11 @@ public:
 
 private:
     std::list<Listener> listeners;
+};
+
+struct ListenerPair {
+    struct wl_signal* signal;
+    wl_notify_func_t notify;
 };
 
 #endif //CARDBOARD_LISTENER_H

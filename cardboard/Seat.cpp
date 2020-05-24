@@ -1,4 +1,5 @@
 extern "C" {
+#include <wlr/types/wlr_input_inhibitor.h>
 #include <wlr/types/wlr_primary_selection.h>
 #include <wlr/util/log.h>
 }
@@ -8,6 +9,7 @@ extern "C" {
 #include <optional>
 
 #include "Cursor.h"
+#include "Helpers.h"
 #include "Listener.h"
 #include "Seat.h"
 #include "Server.h"
@@ -20,6 +22,8 @@ void init_seat(Server* server, Seat* seat, const char* name)
 
     seat->cursor = SeatCursor {};
     init_cursor(server, seat, &seat->cursor);
+
+    seat->inhibit_manager = wlr_input_inhibit_manager_create(server->wl_display);
 
     struct {
         wl_signal* signal;
@@ -39,6 +43,15 @@ void init_seat(Server* server, Seat* seat, const char* name)
 Seat::Seat(NotNullPointer<const OutputManager> output_manager)
     : output_manager(output_manager)
 {
+}
+
+void Seat::register_handlers(Server& server, struct wl_signal* new_input)
+{
+    ::register_handlers(server, this, {
+                                          { new_input, Seat::new_input_handler },
+                                          { &inhibit_manager->events.activate, Seat::activate_inhibit_handler },
+                                          { &inhibit_manager->events.deactivate, Seat::deactivate_inhibit_handler },
+                                      });
 }
 
 void Seat::add_input_device(Server* server, struct wlr_input_device* device)
@@ -552,6 +565,32 @@ void Seat::focus(Server* server, Workspace* workspace)
         focus_view(server, nullptr);
     }
     server->seat.cursor.rebase(server);
+}
+
+void Seat::new_input_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+
+    auto* device = static_cast<struct wlr_input_device*>(data);
+
+    seat->add_input_device(server, device);
+}
+
+void Seat::activate_inhibit_handler(struct wl_listener* listener, void*)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+
+    seat->set_exclusive_client(server, seat->inhibit_manager->active_client);
+}
+
+void Seat::deactivate_inhibit_handler(struct wl_listener* listener, void*)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+
+    seat->set_exclusive_client(server, nullptr);
 }
 
 void Seat::request_cursor_handler(struct wl_listener* listener, void* data)

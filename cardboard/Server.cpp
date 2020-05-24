@@ -26,6 +26,7 @@ extern "C" {
 
 #include <cassert>
 
+#include "Helpers.h"
 #include "IPC.h"
 #include "Seat.h"
 #include "Server.h"
@@ -62,9 +63,6 @@ bool Server::init()
     wlr_gtk_primary_selection_device_manager_create(wl_display);
     wlr_primary_selection_v1_device_manager_create(wl_display);
 
-    // less low effort protocol implementations
-    inhibit_manager = wlr_input_inhibit_manager_create(wl_display);
-
     init_seat(this, &seat, DEFAULT_SEAT);
 
     config = Config {
@@ -75,27 +73,13 @@ bool Server::init()
         workspaces.emplace_back(&output_manager, i);
     }
 
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &backend->events.new_input, Server::new_input_handler },
-        { &backend->events.new_output, Server::new_output_handler },
+    register_handlers(*this, NoneT {}, {
+                                           { &xdg_shell->events.new_surface, Server::new_xdg_surface_handler },
+                                           { &layer_shell->events.new_surface, Server::new_layer_surface_handler },
+                                       });
 
-        { &output_manager.output_layout->events.add, Server::output_layout_add_handler },
-
-        { &xdg_shell->events.new_surface, Server::new_xdg_surface_handler },
-        { &layer_shell->events.new_surface, Server::new_layer_surface_handler },
-
-        { &inhibit_manager->events.activate, Server::activate_inhibit_handler },
-        { &inhibit_manager->events.deactivate, Server::deactivate_inhibit_handler },
-    };
-
-    for (const auto& to_add_listener : to_add_listeners) {
-        listeners.add_listener(
-            to_add_listener.signal,
-            Listener { to_add_listener.notify, this, NoneT {} });
-    }
+    seat.register_handlers(*this, &backend->events.new_input);
+    output_manager.register_handlers(*this, &backend->events.new_output);
 
     return true;
 }
@@ -341,56 +325,6 @@ void Server::teardown(int code)
     exit_code = code;
 }
 
-void Server::new_output_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-    auto* output = static_cast<struct wlr_output*>(data);
-
-    // pick the monitor's preferred mode
-    if (!wl_list_empty(&output->modes)) {
-        struct wlr_output_mode* mode = wlr_output_preferred_mode(output);
-        wlr_output_set_mode(output, mode);
-        wlr_output_enable(output, true);
-        if (!wlr_output_commit(output)) {
-            return;
-        }
-    }
-
-    // add output to the layout. add_auto arranges outputs left-to-right
-    // in the order they appear.
-    wlr_output_layout_add_auto(server->output_manager.output_layout, output);
-}
-
-void Server::output_layout_add_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-    auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
-
-    auto output_ = Output { &server->output_manager, l_output->output };
-    // FIXME: should this go in the constructor?
-    wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
-    register_output(server, std::move(output_));
-
-    auto& output = server->output_manager.outputs.back();
-
-    Workspace* ws_to_assign = nullptr;
-    for (auto& ws : server->workspaces) {
-        if (!ws.output) {
-            ws_to_assign = &ws;
-            break;
-        }
-    }
-
-    if (!ws_to_assign) {
-        ws_to_assign = &server->create_workspace();
-    }
-
-    ws_to_assign->activate(output);
-
-    // the output doesn't need to be exposed as a wayland global
-    // because wlr_output_layout does it for us already
-}
-
 void Server::new_xdg_surface_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
@@ -457,26 +391,3 @@ void Server::new_xwayland_surface_handler(struct wl_listener* listener, void* da
     create_view(server, new XwaylandView(server, xsurface));
 }
 #endif
-
-void Server::new_input_handler(struct wl_listener* listener, void* data)
-{
-    Server* server = get_server(listener);
-
-    auto* device = static_cast<struct wlr_input_device*>(data);
-
-    server->seat.add_input_device(server, device);
-}
-
-void Server::activate_inhibit_handler(struct wl_listener* listener, void*)
-{
-    auto* server = get_server(listener);
-
-    server->seat.set_exclusive_client(server, server->inhibit_manager->active_client);
-}
-
-void Server::deactivate_inhibit_handler(struct wl_listener* listener, void*)
-{
-    auto* server = get_server(listener);
-
-    server->seat.set_exclusive_client(server, nullptr);
-}

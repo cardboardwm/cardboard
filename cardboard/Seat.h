@@ -60,6 +60,7 @@ struct Seat {
     std::optional<GrabState> grab_state;
 
     struct wlr_seat* wlr_seat;
+    struct wlr_input_inhibit_manager* inhibit_manager;
 
     std::list<Keyboard> keyboards;
     std::list<View*> focus_stack; ///< Views ordered by the time they were focused, from most recent.
@@ -70,6 +71,8 @@ struct Seat {
     NotNullPointer<const OutputManager> output_manager;
 
     Seat(NotNullPointer<const OutputManager>);
+
+    void register_handlers(Server& server, struct wl_signal* new_input);
 
     /// Sets up a newly attached input device.
     void add_input_device(Server* server, struct wlr_input_device* device);
@@ -135,6 +138,27 @@ struct Seat {
     bool is_mod_pressed(uint32_t mods);
 
 private:
+    /**
+    * \brief Called when an input device (keyboard, mouse, touchscreen, tablet) is attached.
+    *
+    * The device is registered within the compositor accordingly.
+    */
+    static void new_input_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Activates the inhibition of input events for the requester.
+    *
+    * Per the wlr-input-inhibitor protocol.
+    */
+    static void activate_inhibit_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Deactivates the inhibiton of input events for the requester.
+    *
+    * Per the wlr-input-inhibitor protocol.
+    */
+    static void deactivate_inhibit_handler(struct wl_listener* listener, void* data);
+
     /// Sets keyboard focus on a \a surface.
     void keyboard_notify_enter(struct wlr_surface* surface);
 
