@@ -1,4 +1,5 @@
 extern "C" {
+#include <linux/input-event-codes.h>
 #include <wlr/types/wlr_input_inhibitor.h>
 #include <wlr/types/wlr_primary_selection.h>
 #include <wlr/util/log.h>
@@ -15,29 +16,31 @@ extern "C" {
 #include "Server.h"
 #include "ViewManager.h"
 
-void init_seat(Server* server, Seat* seat, const char* name)
+void init_seat(Server& server, Seat& seat, const char* name)
 {
-    seat->wlr_seat = wlr_seat_create(server->wl_display, name);
-    seat->wlr_seat->data = seat;
+    seat.wlr_seat = wlr_seat_create(server.wl_display, name);
+    seat.wlr_seat->data = &seat;
 
-    seat->cursor = SeatCursor {};
-    init_cursor(server, seat, &seat->cursor);
+    seat.cursor = SeatCursor {};
+    init_cursor(server, seat.cursor);
 
-    seat->inhibit_manager = wlr_input_inhibit_manager_create(server->wl_display);
+    seat.inhibit_manager = wlr_input_inhibit_manager_create(server.wl_display);
 
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &seat->wlr_seat->events.request_set_cursor, Seat::request_cursor_handler },
-        { &seat->wlr_seat->events.request_set_selection, Seat::request_selection_handler },
-        { &seat->wlr_seat->events.request_set_primary_selection, Seat::request_primary_selection_handler },
-    };
+    register_handlers(server, &seat, {
+                                         { &seat.wlr_seat->events.request_set_cursor, Seat::request_cursor_handler },
+                                         { &seat.wlr_seat->events.request_set_selection, Seat::request_selection_handler },
+                                         { &seat.wlr_seat->events.request_set_primary_selection, Seat::request_primary_selection_handler },
 
-    for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(to_add_listener.signal,
-                                       Listener { to_add_listener.notify, server, seat });
-    }
+                                         { &seat.cursor.wlr_cursor->events.motion, Seat::cursor_motion_handler },
+                                         { &seat.cursor.wlr_cursor->events.motion_absolute, Seat::cursor_motion_absolute_handler },
+                                         { &seat.cursor.wlr_cursor->events.button, Seat::cursor_button_handler },
+                                         { &seat.cursor.wlr_cursor->events.axis, Seat::cursor_axis_handler },
+                                         { &seat.cursor.wlr_cursor->events.frame, Seat::cursor_frame_handler },
+
+                                         { &seat.cursor.wlr_cursor->events.swipe_begin, Seat::cursor_swipe_begin_handler },
+                                         { &seat.cursor.wlr_cursor->events.swipe_update, Seat::cursor_swipe_update_handler },
+                                         { &seat.cursor.wlr_cursor->events.swipe_end, Seat::cursor_swipe_end_handler },
+                                     });
 }
 
 Seat::Seat(NotNullPointer<const OutputManager> output_manager)
@@ -332,7 +335,7 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
             grab_state->grab_data);
         return;
     }
-    cursor.rebase(server, time);
+    cursor_rebase(*server, *this, cursor, time);
 }
 
 void Seat::process_cursor_move(Server* server, GrabState::Move move_data)
@@ -418,7 +421,7 @@ void Seat::process_swipe_end(Server*)
 void Seat::end_interactive(Server* server)
 {
     grab_state = std::nullopt;
-    cursor.rebase(server);
+    cursor_rebase(*server, *this, cursor);
 }
 
 /**
@@ -455,14 +458,14 @@ void Seat::update_swipe(Server* server)
         data->dominant_view = dominant;
     }
     if (data->dominant_view) {
-        server->seat.get_focused_view()->set_activated(false);
+        get_focused_view()->set_activated(false);
         data->dominant_view->set_activated(true);
     }
 
     data->speed *= WORKSPACE_SCROLL_FRICTION;
 
     if (data->wants_to_stop && fabs(data->speed) < 1) {
-        server->seat.focus_view(server, data->dominant_view);
+        focus_view(server, data->dominant_view);
         end_touchpad_swipe(server);
     }
 }
@@ -551,8 +554,10 @@ void Seat::focus(Server* server, Workspace* workspace)
 
     const struct wlr_box* output_box = output_manager->get_output_box(&output);
 
-    cursor.warp(
-        server,
+    cursor_warp(
+        *server,
+        *this,
+        cursor,
         output_box->x + output.usable_area.x + output.usable_area.width / 2,
         output_box->y + output.usable_area.y + output.usable_area.height / 2);
 
@@ -564,7 +569,7 @@ void Seat::focus(Server* server, Workspace* workspace)
     } else {
         focus_view(server, nullptr);
     }
-    server->seat.cursor.rebase(server);
+    cursor_rebase(*server, *this, cursor);
 }
 
 void Seat::new_input_handler(struct wl_listener* listener, void* data)
@@ -602,7 +607,7 @@ void Seat::request_cursor_handler(struct wl_listener* listener, void* data)
     struct wlr_seat_client* focused_client = seat->wlr_seat->pointer_state.focused_client;
 
     if (focused_client == event->seat_client && !seat->grab_state) {
-        server->seat.cursor.set_image_surface(server, event->surface, event->hotspot_x, event->hotspot_y);
+        cursor_set_image_surface(*server, *seat, seat->cursor, event->surface, event->hotspot_x, event->hotspot_y);
     }
 }
 
@@ -622,4 +627,124 @@ void Seat::request_primary_selection_handler(struct wl_listener* listener, void*
     auto* event = static_cast<wlr_seat_request_set_primary_selection_event*>(data);
 
     wlr_seat_set_primary_selection(seat->wlr_seat, event->source, event->serial);
+}
+
+void Seat::cursor_motion_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_motion*>(data);
+
+    // in case the user was doing a three finger swipe and lifted two fingers.
+    seat->end_touchpad_swipe(server);
+
+    wlr_cursor_move(seat->cursor.wlr_cursor, event->device, event->delta_x, event->delta_y);
+    seat->process_cursor_motion(server, event->time_msec);
+}
+
+void Seat::cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_motion_absolute*>(data);
+
+    wlr_cursor_warp_absolute(seat->cursor.wlr_cursor, event->device, event->x, event->y);
+    seat->process_cursor_motion(server, event->time_msec);
+}
+
+void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_button*>(data);
+
+    if (event->state == WLR_BUTTON_RELEASED) {
+        wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
+        // end grabbing
+        seat->end_interactive(server);
+        return;
+    }
+
+    double sx, sy;
+    struct wlr_surface* surface;
+    View* view = server->get_surface_under_cursor(seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
+    if (!view) {
+        wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
+        return;
+    }
+    if (seat->is_mod_pressed(server->config.mouse_mods)) {
+        if (event->button == BTN_LEFT) {
+            cursor_set_image(*server, *seat, seat->cursor, "grab");
+            seat->begin_move(server, view);
+            wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_move
+        } else if (event->button == BTN_RIGHT) {
+            uint32_t edge = 0;
+            edge |= seat->cursor.wlr_cursor->x > view->x + view->geometry.x + view->geometry.width / 2 ? WLR_EDGE_RIGHT : WLR_EDGE_LEFT;
+            edge |= seat->cursor.wlr_cursor->y > view->y + view->geometry.y + view->geometry.height / 2 ? WLR_EDGE_BOTTOM : WLR_EDGE_TOP;
+            const char* image = NULL;
+            if (edge == (WLR_EDGE_LEFT | WLR_EDGE_TOP)) {
+                image = "nw-resize";
+            } else if (edge == (WLR_EDGE_TOP | WLR_EDGE_RIGHT)) {
+                image = "ne-resize";
+            } else if (edge == (WLR_EDGE_RIGHT | WLR_EDGE_BOTTOM)) {
+                image = "se-resize";
+            } else if (edge == (WLR_EDGE_BOTTOM | WLR_EDGE_LEFT)) {
+                image = "sw-resize";
+            }
+
+            cursor_set_image(*server, *seat, seat->cursor, image);
+            seat->begin_resize(server, view, edge);
+            wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_resize
+        }
+    } else {
+        wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
+        if (view != seat->get_focused_view()) {
+            seat->focus_view(server, view);
+        }
+    }
+}
+
+void Seat::cursor_axis_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
+
+    // in case the user was doing a three finger swipe and lifted a finger
+    seat->end_touchpad_swipe(server);
+
+    wlr_seat_pointer_notify_axis(seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
+}
+
+void Seat::cursor_frame_handler(struct wl_listener* listener, void*)
+{
+    auto* seat = get_listener_data<Seat*>(listener);
+
+    wlr_seat_pointer_notify_frame(seat->wlr_seat);
+}
+
+void Seat::cursor_swipe_begin_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_swipe_begin*>(data);
+
+    seat->process_swipe_begin(server, event->fingers);
+}
+
+void Seat::cursor_swipe_update_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+    auto* event = static_cast<struct wlr_event_pointer_swipe_update*>(data);
+
+    seat->process_swipe_update(server, event->fingers, event->dx, event->dy);
+}
+
+void Seat::cursor_swipe_end_handler(struct wl_listener* listener, void*)
+{
+    auto* server = get_server(listener);
+    auto* seat = get_listener_data<Seat*>(listener);
+
+    seat->process_swipe_end(server);
 }

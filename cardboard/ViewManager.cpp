@@ -38,7 +38,7 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
     } else {
         server->seat.focus_view(server.get(), nullptr);
     };
-    server->seat.cursor.rebase(server.get());
+    cursor_rebase(*server, server->seat, server->seat.cursor);
 }
 
 static void validate_output(NotNullPointer<Server> server, NotNullPointer<View> view)

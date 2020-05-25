@@ -137,7 +137,10 @@ struct Seat {
     /// Returns true if the mod keys is pressed on any of this seat's keyboards.
     bool is_mod_pressed(uint32_t mods);
 
-private:
+    /// Sets keyboard focus on a \a surface.
+    void keyboard_notify_enter(struct wlr_surface* surface);
+
+public:
     /**
     * \brief Called when an input device (keyboard, mouse, touchscreen, tablet) is attached.
     *
@@ -159,10 +162,61 @@ private:
     */
     static void deactivate_inhibit_handler(struct wl_listener* listener, void* data);
 
-    /// Sets keyboard focus on a \a surface.
-    void keyboard_notify_enter(struct wlr_surface* surface);
+    /**
+    * \brief Called when the cursor (mouse) is moved.
+    *
+    * In some cases, the mouse might "jump" to a position instead of moving by a certain delta.
+    * This happens with the X11 backend for example. This handler only handles moves by a delta.
+    *
+    * \sa cursor_motion_absolute_handler for when the cursor "jumps".
+    */
+    static void cursor_motion_handler(struct wl_listener* listener, void* data);
 
-public:
+    /**
+    * \brief Called when the cursor "jumps" or "warps" to an absolute position on the screen.
+    *
+    * \sa cursor_motion_handler for cursor moves by a delta.
+    */
+    static void cursor_motion_absolute_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Handles mouse button clicks.
+    *
+    * Besides transmitting clicks to the clients (by the means of Server::seat),
+    * it also focuses the window under the cursor, with its side effects, such as auto-scrolling
+    * the viewport of the Workspace the View under the cursor is in.
+    */
+    static void cursor_button_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Handles scrolling.
+    */
+    static void cursor_axis_handler(struct wl_listener* listener, void* data);
+
+    /**
+    * \brief Handles pointer frame events.
+    *
+    * A frame event is sent after regular pointer events to group multiple events together.
+    * For instance, two axis events may happend at the same time, in which case a frame event
+    * won't be sent in between.
+    */
+    static void cursor_frame_handler(struct wl_listener* listener, void* data);
+
+    /**
+     * \brief Called when the user starts a swipe on the touchpad (more than one finger).
+     */
+    static void cursor_swipe_update_handler(struct wl_listener* listener, void* data);
+
+    /**
+     * \brief Called when the user moved their fingers during a swipe on the touchpad.
+     */
+    static void cursor_swipe_begin_handler(struct wl_listener* listener, void* data);
+
+    /**
+     * \brief Called after the user lifted all their fingers, eding the swipe.
+     */
+    static void cursor_swipe_end_handler(struct wl_listener* listener, void* data);
+
     /**
     * \brief Called when a client wants to set its own mouse cursor image.
     */
@@ -179,6 +233,6 @@ public:
     static void request_primary_selection_handler(struct wl_listener* listener, void* data);
 };
 
-void init_seat(Server* server, Seat* seat, const char* name);
+void init_seat(Server& server, Seat& seat, const char* name);
 
 #endif // __CARDBOARD_SEAT_H_

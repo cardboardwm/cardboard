@@ -63,7 +63,7 @@ bool Server::init()
     wlr_gtk_primary_selection_device_manager_create(wl_display);
     wlr_primary_selection_v1_device_manager_create(wl_display);
 
-    init_seat(this, &seat, DEFAULT_SEAT);
+    init_seat(*this, seat, DEFAULT_SEAT);
 
     config = Config {
         .mouse_mods = WLR_MODIFIER_LOGO,

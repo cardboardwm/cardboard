@@ -358,7 +358,7 @@ void LayerSurface::map_handler(struct wl_listener* listener, void*)
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
     wlr_surface_send_enter(layer_surface->surface->surface, layer_surface->surface->output);
-    server->seat.cursor.rebase(server);
+    cursor_rebase(*server, server->seat, server->seat.cursor);
 }
 
 void LayerSurface::unmap_handler(struct wl_listener* listener, void*)
