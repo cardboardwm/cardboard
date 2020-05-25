@@ -46,6 +46,11 @@ bool OutputManager::output_contains_point(NotNullPointer<const Output> reference
     return wlr_output_layout_contains_point(output_layout, reference->wlr_output, lx, ly);
 }
 
+void OutputManager::remove_output_from_list(NotNullPointer<Output> output)
+{
+    outputs.remove_if([output](auto& other) { return &other == output; });
+}
+
 void OutputManager::new_output_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
@@ -71,7 +76,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     Server* server = get_server(listener);
     auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
 
-    auto output_ = Output { &server->output_manager, l_output->output };
+    auto output_ = Output { l_output->output };
     // FIXME: should this go in the constructor?
     wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
     register_output(server, std::move(output_));

@@ -68,10 +68,6 @@ struct Seat {
     std::optional<struct wlr_layer_surface_v1*> focused_layer;
     std::optional<struct wl_client*> exclusive_client;
 
-    NotNullPointer<const OutputManager> output_manager;
-
-    Seat(NotNullPointer<const OutputManager>);
-
     void register_handlers(Server& server, struct wl_signal* new_input);
 
     /// Sets up a newly attached input device.

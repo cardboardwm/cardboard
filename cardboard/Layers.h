@@ -28,9 +28,7 @@ struct LayerSurface {
     enum zwlr_layer_shell_v1_layer layer;
     OptionalRef<Output> output;
 
-    NotNullPointer<const OutputManager> output_manager;
-
-    LayerSurface(NotNullPointer<const OutputManager>, struct wlr_layer_surface_v1*, Output&);
+    LayerSurface(struct wlr_layer_surface_v1*, Output&);
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
     /// Returns true if \a output is the output of this layer surface.
@@ -48,11 +46,9 @@ struct LayerSurfacePopup {
     struct wlr_xdg_popup* wlr_popup;
     NotNullPointer<LayerSurface> parent;
 
-    NotNullPointer<const OutputManager> output_manager;
+    LayerSurfacePopup(struct wlr_xdg_popup*, NotNullPointer<LayerSurface>);
 
-    LayerSurfacePopup(NotNullPointer<const OutputManager>, struct wlr_xdg_popup*, NotNullPointer<LayerSurface>);
-
-    void unconstrain();
+    void unconstrain(OutputManager& output_manager);
 
     static void destroy_handler(struct wl_listener* listener, void* data);
     static void new_popup_handler(struct wl_listener* listener, void* data);

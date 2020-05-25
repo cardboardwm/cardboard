@@ -70,7 +70,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        workspaces.emplace_back(&output_manager, i);
+        workspaces.emplace_back(i);
     }
 
     register_handlers(*this, NoneT {}, {
@@ -244,8 +244,8 @@ void Server::map_view(View* view)
 
     auto* prev_focused = seat.get_focused_view();
 
-    seat.get_focused_workspace(this).and_then([view, prev_focused](auto& ws) {
-        ws.add_view(view, prev_focused);
+    seat.get_focused_workspace(this).and_then([this, view, prev_focused](auto& ws) {
+        ws.add_view(output_manager, view, prev_focused);
     });
     seat.focus_view(this, view);
 }
@@ -254,7 +254,7 @@ void Server::unmap_view(View* view)
 {
     if (view->mapped) {
         view->mapped = false;
-        get_views_workspace(view).remove_view(view);
+        get_views_workspace(view).remove_view(output_manager, view);
     }
 
     seat.hide_view(this, view);
@@ -274,7 +274,7 @@ Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 
 Workspace& Server::create_workspace()
 {
-    workspaces.emplace_back(&output_manager, workspaces.size());
+    workspaces.emplace_back(workspaces.size());
     return workspaces.back();
 }
 
@@ -371,7 +371,7 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
     }
 
     output_to_assign.and_then([layer_surface, server](auto& output) {
-        LayerSurface ls { &server->output_manager, layer_surface, output };
+        LayerSurface ls { layer_surface, output };
         create_layer(server, std::move(ls));
     });
 }

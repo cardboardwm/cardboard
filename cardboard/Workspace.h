@@ -39,7 +39,6 @@ struct Workspace {
 
     std::list<Tile> tiles;
     std::list<View*> floating_views;
-    NotNullPointer<const OutputManager> output_manager;
 
     /**
      * \brief The output assigned to this workspace (or the output to which this workspace is assigned).
@@ -58,7 +57,7 @@ struct Workspace {
      */
     int scroll_x = 0;
 
-    Workspace(NotNullPointer<const OutputManager> output_manager, IndexType index);
+    Workspace(IndexType index);
 
     /**
      * \brief Returns an iterator to the tile containing \a view.
@@ -75,17 +74,17 @@ struct Workspace {
     *
     * \param transfering - set to true if we toggle the floating state
     */
-    void add_view(View* view, View* next_to, bool floating = false, bool transferring = false);
+    void add_view(OutputManager& output_manager, View* view, View* next_to, bool floating = false, bool transferring = false);
 
     /**
     * \brief Removes \a view from the workspace and tiles the others accordingly.
     */
-    void remove_view(View* view, bool transferring = false);
+    void remove_view(OutputManager& output_manager, View* view, bool transferring = false);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.
     */
-    void arrange_workspace();
+    void arrange_workspace(OutputManager& output_manager);
 
     /**
      * \brief Scrolls the viewport of the workspace just enough to make the
@@ -93,14 +92,14 @@ struct Workspace {
      *
      * \param condense - if true, if \a view is the first or last in the sequence, align it to the border
      */
-    void fit_view_on_screen(View* view, bool condense = false);
+    void fit_view_on_screen(OutputManager& output_manager, View* view, bool condense = false);
 
     /**
      * \brief From the currently visible view (those that are inside the viewport), return the one that has
      * most coverage as a ratio of its width. There may be more views having the most coverage.
      * If \a focused_view is one of them, return it directly. Can return nullptr.
      */
-    View* find_dominant_view(View* focused_view);
+    View* find_dominant_view(OutputManager& output_manager, View* focused_view);
 
     /**
     * \brief Returns the x coordinate of \a view in workspace coordinates.
@@ -110,7 +109,7 @@ struct Workspace {
     int get_view_wx(View*);
 
     /// Sets \a view as the currently fullscreen view. If null, the fullscreen view will be cleared, if any.
-    void set_fullscreen_view(View* view);
+    void set_fullscreen_view(OutputManager& output_manager, View* view);
 
     /// Returns true if the view is floating in this Workspace.
     bool is_view_floating(View* view);

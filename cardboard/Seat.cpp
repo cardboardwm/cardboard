@@ -43,11 +43,6 @@ void init_seat(Server& server, Seat& seat, const char* name)
                                      });
 }
 
-Seat::Seat(NotNullPointer<const OutputManager> output_manager)
-    : output_manager(output_manager)
-{
-}
-
 void Seat::register_handlers(Server& server, struct wl_signal* new_input)
 {
     ::register_handlers(server, this, {
@@ -203,7 +198,7 @@ void Seat::focus_view(Server* server, View* view, bool condense_workspace)
 
 fit_on_screen:
     // noop if the view is floating
-    server->get_views_workspace(view).fit_view_on_screen(view, condense_workspace);
+    server->get_views_workspace(view).fit_view_on_screen(server->output_manager, view, condense_workspace);
 }
 
 void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
@@ -454,8 +449,8 @@ void Seat::update_swipe(Server* server)
     }
 
     data->scroll_x -= data->speed;
-    scroll_workspace(data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
-    if (auto* dominant = data->workspace->find_dominant_view(get_focused_view()); dominant) {
+    scroll_workspace(server->output_manager, data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
+    if (auto* dominant = data->workspace->find_dominant_view(server->output_manager, get_focused_view()); dominant) {
         data->dominant_view = dominant;
     }
     if (data->dominant_view) {
@@ -474,7 +469,7 @@ void Seat::update_swipe(Server* server)
 OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
 {
     for (auto& ws : server->workspaces) {
-        if (ws.output && output_manager->output_contains_point(ws.output.raw_pointer(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+        if (ws.output && server->output_manager.output_contains_point(ws.output.raw_pointer(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
@@ -499,7 +494,7 @@ void Seat::set_exclusive_client(Server* server, struct wl_client* client)
     if (!client) {
         exclusive_client = std::nullopt;
 
-        output_manager->get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([server](auto& output_under_cursor) {
+        server->output_manager.get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([server](auto& output_under_cursor) {
             arrange_layers(server, &output_under_cursor);
         });
         return;
@@ -553,7 +548,7 @@ void Seat::focus(Server* server, Workspace* workspace)
 
     Output& output = workspace->output.unwrap();
 
-    const struct wlr_box* output_box = output_manager->get_output_box(&output);
+    const struct wlr_box* output_box = server->output_manager.get_output_box(&output);
 
     cursor_warp(
         *server,

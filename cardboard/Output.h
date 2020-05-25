@@ -25,9 +25,7 @@ struct Output {
     /// Time of last presentation. Use it to calculate the delta time.
     struct timespec last_present;
 
-    NotNullPointer<OutputManager> output_manager;
-
-    Output(NotNullPointer<OutputManager>, struct wlr_output*);
+    Output(struct wlr_output*);
 
     /// Executed for each frame render per output.
     static void frame_handler(struct wl_listener* listener, void* data);

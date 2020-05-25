@@ -94,7 +94,6 @@ struct Server {
     int exit_code = EXIT_SUCCESS;
 
     Server()
-        : seat(&output_manager)
     {
     }
     Server(const Server&) = delete;

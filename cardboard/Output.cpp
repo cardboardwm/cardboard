@@ -61,7 +61,7 @@ static void arrange_output(Server* server, Output* output)
     if (ws_it == server->workspaces.end()) {
         return;
     }
-    ws_it->arrange_workspace();
+    ws_it->arrange_workspace(server->output_manager);
 }
 
 static void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
@@ -234,9 +234,8 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
     return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
 }
 
-Output::Output(NotNullPointer<OutputManager> output_manager, struct wlr_output* wlr_output)
+Output::Output(struct wlr_output* wlr_output)
     : wlr_output(wlr_output)
-    , output_manager(output_manager)
 {
 }
 
@@ -318,7 +317,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     }
 
     server->listeners.clear_listeners(output);
-    output->output_manager->outputs.remove_if([output](auto& other) { return &other == output; });
+    server->output_manager.remove_output_from_list(output);
 }
 
 void Output::mode_handler(struct wl_listener* listener, void*)

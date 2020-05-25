@@ -11,9 +11,8 @@ extern "C" {
 #include "ViewManager.h"
 #include "Workspace.h"
 
-Workspace::Workspace(NotNullPointer<const OutputManager> output_manager, IndexType index)
-    : output_manager(output_manager)
-    , index(index)
+Workspace::Workspace(IndexType index)
+    : index(index)
     , scroll_x(0)
 {
 }
@@ -32,7 +31,7 @@ std::list<View*>::iterator Workspace::find_floating(View* view)
     });
 }
 
-void Workspace::add_view(View* view, View* next_to, bool floating, bool transferring)
+void Workspace::add_view(OutputManager& output_manager, View* view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
     if (floating) {
@@ -58,10 +57,10 @@ void Workspace::add_view(View* view, View* next_to, bool floating, bool transfer
         view->change_output(nullptr, output);
     }
 
-    arrange_workspace();
+    arrange_workspace(output_manager);
 }
 
-void Workspace::remove_view(View* view, bool transferring)
+void Workspace::remove_view(OutputManager& output_manager, View* view, bool transferring)
 {
     if (!transferring) {
         if (fullscreen_view && &fullscreen_view.unwrap() == view) {
@@ -73,17 +72,17 @@ void Workspace::remove_view(View* view, bool transferring)
     tiles.remove_if([view](auto& other) { return other.view == view; });
     floating_views.remove(view);
 
-    arrange_workspace();
+    arrange_workspace(output_manager);
 }
 
-void Workspace::arrange_workspace()
+void Workspace::arrange_workspace(OutputManager& output_manager)
 {
     if (!output) {
         return;
     }
 
     int acc_width = 0;
-    const struct wlr_box* output_box = output_manager->get_output_box(output.raw_pointer());
+    const struct wlr_box* output_box = output_manager.get_output_box(output.raw_pointer());
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
     fullscreen_view.and_then([output_box](auto& view) {
@@ -104,7 +103,7 @@ void Workspace::arrange_workspace()
     }
 }
 
-void Workspace::fit_view_on_screen(View* view, bool condense)
+void Workspace::fit_view_on_screen(OutputManager& output_manager, View* view, bool condense)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
@@ -125,7 +124,7 @@ void Workspace::fit_view_on_screen(View* view, bool condense)
     }
 
     const auto& output = this->output.unwrap();
-    const struct wlr_box* output_box = output_manager->get_output_box(&output);
+    const struct wlr_box* output_box = output_manager.get_output_box(&output);
 
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
@@ -144,10 +143,10 @@ void Workspace::fit_view_on_screen(View* view, bool condense)
         scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
     }
 
-    arrange_workspace();
+    arrange_workspace(output_manager);
 }
 
-View* Workspace::find_dominant_view(View* focused_view)
+View* Workspace::find_dominant_view(OutputManager& output_manager, View* focused_view)
 {
     if (!output) {
         return nullptr;
@@ -155,7 +154,7 @@ View* Workspace::find_dominant_view(View* focused_view)
     View* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
-    const auto usable_area = output_manager->get_output_real_usable_area(output.raw_pointer());
+    const auto usable_area = output_manager.get_output_real_usable_area(output.raw_pointer());
     for (auto& tile : tiles) {
         auto* view = tile.view;
         if (!view->mapped) {
@@ -205,7 +204,7 @@ int Workspace::get_view_wx(View* view)
     return acc_wx;
 }
 
-void Workspace::set_fullscreen_view(View* view)
+void Workspace::set_fullscreen_view(OutputManager& output_manager, View* view)
 {
     fullscreen_view.and_then([](auto& fview) {
         fview.set_fullscreen(false);
@@ -226,7 +225,7 @@ void Workspace::set_fullscreen_view(View* view)
     }
     fullscreen_view = OptionalRef(view);
 
-    arrange_workspace();
+    arrange_workspace(output_manager);
 }
 
 bool Workspace::is_view_floating(View* view)

@@ -22,9 +22,9 @@ void reconfigure_view_position(NotNullPointer<Server> server, NotNullPointer<Vie
 void reconfigure_view_size(NotNullPointer<Server> server, NotNullPointer<View> view, int width, int height);
 
 /// Sets the workspace absolute scroll position to `scroll`
-void scroll_workspace(NotNullPointer<Workspace>, AbsoluteScroll scroll);
+void scroll_workspace(OutputManager&, NotNullPointer<Workspace>, AbsoluteScroll scroll);
 
 /// Scrolls workspace with as `scroll` as offset.
-void scroll_workspace(NotNullPointer<Workspace>, RelativeScroll scroll);
+void scroll_workspace(OutputManager&, NotNullPointer<Workspace>, RelativeScroll scroll);
 
 #endif //CARDBOARD_WINDOWMANAGER_H

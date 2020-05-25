@@ -80,7 +80,7 @@ inline CommandResult workspace_switch(Server* server, int n)
         return { "Invalid Workspace number" };
 
     server->seat.focus(server, &server->workspaces[n]);
-    server->workspaces[n].arrange_workspace();
+    server->workspaces[n].arrange_workspace(server->output_manager);
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
@@ -96,7 +96,7 @@ inline CommandResult workspace_move(Server* server, int n)
         return { "No view to move in current workspace"s };
     }
     change_view_workspace(server, view, &server->workspaces[n]);
-    server->workspaces[n].arrange_workspace();
+    server->workspaces[n].arrange_workspace(server->output_manager);
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
@@ -149,8 +149,8 @@ inline CommandResult toggle_floating(Server* server)
         view->resize(prev_size.first, prev_size.second);
     }
 
-    ws.remove_view(view, true);
-    ws.add_view(view, ws.tiles.back().view, !currently_floating, true);
+    ws.remove_view(server->output_manager, view, true);
+    ws.add_view(server->output_manager, view, ws.tiles.back().view, !currently_floating, true);
 
     return { "" };
 }
@@ -173,7 +173,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         }
 
         std::swap(*other, *it);
-        workspace.arrange_workspace();
+        workspace.arrange_workspace(server->output_manager);
     } else {
         reconfigure_view_position(server, view, view->x + dx, view->y + dy);
     }

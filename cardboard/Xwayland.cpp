@@ -219,7 +219,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
         view->geometry.height = xsurface->height;
         view->recover();
 
-        ws.arrange_workspace();
+        ws.arrange_workspace(server->output_manager);
     }
 }
 
@@ -229,7 +229,7 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->get_views_workspace(view).set_fullscreen_view(set ? view : nullptr);
+    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? view : nullptr);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

@@ -7,6 +7,7 @@ extern "C" {
 
 #include <cstring>
 
+#include "Helpers.h"
 #include "Layers.h"
 #include "Listener.h"
 #include "Server.h"
@@ -45,10 +46,9 @@ void create_layer(Server* server, LayerSurface&& layer_surface_)
     layer_surface.surface->current = old_state;
 }
 
-LayerSurface::LayerSurface(NotNullPointer<const OutputManager> output_manager, struct wlr_layer_surface_v1* surface, Output& output)
+LayerSurface::LayerSurface(struct wlr_layer_surface_v1* surface, Output& output)
     : surface(surface)
     , output(output)
-    , output_manager(output_manager)
 {
     this->surface->output = output.wlr_output;
 }
@@ -56,24 +56,17 @@ LayerSurface::LayerSurface(NotNullPointer<const OutputManager> output_manager, s
 void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSurface* layer_surface)
 {
     wlr_log(WLR_DEBUG, "new layer popup");
-    auto* popup = new LayerSurfacePopup { &server->output_manager, wlr_popup, layer_surface };
+    auto* popup = new LayerSurfacePopup { wlr_popup, layer_surface };
 
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &popup->wlr_popup->base->events.destroy, &LayerSurfacePopup::destroy_handler },
-        { &popup->wlr_popup->base->events.new_popup, &LayerSurfacePopup::new_popup_handler },
-        { &popup->wlr_popup->base->events.map, &LayerSurfacePopup::map_handler },
-    };
+    register_handlers(*server,
+                      popup,
+                      {
+                          { &popup->wlr_popup->base->events.destroy, &LayerSurfacePopup::destroy_handler },
+                          { &popup->wlr_popup->base->events.new_popup, &LayerSurfacePopup::new_popup_handler },
+                          { &popup->wlr_popup->base->events.map, &LayerSurfacePopup::map_handler },
+                      });
 
-    for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
-            to_add_listeners->signal,
-            Listener { to_add_listener.notify, server, popup });
-    }
-
-    popup->unconstrain();
+    popup->unconstrain(server->output_manager);
 }
 
 bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surf, double& sx, double& sy) const
@@ -100,17 +93,16 @@ bool LayerSurface::is_on_output(Output* out) const
     return output && &output.unwrap() == out;
 }
 
-LayerSurfacePopup::LayerSurfacePopup(NotNullPointer<const OutputManager> output_manager, struct wlr_xdg_popup* wlr_popup, NotNullPointer<LayerSurface> parent)
+LayerSurfacePopup::LayerSurfacePopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<LayerSurface> parent)
     : wlr_popup(wlr_popup)
     , parent(parent)
-    , output_manager(output_manager)
 {
 }
 
-void LayerSurfacePopup::unconstrain()
+void LayerSurfacePopup::unconstrain(OutputManager& output_manager)
 {
     auto* output = static_cast<Output*>(parent->surface->output->data);
-    auto* output_box = wlr_output_layout_get_box(output_manager->output_layout, output->wlr_output);
+    auto* output_box = wlr_output_layout_get_box(output_manager.output_layout, output->wlr_output);
 
     struct wlr_box output_toplevel_sx_box = {
         .x = -parent->geometry.x,
@@ -276,9 +268,9 @@ void arrange_layers(Server* server, Output* output)
         assert(ws_it != server->workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
         if (auto focused_view = server->seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
-            ws_it->fit_view_on_screen(focused_view);
+            ws_it->fit_view_on_screen(server->output_manager, focused_view);
         } else {
-            ws_it->arrange_workspace();
+            ws_it->arrange_workspace(server->output_manager);
         }
     }
 

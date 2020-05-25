@@ -10,10 +10,10 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
 
     if (view->expansion_state == View::ExpansionState::FULLSCREEN) {
         if (new_workspace->fullscreen_view) {
-            new_workspace->set_fullscreen_view(nullptr);
+            new_workspace->set_fullscreen_view(server->output_manager, nullptr);
         }
         new_workspace->fullscreen_view = OptionalRef(view.get());
-        new_workspace->arrange_workspace();
+        new_workspace->arrange_workspace(server->output_manager);
     }
 
     bool floating = workspace.is_view_floating(view.get());
@@ -27,8 +27,8 @@ void change_view_workspace(NotNullPointer<Server> server, NotNullPointer<View> v
         }
     }
 
-    workspace.remove_view(view.get());
-    new_workspace->add_view(view.get(), nullptr, floating);
+    workspace.remove_view(server->output_manager, view.get());
+    new_workspace->add_view(server->output_manager, view.get(), nullptr, floating);
 
     if (auto last_focused_view = std::find_if(server->seat.focus_stack.begin(), server->seat.focus_stack.end(), [workspace, view](View* v) {
             return v->workspace_id == workspace.index && v != view.get();
@@ -67,7 +67,7 @@ void reconfigure_view_position(NotNullPointer<Server> server, NotNullPointer<Vie
     if (auto& workspace = server->workspaces[view->workspace_id]; workspace.find_tile(view.get()) != workspace.tiles.end()) {
         int dx = view->x - x;
 
-        scroll_workspace(&workspace, RelativeScroll { dx });
+        scroll_workspace(server->output_manager, &workspace, RelativeScroll { dx });
     } else {
         view->move(x, y);
         validate_output(server, view);
@@ -85,14 +85,14 @@ void reconfigure_view_size(NotNullPointer<Server> server, NotNullPointer<View> v
     view->resize(width, height);
 }
 
-void scroll_workspace(NotNullPointer<Workspace> workspace, AbsoluteScroll scroll)
+void scroll_workspace(OutputManager& output_manager, NotNullPointer<Workspace> workspace, AbsoluteScroll scroll)
 {
     workspace->scroll_x = scroll.get();
-    workspace->arrange_workspace();
+    workspace->arrange_workspace(output_manager);
 }
 
-void scroll_workspace(NotNullPointer<Workspace> workspace, RelativeScroll scroll)
+void scroll_workspace(OutputManager& output_manager, NotNullPointer<Workspace> workspace, RelativeScroll scroll)
 {
     workspace->scroll_x += scroll.get();
-    workspace->arrange_workspace();
+    workspace->arrange_workspace(output_manager);
 }

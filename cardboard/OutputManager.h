@@ -31,6 +31,9 @@ struct OutputManager {
     /// Returns true if the \a reference output contains the given point.
     bool output_contains_point(NotNullPointer<const Output> reference, int lx, int ly) const;
 
+    /// Removes \a output from the output list. Doesn't do anything else.
+    void remove_output_from_list(NotNullPointer<Output> output);
+
 private:
     /**
     * \brief Executed when a new output (monitor) is attached.

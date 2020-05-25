@@ -4,6 +4,7 @@ extern "C" {
 
 #include <cstring>
 
+#include "Helpers.h"
 #include "Server.h"
 #include "XDGView.h"
 
@@ -113,10 +114,9 @@ void XDGView::close()
     wlr_xdg_toplevel_send_close(xdg_surface);
 }
 
-XDGPopup::XDGPopup(NotNullPointer<const OutputManager> output_manager, struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
+XDGPopup::XDGPopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
     : wlr_popup(wlr_popup)
     , parent(parent)
-    , output_manager(output_manager)
 {
 }
 
@@ -127,7 +127,7 @@ void XDGPopup::unconstrain(Server* server)
         return;
     }
 
-    const struct wlr_box* output_box = output_manager->get_output_box(output.raw_pointer());
+    const struct wlr_box* output_box = server->output_manager.get_output_box(output.raw_pointer());
 
     // the output box expressed in the coordinate system of the
     // toplevel parent of the popup
@@ -143,22 +143,15 @@ void XDGPopup::unconstrain(Server* server)
 
 void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent)
 {
-    auto* popup = new XDGPopup { &server->output_manager, wlr_popup, parent };
+    auto* popup = new XDGPopup { wlr_popup, parent };
 
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &popup->wlr_popup->base->events.destroy, &XDGPopup::destroy_handler },
-        { &popup->wlr_popup->base->events.new_popup, &XDGPopup::new_popup_handler },
-        { &popup->wlr_popup->base->events.map, &XDGPopup::map_handler },
-    };
-
-    for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
-            to_add_listener.signal,
-            Listener { to_add_listener.notify, server, popup });
-    }
+    register_handlers(*server,
+                      popup,
+                      {
+                          { &popup->wlr_popup->base->events.destroy, &XDGPopup::destroy_handler },
+                          { &popup->wlr_popup->base->events.new_popup, &XDGPopup::new_popup_handler },
+                          { &popup->wlr_popup->base->events.map, &XDGPopup::map_handler },
+                      });
 
     popup->unconstrain(server);
 }
@@ -239,7 +232,7 @@ void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
         view->geometry = new_geo;
         view->recover();
 
-        ws.arrange_workspace();
+        ws.arrange_workspace(server->output_manager);
     }
 }
 
@@ -276,7 +269,7 @@ void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, 
 
     bool set = event->fullscreen;
 
-    server->get_views_workspace(view).set_fullscreen_view(set ? view : nullptr);
+    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? view : nullptr);
 }
 
 void XDGPopup::destroy_handler(struct wl_listener* listener, void*)
