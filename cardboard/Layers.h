@@ -28,8 +28,6 @@ struct LayerSurface {
     enum zwlr_layer_shell_v1_layer layer;
     OptionalRef<Output> output;
 
-    LayerSurface(struct wlr_layer_surface_v1*, Output&);
-
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) const;
     /// Returns true if \a output is the output of this layer surface.
     bool is_on_output(Output* output) const;

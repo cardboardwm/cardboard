@@ -4,6 +4,7 @@ extern "C" {
 }
 
 #include "Helpers.h"
+#include "Layers.h"
 #include "Listener.h"
 #include "Output.h"
 #include "OutputManager.h"
@@ -76,7 +77,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     Server* server = get_server(listener);
     auto* l_output = static_cast<struct wlr_output_layout_output*>(data);
 
-    auto output_ = Output { l_output->output };
+    auto output_ = Output { .wlr_output = l_output->output };
     // FIXME: should this go in the constructor?
     wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
     register_output(server, std::move(output_));
@@ -96,6 +97,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     }
 
     ws_to_assign->activate(output);
+    arrange_layers(server, &output);
 
     // the output doesn't need to be exposed as a wayland global
     // because wlr_output_layout does it for us already

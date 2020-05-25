@@ -11,12 +11,6 @@ extern "C" {
 #include "ViewManager.h"
 #include "Workspace.h"
 
-Workspace::Workspace(IndexType index)
-    : index(index)
-    , scroll_x(0)
-{
-}
-
 std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
 {
     return std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {

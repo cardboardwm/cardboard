@@ -234,11 +234,6 @@ static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_ou
     return static_cast<double>(delta.tv_sec) + static_cast<double>(delta.tv_nsec) / 1000000000.0;
 }
 
-Output::Output(struct wlr_output* wlr_output)
-    : wlr_output(wlr_output)
-{
-}
-
 void Output::frame_handler(struct wl_listener* listener, void*)
 {
     Server* server = get_server(listener);

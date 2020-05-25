@@ -57,8 +57,6 @@ struct Workspace {
      */
     int scroll_x = 0;
 
-    Workspace(IndexType index);
-
     /**
      * \brief Returns an iterator to the tile containing \a view.
      */

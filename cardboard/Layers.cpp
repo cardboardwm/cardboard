@@ -46,13 +46,6 @@ void create_layer(Server* server, LayerSurface&& layer_surface_)
     layer_surface.surface->current = old_state;
 }
 
-LayerSurface::LayerSurface(struct wlr_layer_surface_v1* surface, Output& output)
-    : surface(surface)
-    , output(output)
-{
-    this->surface->output = output.wlr_output;
-}
-
 void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSurface* layer_surface)
 {
     wlr_log(WLR_DEBUG, "new layer popup");

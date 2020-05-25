@@ -70,7 +70,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        workspaces.emplace_back(i);
+        workspaces.push_back({ .index = i });
     }
 
     register_handlers(*this, NoneT {}, {
@@ -274,7 +274,7 @@ Workspace& Server::get_views_workspace(NotNullPointer<View> view)
 
 Workspace& Server::create_workspace()
 {
-    workspaces.emplace_back(workspaces.size());
+    workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
     return workspaces.back();
 }
 
@@ -371,7 +371,8 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
     }
 
     output_to_assign.and_then([layer_surface, server](auto& output) {
-        LayerSurface ls { layer_surface, output };
+        LayerSurface ls { .surface = layer_surface, .output = output };
+        ls.surface->output = output.wlr_output;
         create_layer(server, std::move(ls));
     });
 }
