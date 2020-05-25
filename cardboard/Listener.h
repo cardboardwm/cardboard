@@ -30,12 +30,11 @@ struct Server;
 /// Constant data for many event listeners.
 using ListenerData = std::variant<
     NoneT,
-    KeyHandleData,
+    KeyboardHandleData,
     LayerSurface*,
     LayerSurfacePopup*,
     Output*,
     OutputManager*,
-    Keyboard*,
     SeatCursor*,
     Seat*,
 #if HAVE_XWAYLAND

@@ -8,35 +8,32 @@ extern "C" {
 #include "Keyboard.h"
 #include "Server.h"
 
-void Keyboard::destroy_handler(struct wl_listener* listener, void*)
+void KeyboardHandleData::destroy_handler(struct wl_listener* listener, void*)
 {
-    Server* server = get_server(listener);
-    auto* keyboard = get_listener_data<Keyboard*>(listener);
+    auto* server = get_server(listener);
+    auto handle_data = get_listener_data<KeyboardHandleData>(listener);
 
-    auto* seat = keyboard->seat;
+    server->listeners.clear_listeners(KeyboardHandleData { handle_data.seat, handle_data.keyboard, handle_data.config });
 
-    server->listeners.clear_listeners(keyboard);
-    server->listeners.clear_listeners(KeyHandleData { keyboard, &server->keybindings_config });
-
-    seat->keyboards.erase(std::remove_if(seat->keyboards.begin(), seat->keyboards.end(), [keyboard](const auto& other) {
-                              return keyboard == &other;
-                          }),
-                          server->seat.keyboards.end());
+    handle_data.seat->keyboards.erase(std::remove_if(handle_data.seat->keyboards.begin(), handle_data.seat->keyboards.end(), [&handle_data](const auto& other) {
+                                          return handle_data.keyboard == &other;
+                                      }),
+                                      handle_data.seat->keyboards.end());
 }
 
-void Keyboard::modifiers_handler(struct wl_listener* listener, void*)
+void KeyboardHandleData::modifiers_handler(struct wl_listener* listener, void*)
 {
-    auto* keyboard = get_listener_data<Keyboard*>(listener);
+    auto handle_data = get_listener_data<KeyboardHandleData>(listener);
 
-    wlr_seat_set_keyboard(keyboard->seat->wlr_seat, keyboard->device);
+    wlr_seat_set_keyboard(handle_data.seat->wlr_seat, handle_data.keyboard->device);
     // send modifiers to the client
-    wlr_seat_keyboard_notify_modifiers(keyboard->seat->wlr_seat, &keyboard->device->keyboard->modifiers);
+    wlr_seat_keyboard_notify_modifiers(handle_data.seat->wlr_seat, &handle_data.keyboard->device->keyboard->modifiers);
 }
 
-void key_handler(struct wl_listener* listener, void* data)
+void KeyboardHandleData::key_handler(struct wl_listener* listener, void* data)
 {
     Server* server = get_server(listener);
-    auto handle_data = get_listener_data<KeyHandleData>(listener);
+    auto handle_data = get_listener_data<KeyboardHandleData>(listener);
 
     auto* event = static_cast<struct wlr_event_keyboard_key*>(data);
 
@@ -50,7 +47,7 @@ void key_handler(struct wl_listener* listener, void* data)
             &syms);
 
         // TODO: keybinds that work when there is an exclusive client
-        if (!handle_data.keyboard->seat->exclusive_client) {
+        if (!handle_data.seat->exclusive_client) {
             for (int i = 0; i < syms_number; i++) {
                 auto& map = handle_data.config->map[modifiers];
                 // as you can see below, keysyms are always stored lowercase
@@ -79,7 +76,7 @@ void key_handler(struct wl_listener* listener, void* data)
     }
 
     if (!handled) {
-        wlr_seat_set_keyboard(handle_data.keyboard->seat->wlr_seat, handle_data.keyboard->device);
-        wlr_seat_keyboard_notify_key(handle_data.keyboard->seat->wlr_seat, event->time_msec, event->keycode, event->state);
+        wlr_seat_set_keyboard(handle_data.seat->wlr_seat, handle_data.keyboard->device);
+        wlr_seat_keyboard_notify_key(handle_data.seat->wlr_seat, event->time_msec, event->keycode, event->state);
     }
 }

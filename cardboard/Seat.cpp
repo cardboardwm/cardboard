@@ -81,7 +81,7 @@ void Seat::add_input_device(Server* server, struct wlr_input_device* device)
 
 void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
 {
-    keyboards.push_back(Keyboard { this, device });
+    keyboards.push_back(Keyboard { device });
     auto& keyboard = keyboards.back();
     keyboard.device->data = &keyboard;
 
@@ -94,13 +94,14 @@ void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
     xkb_context_unref(context);
     wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
 
-    server->listeners.add_listener(&device->keyboard->events.modifiers,
-                                   Listener { Keyboard::modifiers_handler, server, &keyboard });
-    server->listeners.add_listener(
-        &device->keyboard->events.key,
-        Listener { key_handler, server, KeyHandleData { &keyboard, &server->keybindings_config } });
-    server->listeners.add_listener(&device->keyboard->events.destroy,
-                                   Listener { Keyboard::destroy_handler, server, &keyboard });
+    ::register_handlers(*server,
+                        KeyboardHandleData { this, &keyboard, &server->keybindings_config },
+                        {
+                            { &device->keyboard->events.key, KeyboardHandleData::key_handler },
+                            { &device->keyboard->events.modifiers, KeyboardHandleData::modifiers_handler },
+                            { &device->keyboard->events.destroy, KeyboardHandleData::destroy_handler },
+                        });
+
     wlr_seat_set_keyboard(wlr_seat, device);
 }
 

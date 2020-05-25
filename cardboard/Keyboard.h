@@ -9,6 +9,7 @@ extern "C" {
 #include <unordered_map>
 
 #include "Command.h"
+#include "NotNull.h"
 
 /**
  * \file
@@ -21,14 +22,12 @@ struct Seat;
 
 /// A keyboard device, managed by a seat.
 struct Keyboard {
-    Seat* seat; ///< The seat that manages this keyboard.
     struct wlr_input_device* device;
 
-    /// Signals that a keyboard has been disconnected.
-    static void destroy_handler(struct wl_listener* listener, void* data);
-
-    /// Notifies the currently focused surface about the pressed state of the modifier keys.
-    static void modifiers_handler(struct wl_listener* listener, void* data);
+private:
+    // i can't make a friend only the required method (Seat::add_keyboard) because
+    // that would be a cyclic dependency
+    friend struct Seat;
 };
 
 /**
@@ -73,24 +72,34 @@ struct KeybindingsConfig {
 };
 
 /**
- * \brief Object that is passed to \c key_handler for context.
+ * \brief Object that is passed to keyboard-related handlers for context.
  */
-struct KeyHandleData {
-    Keyboard* keyboard; ///< The device from which the key handling event arised
-    KeybindingsConfig* config; ///< Pointer to the global key binding configuration
+struct KeyboardHandleData {
+    NotNullPointer<Seat> seat;
+    NotNullPointer<Keyboard> keyboard; ///< The device from which the key handling event arised
+    NotNullPointer<KeybindingsConfig> config; ///< Pointer to the global key binding configuration
 
-    bool operator==(KeyHandleData other)
+    bool operator==(KeyboardHandleData other) const
     {
         return keyboard == other.keyboard && config == other.config;
     }
-};
 
-/**
- * \brief Fired when a non-modifier key is pressed.
- *
- * Executes key binding commands if the key together with the currently active
- * modifiers match. Else, sends the key to the surface currently holding keyboard focus.
- */
-void key_handler(struct wl_listener* listener, void* data);
+private:
+    /**
+      * \brief Fired when a non-modifier key is pressed.
+      *
+      * Executes key binding commands if the key together with the currently active
+      * modifiers match. Else, sends the key to the surface currently holding keyboard focus.
+      */
+    static void key_handler(struct wl_listener* listener, void* data);
+
+    /// Signals that a keyboard has been disconnected.
+    static void destroy_handler(struct wl_listener* listener, void* data);
+
+    /// Notifies the currently focused surface about the pressed state of the modifier keys.
+    static void modifiers_handler(struct wl_listener* listener, void* data);
+
+    friend struct Seat;
+};
 
 #endif // __CARDBOARD_KEYBOARD_H_
