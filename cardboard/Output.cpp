@@ -14,6 +14,7 @@ extern "C" {
 #include <ctime>
 #include <wlr/types/wlr_output.h>
 
+#include "Helpers.h"
 #include "Listener.h"
 #include "Output.h"
 #include "Server.h"
@@ -29,29 +30,22 @@ struct RenderData {
     Server* server;
 };
 
-void register_output(Server* server, Output&& output_)
+void register_output(Server& server, Output&& output_)
 {
-    server->output_manager.outputs.emplace_back(output_);
-    auto& output = server->output_manager.outputs.back();
+    server.output_manager.outputs.emplace_back(output_);
+    auto& output = server.output_manager.outputs.back();
     output.wlr_output->data = &output;
 
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &output.wlr_output->events.frame, Output::frame_handler },
-        { &output.wlr_output->events.present, Output::present_handler },
-        { &output.wlr_output->events.mode, Output::mode_handler },
-        { &output.wlr_output->events.transform, Output::transform_handler },
-        { &output.wlr_output->events.scale, Output::scale_handler },
-        { &output.wlr_output->events.destroy, Output::destroy_handler }
-    };
-
-    for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
-            to_add_listener.signal,
-            Listener { to_add_listener.notify, server, &output });
-    }
+    register_handlers(server,
+                      &output,
+                      {
+                          { &output.wlr_output->events.frame, Output::frame_handler },
+                          { &output.wlr_output->events.present, Output::present_handler },
+                          { &output.wlr_output->events.mode, Output::mode_handler },
+                          { &output.wlr_output->events.transform, Output::transform_handler },
+                          { &output.wlr_output->events.scale, Output::scale_handler },
+                          { &output.wlr_output->events.destroy, Output::destroy_handler },
+                      });
 }
 
 /// Arrange the workspace associated with \a output.
@@ -174,7 +168,7 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, NotNu
 {
     const struct wlr_box* output_box = server->output_manager.get_output_box(output);
     for (const auto& surface : surfaces) {
-        if (!surface.surface->mapped || !surface.is_on_output(output)) {
+        if (!surface.surface->mapped || !surface.is_on_output(*output)) {
             continue;
         }
 
@@ -320,7 +314,7 @@ void Output::mode_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
 
-    arrange_layers(server, output);
+    arrange_layers(*server, *output);
     arrange_output(server, output);
 }
 
@@ -329,7 +323,7 @@ void Output::transform_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
 
-    arrange_layers(server, output);
+    arrange_layers(*server, *output);
     arrange_output(server, output);
 }
 
@@ -338,6 +332,6 @@ void Output::scale_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
 
-    arrange_layers(server, output);
+    arrange_layers(*server, *output);
     arrange_output(server, output);
 }

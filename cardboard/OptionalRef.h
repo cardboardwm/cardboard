@@ -128,6 +128,11 @@ public:
         return ptr;
     }
 
+    const T* raw_pointer() const
+    {
+        return ptr;
+    }
+
 private:
     T* ptr;
 };

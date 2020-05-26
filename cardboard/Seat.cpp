@@ -495,7 +495,7 @@ void Seat::set_exclusive_client(Server* server, struct wl_client* client)
         exclusive_client = std::nullopt;
 
         server->output_manager.get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([server](auto& output_under_cursor) {
-            arrange_layers(server, &output_under_cursor);
+            arrange_layers(*server, output_under_cursor);
         });
         return;
     }

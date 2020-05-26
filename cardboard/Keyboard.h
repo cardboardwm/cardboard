@@ -75,7 +75,7 @@ struct KeybindingsConfig {
  * \brief Object that is passed to keyboard-related handlers for context.
  */
 struct KeyboardHandleData {
-    NotNullPointer<Seat> seat;
+    NotNullPointer<Seat> seat; ///< The seat of the device
     NotNullPointer<Keyboard> keyboard; ///< The device from which the key handling event arised
     NotNullPointer<KeybindingsConfig> config; ///< Pointer to the global key binding configuration
 

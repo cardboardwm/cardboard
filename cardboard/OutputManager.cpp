@@ -80,7 +80,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     auto output_ = Output { .wlr_output = l_output->output };
     // FIXME: should this go in the constructor?
     wlr_output_effective_resolution(output_.wlr_output, &output_.usable_area.width, &output_.usable_area.height);
-    register_output(server, std::move(output_));
+    register_output(*server, std::move(output_));
 
     auto& output = server->output_manager.outputs.back();
 
@@ -97,7 +97,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     }
 
     ws_to_assign->activate(output);
-    arrange_layers(server, &output);
+    arrange_layers(*server, output);
 
     // the output doesn't need to be exposed as a wayland global
     // because wlr_output_layout does it for us already

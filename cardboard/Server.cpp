@@ -167,6 +167,8 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
         return nullptr;
     }
 
+    // it is guaranteed that the workspace is activated on an output
+
     // we are trying surfaces from top to bottom
 
     // first, overlays and top layers
@@ -176,7 +178,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
             continue;
         }
         for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(ws_it->output.raw_pointer())) {
+            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(ws_it->output.unwrap())) {
                 continue;
             }
 
@@ -373,7 +375,7 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
     output_to_assign.and_then([layer_surface, server](auto& output) {
         LayerSurface ls { .surface = layer_surface, .output = output };
         ls.surface->output = output.wlr_output;
-        create_layer(server, std::move(ls));
+        create_layer(*server, std::move(ls));
     });
 }
 

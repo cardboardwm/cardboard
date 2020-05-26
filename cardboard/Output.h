@@ -40,6 +40,6 @@ struct Output {
 };
 
 /// Registers event listeners and does bookkeeping for a newly added output.
-void register_output(Server* server, Output&& output);
+void register_output(Server& server, Output&& output);
 
 #endif // __CARDBOARD_OUTPUT_H_

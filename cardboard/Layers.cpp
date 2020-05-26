@@ -12,46 +12,13 @@ extern "C" {
 #include "Listener.h"
 #include "Server.h"
 
-void create_layer(Server* server, LayerSurface&& layer_surface_)
-{
-    auto layer = layer_surface_.surface->client_pending.layer;
-    server->layers[layer].push_back(layer_surface_);
-    auto& layer_surface = server->layers[layer].back();
-    layer_surface.layer = layer;
-    layer_surface.surface->data = &layer_surface;
-
-    struct {
-        wl_signal* signal;
-        wl_notify_func_t notify;
-    } to_add_listeners[] = {
-        { &layer_surface.surface->surface->events.commit, LayerSurface::commit_handler },
-        { &layer_surface.surface->events.destroy, LayerSurface::destroy_handler },
-        { &layer_surface.surface->events.map, LayerSurface::map_handler },
-        { &layer_surface.surface->events.unmap, LayerSurface::unmap_handler },
-        { &layer_surface.surface->events.new_popup, LayerSurface::new_popup_handler },
-        { &layer_surface.surface->output->events.destroy, LayerSurface::output_destroy_handler },
-    };
-
-    for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
-            to_add_listener.signal,
-            Listener { to_add_listener.notify, server, &layer_surface });
-    }
-
-    // Set the layer's current state to client_pending
-    // to easily arrange it.
-    auto old_state = layer_surface.surface->current;
-    layer_surface.surface->current = layer_surface.surface->client_pending;
-    arrange_layers(server, &layer_surface.output.unwrap());
-    layer_surface.surface->current = old_state;
-}
-
-void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSurface* layer_surface)
+/// Creates and registers a LayerSurfacePopup whose parent is \a layer_surface.
+static void create_layer_popup(Server& server, NotNullPointer<struct wlr_xdg_popup> wlr_popup, NotNullPointer<LayerSurface> layer_surface)
 {
     wlr_log(WLR_DEBUG, "new layer popup");
     auto* popup = new LayerSurfacePopup { wlr_popup, layer_surface };
 
-    register_handlers(*server,
+    register_handlers(server,
                       popup,
                       {
                           { &popup->wlr_popup->base->events.destroy, &LayerSurfacePopup::destroy_handler },
@@ -59,7 +26,32 @@ void create_layer_popup(Server* server, struct wlr_xdg_popup* wlr_popup, LayerSu
                           { &popup->wlr_popup->base->events.map, &LayerSurfacePopup::map_handler },
                       });
 
-    popup->unconstrain(server->output_manager);
+    popup->unconstrain(server.output_manager);
+}
+
+void create_layer(Server& server, LayerSurface&& layer_surface_)
+{
+    auto layer = layer_surface_.surface->client_pending.layer;
+    server.layers[layer].push_back(layer_surface_);
+    auto& layer_surface = server.layers[layer].back();
+    layer_surface.layer = layer;
+    layer_surface.surface->data = &layer_surface;
+
+    register_handlers(server, &layer_surface, {
+                                                  { &layer_surface.surface->surface->events.commit, LayerSurface::commit_handler },
+                                                  { &layer_surface.surface->events.destroy, LayerSurface::destroy_handler },
+                                                  { &layer_surface.surface->events.map, LayerSurface::map_handler },
+                                                  { &layer_surface.surface->events.unmap, LayerSurface::unmap_handler },
+                                                  { &layer_surface.surface->events.new_popup, LayerSurface::new_popup_handler },
+                                                  { &layer_surface.surface->output->events.destroy, LayerSurface::output_destroy_handler },
+                                              });
+
+    // Set the layer's current state to client_pending
+    // to easily arrange it.
+    auto old_state = layer_surface.surface->current;
+    layer_surface.surface->current = layer_surface.surface->client_pending;
+    arrange_layers(server, layer_surface.output.unwrap());
+    layer_surface.surface->current = old_state;
 }
 
 bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surf, double& sx, double& sy) const
@@ -81,15 +73,9 @@ bool LayerSurface::get_surface_under_coords(double lx, double ly, struct wlr_sur
     return false;
 }
 
-bool LayerSurface::is_on_output(Output* out) const
+bool LayerSurface::is_on_output(Output& out) const
 {
-    return output && &output.unwrap() == out;
-}
-
-LayerSurfacePopup::LayerSurfacePopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<LayerSurface> parent)
-    : wlr_popup(wlr_popup)
-    , parent(parent)
-{
+    return output && &output.unwrap() == &out;
 }
 
 void LayerSurfacePopup::unconstrain(OutputManager& output_manager)
@@ -163,10 +149,10 @@ static void apply_exclusive_zone(struct wlr_box* usable_area, const wlr_layer_su
     }
 }
 
-static void arrange_layer(Output* output, LayerArray::value_type& layer_surfaces, struct wlr_box* usable_area, bool exclusive)
+static void arrange_layer(Output& output, LayerArray::value_type& layer_surfaces, NotNullPointer<struct wlr_box> usable_area, bool exclusive)
 {
     struct wlr_box full_area = {};
-    wlr_output_effective_resolution(output->wlr_output, &full_area.width, &full_area.height);
+    wlr_output_effective_resolution(output.wlr_output, &full_area.width, &full_area.height);
 
     for (auto& layer_surface : layer_surfaces) {
         if (!layer_surface.is_on_output(output)) {
@@ -244,34 +230,34 @@ static void arrange_layer(Output* output, LayerArray::value_type& layer_surfaces
     }
 }
 
-void arrange_layers(Server* server, Output* output)
+void arrange_layers(Server& server, Output& output)
 {
     struct wlr_box usable_area = {};
-    wlr_output_effective_resolution(output->wlr_output, &usable_area.width, &usable_area.height);
+    wlr_output_effective_resolution(output.wlr_output, &usable_area.width, &usable_area.height);
 
     // arrange exclusive surfaces from top to bottom
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, true);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, true);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, true);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, true);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, true);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, true);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, true);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, true);
 
-    if (memcmp(&usable_area, &output->usable_area, sizeof(struct wlr_box)) != 0) {
-        output->usable_area = usable_area;
-        auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
-        assert(ws_it != server->workspaces.end());
+    if (memcmp(&usable_area, &output.usable_area, sizeof(struct wlr_box)) != 0) {
+        output.usable_area = usable_area;
+        auto ws_it = std::find_if(server.workspaces.begin(), server.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
+        assert(ws_it != server.workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
-        if (auto focused_view = server->seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
-            ws_it->fit_view_on_screen(server->output_manager, focused_view);
+        if (auto focused_view = server.seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
+            ws_it->fit_view_on_screen(server.output_manager, focused_view);
         } else {
-            ws_it->arrange_workspace(server->output_manager);
+            ws_it->arrange_workspace(server.output_manager);
         }
     }
 
     // arrange non-exclusive surfaces from top to bottom
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, false);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, false);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, false);
-    arrange_layer(output, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, false);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], &usable_area, false);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], &usable_area, false);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], &usable_area, false);
+    arrange_layer(output, server.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], &usable_area, false);
 
     // finds top-most layer surface, if it exists
 
@@ -282,7 +268,7 @@ void arrange_layers(Server* server, Output* output)
     };
     LayerSurface* topmost = nullptr;
     for (const auto layer : layers_above_shell) {
-        for (auto& layer_surface : server->layers[layer]) {
+        for (auto& layer_surface : server.layers[layer]) {
             if (layer_surface.surface->current.keyboard_interactive && layer_surface.is_on_output(output) && layer_surface.surface->mapped) {
                 topmost = &layer_surface;
                 break;
@@ -294,9 +280,9 @@ void arrange_layers(Server* server, Output* output)
     }
 
     if (topmost != nullptr) {
-        server->seat.focus_layer(server, topmost->surface);
-    } else if (server->seat.focused_layer && !(*server->seat.focused_layer)->current.keyboard_interactive) {
-        server->seat.focus_layer(server, nullptr);
+        server.seat.focus_layer(&server, topmost->surface);
+    } else if (server.seat.focused_layer && !(*server.seat.focused_layer)->current.keyboard_interactive) {
+        server.seat.focus_layer(&server, nullptr);
     }
 }
 
@@ -304,12 +290,10 @@ void LayerSurface::commit_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
-    if (layer_surface->surface->output == nullptr) {
-        return;
-    }
-    auto* output = static_cast<Output*>(layer_surface->surface->output->data);
 
-    arrange_layers(server, output);
+    layer_surface->output.and_then([server](auto& output) {
+        arrange_layers(*server, output);
+    });
 
     bool layer_changed = layer_surface->layer != layer_surface->surface->current.layer;
     if (layer_changed) {
@@ -334,7 +318,7 @@ void LayerSurface::destroy_handler(struct wl_listener* listener, void*)
 
     server->layers[layer_surface->layer].remove_if([layer_surface](const auto& other) { return &other == layer_surface; });
     // we arrange in destroy and not in unmap because unmapping is always preceded by a commit event which should take care of it
-    layer_surface->output.and_then([server](auto& out) { arrange_layers(server, &out); });
+    layer_surface->output.and_then([server](auto& out) { arrange_layers(*server, out); });
 }
 
 void LayerSurface::map_handler(struct wl_listener* listener, void*)
@@ -363,7 +347,7 @@ void LayerSurface::new_popup_handler(struct wl_listener* listener, void* data)
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
-    create_layer_popup(server, wlr_popup, layer_surface);
+    create_layer_popup(*server, wlr_popup, layer_surface);
 }
 
 void LayerSurface::output_destroy_handler(struct wl_listener* listener, void*)
@@ -419,7 +403,7 @@ void LayerSurfacePopup::new_popup_handler(struct wl_listener* listener, void* da
     auto* popup = get_listener_data<LayerSurfacePopup*>(listener);
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
-    create_layer_popup(server, wlr_popup, popup->parent);
+    create_layer_popup(*server, wlr_popup, popup->parent);
 }
 
 void LayerSurfacePopup::map_handler(struct wl_listener* listener, void*)
