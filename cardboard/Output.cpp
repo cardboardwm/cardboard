@@ -49,13 +49,13 @@ void register_output(Server& server, Output&& output_)
 }
 
 /// Arrange the workspace associated with \a output.
-static void arrange_output(Server* server, Output* output)
+static void arrange_output(Server& server, Output& output)
 {
-    auto ws_it = std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
-    if (ws_it == server->workspaces.end()) {
+    auto ws_it = std::find_if(server.workspaces.begin(), server.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
+    if (ws_it == server.workspaces.end()) {
         return;
     }
-    ws_it->arrange_workspace(server->output_manager);
+    ws_it->arrange_workspace(server.output_manager);
 }
 
 static void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
@@ -90,9 +90,9 @@ static void render_surface(struct wlr_surface* surface, int sx, int sy, void* da
     wlr_surface_send_frame_done(surface, rdata->when);
 }
 
-static void render_workspace(Server* server, Workspace& ws, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_workspace(Server& server, Workspace& ws, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    View* focused_view = server->seat.get_focused_view();
+    View* focused_view = server.seat.get_focused_view();
 
     bool focused_tiled = false;
     for (const auto& tile : ws.tiles) {
@@ -107,7 +107,7 @@ static void render_workspace(Server* server, Workspace& ws, struct wlr_output* w
             .lx = tile.view->x,
             .ly = tile.view->y,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         tile.view->for_each_surface(render_surface, &rdata);
@@ -120,16 +120,16 @@ static void render_workspace(Server* server, Workspace& ws, struct wlr_output* w
             .lx = focused_view->x,
             .ly = focused_view->y,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         focused_view->for_each_surface(render_surface, &rdata);
     }
 }
 
-static void render_floating(Server* server, Workspace& ws, View* ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_floating(Server& server, Workspace& ws, View* ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    View* focused_view = server->seat.get_focused_view();
+    View* focused_view = server.seat.get_focused_view();
 
     bool focused_floating = false;
     for (const auto& view : ws.floating_views) {
@@ -144,7 +144,7 @@ static void render_floating(Server* server, Workspace& ws, View* ancestor, struc
             .lx = view->x,
             .ly = view->y,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         view->for_each_surface(render_surface, &rdata);
@@ -157,28 +157,28 @@ static void render_floating(Server* server, Workspace& ws, View* ancestor, struc
             .lx = focused_view->x,
             .ly = focused_view->y,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         focused_view->for_each_surface(render_surface, &rdata);
     }
 }
 
-static void render_layer(Server* server, LayerArray::value_type& surfaces, NotNullPointer<Output> output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_layer(Server& server, LayerArray::value_type& surfaces, Output& output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    const struct wlr_box* output_box = server->output_manager.get_output_box(*output);
+    const struct wlr_box* output_box = server.output_manager.get_output_box(output);
     for (const auto& surface : surfaces) {
-        if (!surface.surface->mapped || !surface.is_on_output(*output)) {
+        if (!surface.surface->mapped || !surface.is_on_output(output)) {
             continue;
         }
 
         RenderData rdata = {
-            .output = output->wlr_output,
+            .output = output.wlr_output,
             .renderer = renderer,
             .lx = surface.geometry.x + output_box->x,
             .ly = surface.geometry.y + output_box->y,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         wlr_layer_surface_v1_for_each_surface(surface.surface, render_surface, &rdata);
@@ -186,16 +186,16 @@ static void render_layer(Server* server, LayerArray::value_type& surfaces, NotNu
 }
 
 #if HAVE_XWAYLAND
-static void render_xwayland_or_surface(Server* server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_xwayland_or_surface(Server& server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    for (const auto xwayland_or_surface : server->xwayland_or_surfaces) {
+    for (const auto xwayland_or_surface : server.xwayland_or_surfaces) {
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
             .lx = xwayland_or_surface->lx,
             .ly = xwayland_or_surface->ly,
             .when = now,
-            .server = server
+            .server = &server
         };
 
         wlr_surface_for_each_surface(xwayland_or_surface->xwayland_surface->surface, render_surface, &rdata);
@@ -253,29 +253,29 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    auto& ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && &other.output.unwrap() == output; });
+    auto& ws = *std::find_if(server->workspaces.begin(), server->workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
     if (ws.fullscreen_view) {
-        render_workspace(server, ws, wlr_output, renderer, &now);
+        render_workspace(*server, ws, wlr_output, renderer, &now);
 #if HAVE_XWAYLAND
-        render_xwayland_or_surface(server, wlr_output, renderer, &now);
+        render_xwayland_or_surface(*server, wlr_output, renderer, &now);
 #endif
-        render_floating(server, ws, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
+        render_floating(*server, ws, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
     } else {
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], output, renderer, &now);
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], output, renderer, &now);
+        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
+        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
-        render_workspace(server, ws, wlr_output, renderer, &now);
+        render_workspace(*server, ws, wlr_output, renderer, &now);
         wlr_renderer_scissor(renderer, nullptr);
 
 #if HAVE_XWAYLAND
-        render_xwayland_or_surface(server, wlr_output, renderer, &now);
+        render_xwayland_or_surface(*server, wlr_output, renderer, &now);
 #endif
 
-        render_floating(server, ws, nullptr, wlr_output, renderer, &now);
-        render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], output, renderer, &now);
+        render_floating(*server, ws, nullptr, wlr_output, renderer, &now);
+        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
     }
-    render_layer(server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], output, renderer, &now);
+    render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], *output, renderer, &now);
 
     // in case of software rendered cursor, render it
     wlr_output_render_software_cursors(wlr_output, nullptr);
@@ -315,7 +315,7 @@ void Output::mode_handler(struct wl_listener* listener, void*)
     auto* output = get_listener_data<Output*>(listener);
 
     arrange_layers(*server, *output);
-    arrange_output(server, output);
+    arrange_output(*server, *output);
 }
 
 void Output::transform_handler(struct wl_listener* listener, void*)
@@ -324,7 +324,7 @@ void Output::transform_handler(struct wl_listener* listener, void*)
     auto* output = get_listener_data<Output*>(listener);
 
     arrange_layers(*server, *output);
-    arrange_output(server, output);
+    arrange_output(*server, *output);
 }
 
 void Output::scale_handler(struct wl_listener* listener, void*)
@@ -333,5 +333,5 @@ void Output::scale_handler(struct wl_listener* listener, void*)
     auto* output = get_listener_data<Output*>(listener);
 
     arrange_layers(*server, *output);
-    arrange_output(server, output);
+    arrange_output(*server, *output);
 }
