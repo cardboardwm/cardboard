@@ -122,12 +122,12 @@ XDGPopup::XDGPopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> pare
 
 void XDGPopup::unconstrain(Server* server)
 {
-    auto output = server->get_views_workspace(parent).output;
+    const auto output = server->get_views_workspace(parent).output;
     if (!output) {
         return;
     }
 
-    const struct wlr_box* output_box = server->output_manager.get_output_box(output.raw_pointer());
+    const struct wlr_box* output_box = server->output_manager.get_output_box(output.unwrap());
 
     // the output box expressed in the coordinate system of the
     // toplevel parent of the popup

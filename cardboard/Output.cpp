@@ -166,7 +166,7 @@ static void render_floating(Server* server, Workspace& ws, View* ancestor, struc
 
 static void render_layer(Server* server, LayerArray::value_type& surfaces, NotNullPointer<Output> output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    const struct wlr_box* output_box = server->output_manager.get_output_box(output);
+    const struct wlr_box* output_box = server->output_manager.get_output_box(*output);
     for (const auto& surface : surfaces) {
         if (!surface.surface->mapped || !surface.is_on_output(*output)) {
             continue;
@@ -306,7 +306,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     }
 
     server->listeners.clear_listeners(output);
-    server->output_manager.remove_output_from_list(output);
+    server->output_manager.remove_output_from_list(*output);
 }
 
 void Output::mode_handler(struct wl_listener* listener, void*)

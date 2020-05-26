@@ -76,7 +76,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
     }
 
     int acc_width = 0;
-    const struct wlr_box* output_box = output_manager.get_output_box(output.raw_pointer());
+    const struct wlr_box* output_box = output_manager.get_output_box(output.unwrap());
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
     fullscreen_view.and_then([output_box](auto& view) {
@@ -118,7 +118,7 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View* view, bo
     }
 
     const auto& output = this->output.unwrap();
-    const struct wlr_box* output_box = output_manager.get_output_box(&output);
+    const struct wlr_box* output_box = output_manager.get_output_box(output);
 
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
@@ -148,7 +148,7 @@ View* Workspace::find_dominant_view(OutputManager& output_manager, View* focused
     View* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
-    const auto usable_area = output_manager.get_output_real_usable_area(output.raw_pointer());
+    const auto usable_area = output_manager.get_output_real_usable_area(output.unwrap());
     for (auto& tile : tiles) {
         auto* view = tile.view;
         if (!view->mapped) {

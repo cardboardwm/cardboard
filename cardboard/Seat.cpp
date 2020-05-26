@@ -469,7 +469,7 @@ void Seat::update_swipe(Server* server)
 OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
 {
     for (auto& ws : server->workspaces) {
-        if (ws.output && server->output_manager.output_contains_point(ws.output.raw_pointer(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+        if (ws.output && server->output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
@@ -546,9 +546,8 @@ void Seat::focus(Server* server, Workspace* workspace)
         previous_workspace.deactivate();
     }
 
-    Output& output = workspace->output.unwrap();
-
-    const struct wlr_box* output_box = server->output_manager.get_output_box(&output);
+    const Output& output = workspace->output.unwrap();
+    const struct wlr_box* output_box = server->output_manager.get_output_box(output);
 
     cursor_warp(
         *server,

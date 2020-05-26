@@ -199,7 +199,7 @@ inline CommandResult cycle_width(Server* server)
     }
 
     server->get_views_workspace(focused_view).output.and_then([server, focused_view](const auto& output) {
-        const struct wlr_box* output_box = server->output_manager.get_output_box(&output);
+        const struct wlr_box* output_box = server->output_manager.get_output_box(output);
         focused_view->cycle_width(output_box->width);
     });
     return { "" };

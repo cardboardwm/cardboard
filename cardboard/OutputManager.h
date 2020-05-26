@@ -20,19 +20,19 @@ struct OutputManager {
     void register_handlers(Server& server, struct wl_signal* new_output);
 
     /// Returns the box of an output in the output layout.
-    NotNullPointer<const struct wlr_box> get_output_box(NotNullPointer<const Output>) const;
+    NotNullPointer<const struct wlr_box> get_output_box(const Output& output) const;
 
     /// Returns the usable area of the \a output as a rectangle with its coordinates placed in the global (output layout) space.
-    struct wlr_box get_output_real_usable_area(NotNullPointer<const Output>) const;
+    struct wlr_box get_output_real_usable_area(const Output& output) const;
 
     /// Returns the output under the given point, if any.
     OptionalRef<Output> get_output_at(double lx, double ly) const;
 
     /// Returns true if the \a reference output contains the given point.
-    bool output_contains_point(NotNullPointer<const Output> reference, int lx, int ly) const;
+    bool output_contains_point(const Output& reference, int lx, int ly) const;
 
     /// Removes \a output from the output list. Doesn't do anything else.
-    void remove_output_from_list(NotNullPointer<Output> output);
+    void remove_output_from_list(Output& output);
 
 private:
     /**
