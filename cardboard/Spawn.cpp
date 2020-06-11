@@ -1,10 +1,18 @@
 #include "Spawn.h"
 
+template<typename ...Args>
+static void ignore(Args&& ...)
+{
+}
+
 std::error_code spawn(std::function<int()> fn)
 {
     // credits: http://www.lubutu.com/code/spawning-in-unix
     int fd[2];
-    pipe(fd);
+    if (pipe(fd) == -1) {
+        int err = errno;
+        return std::error_code(err, std::generic_category());
+    }
     if (fork() == 0) {
         close(fd[0]);
         fcntl(fd[1], F_SETFD, FD_CLOEXEC);
@@ -12,7 +20,7 @@ std::error_code spawn(std::function<int()> fn)
         setsid();
         int status = fn();
 
-        write(fd[1], &errno, sizeof(errno));
+        ignore(write(fd[1], &errno, sizeof(errno)));
         exit(status);
     }
 
