@@ -1,7 +1,7 @@
 #include "Spawn.h"
 
-template<typename ...Args>
-static void ignore(Args&& ...)
+template <typename... Args>
+static void ignore(Args&&...)
 {
 }
 
