@@ -48,7 +48,7 @@ void Workspace::add_view(OutputManager& output_manager, View* view, View* next_t
         if (output) {
             view->set_activated(true);
         }
-        view->change_output(nullptr, output);
+        view->change_output(NullRef<Output>, output);
     }
 
     arrange_workspace(output_manager);
@@ -61,7 +61,7 @@ void Workspace::remove_view(OutputManager& output_manager, View* view, bool tran
             fullscreen_view = NullRef<View>;
         }
         view->set_activated(false);
-        view->change_output(output, nullptr);
+        view->change_output(output, NullRef<Output>);
     }
     tiles.remove_if([view](auto& other) { return other.view == view; });
     floating_views.remove(view);

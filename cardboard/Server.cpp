@@ -244,12 +244,12 @@ void Server::map_view(View* view)
 {
     view->mapped = true;
 
-    auto* prev_focused = seat.get_focused_view();
+    auto* prev_focused = seat.get_focused_view().raw_pointer();
 
-    seat.get_focused_workspace(this).and_then([this, view, prev_focused](auto& ws) {
+    seat.get_focused_workspace(*this).and_then([this, view, prev_focused](auto& ws) {
         ws.add_view(output_manager, view, prev_focused);
     });
-    seat.focus_view(this, view);
+    seat.focus_view(*this, *view);
 }
 
 void Server::unmap_view(View* view)
@@ -259,8 +259,8 @@ void Server::unmap_view(View* view)
         get_views_workspace(view).remove_view(output_manager, view);
     }
 
-    seat.hide_view(this, view);
-    seat.remove_from_focus_stack(view);
+    seat.hide_view(*this, *view);
+    seat.remove_from_focus_stack(*view);
 }
 
 void Server::move_view_to_front(View* view)
@@ -361,7 +361,7 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
         output_to_assign = OptionalRef(static_cast<Output*>(layer_surface->output->data));
     } else {
         // Assigns output of the focused workspace
-        output_to_assign = server->seat.get_focused_workspace(server)
+        output_to_assign = server->seat.get_focused_workspace(*server)
                                .and_then<Output>([](auto& ws) { return ws.output; })
                                .or_else([server]() {
                                    if (server->output_manager.outputs.empty()) {

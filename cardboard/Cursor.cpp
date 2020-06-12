@@ -102,5 +102,5 @@ void cursor_rebase(Server& server, Seat& seat, SeatCursor& cursor, uint32_t time
 void cursor_warp(Server& server, Seat& seat, SeatCursor& cursor, int lx, int ly)
 {
     wlr_cursor_warp(cursor.wlr_cursor, nullptr, lx, ly);
-    seat.process_cursor_motion(&server);
+    seat.process_cursor_motion(server);
 }

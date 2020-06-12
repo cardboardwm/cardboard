@@ -5,6 +5,7 @@ extern "C" {
 #include <wlr/types/wlr_input_device.h>
 }
 
+#include "Helpers.h"
 #include "Keyboard.h"
 #include "Server.h"
 
@@ -13,7 +14,7 @@ void KeyboardHandleData::destroy_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto handle_data = get_listener_data<KeyboardHandleData>(listener);
 
-    server->listeners.clear_listeners(KeyboardHandleData { handle_data.seat, handle_data.keyboard, handle_data.config });
+    server->listeners.clear_listeners(handle_data);
 
     handle_data.seat->keyboards.erase(std::remove_if(handle_data.seat->keyboards.begin(), handle_data.seat->keyboards.end(), [&handle_data](const auto& other) {
                                           return handle_data.keyboard == &other;
@@ -79,4 +80,15 @@ void KeyboardHandleData::key_handler(struct wl_listener* listener, void* data)
         wlr_seat_set_keyboard(handle_data.seat->wlr_seat, handle_data.keyboard->device);
         wlr_seat_keyboard_notify_key(handle_data.seat->wlr_seat, event->time_msec, event->keycode, event->state);
     }
+}
+
+void register_keyboard_handlers(Server& server, Seat& seat, Keyboard& keyboard)
+{
+    register_handlers(server,
+                      KeyboardHandleData { &seat, &keyboard, &server.keybindings_config },
+                      {
+                          { &keyboard.device->keyboard->events.key, KeyboardHandleData::key_handler },
+                          { &keyboard.device->keyboard->events.modifiers, KeyboardHandleData::modifiers_handler },
+                          { &keyboard.device->keyboard->events.destroy, KeyboardHandleData::destroy_handler },
+                      });
 }

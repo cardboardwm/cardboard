@@ -246,8 +246,8 @@ void arrange_layers(Server& server, Output& output)
         auto ws_it = std::find_if(server.workspaces.begin(), server.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
         assert(ws_it != server.workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
-        if (auto focused_view = server.seat.get_focused_view(); focused_view != nullptr && focused_view->workspace_id == ws_it->index) {
-            ws_it->fit_view_on_screen(server.output_manager, focused_view);
+        if (auto focused_view = server.seat.get_focused_view(); focused_view.has_value() && focused_view.unwrap().workspace_id == ws_it->index) {
+            ws_it->fit_view_on_screen(server.output_manager, focused_view.raw_pointer());
         } else {
             ws_it->arrange_workspace(server.output_manager);
         }
@@ -280,9 +280,9 @@ void arrange_layers(Server& server, Output& output)
     }
 
     if (topmost != nullptr) {
-        server.seat.focus_layer(&server, topmost->surface);
+        server.seat.focus_layer(server, topmost->surface);
     } else if (server.seat.focused_layer && !(*server.seat.focused_layer)->current.keyboard_interactive) {
-        server.seat.focus_layer(&server, nullptr);
+        server.seat.focus_layer(server, nullptr);
     }
 }
 
@@ -336,7 +336,7 @@ void LayerSurface::unmap_handler(struct wl_listener* listener, void*)
     auto* layer_surface = get_listener_data<LayerSurface*>(listener);
 
     if (server->seat.focused_layer == layer_surface->surface) {
-        server->seat.focus_layer(server, nullptr);
+        server->seat.focus_layer(*server, nullptr);
     }
     //server->seat.cursor.rebase(server);
 }
@@ -377,7 +377,7 @@ void LayerSurface::output_destroy_handler(struct wl_listener* listener, void*)
                 }
             }
             if (layer_surface_to_focus != nullptr) {
-                server->seat.focus_layer(server, layer_surface_to_focus->surface);
+                server->seat.focus_layer(*server, layer_surface_to_focus->surface);
             }
         }
     }

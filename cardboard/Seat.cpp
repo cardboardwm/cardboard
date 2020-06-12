@@ -16,6 +16,53 @@ extern "C" {
 #include "Server.h"
 #include "ViewManager.h"
 
+static void add_keyboard(Server& server, Seat& seat, struct wlr_input_device* device)
+{
+    seat.keyboards.push_back(Keyboard { device });
+    auto& keyboard = seat.keyboards.back();
+    keyboard.device->data = &keyboard;
+
+    struct xkb_rule_names rules = {};
+    struct xkb_context* context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    struct xkb_keymap* keymap = xkb_map_new_from_names(context, &rules, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    wlr_keyboard_set_keymap(device->keyboard, keymap);
+    xkb_keymap_unref(keymap);
+    xkb_context_unref(context);
+    wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
+
+    register_keyboard_handlers(server, seat, keyboard);
+
+    wlr_seat_set_keyboard(seat.wlr_seat, device);
+}
+
+static void add_pointer(Seat& seat, struct wlr_input_device* device)
+{
+    wlr_cursor_attach_input_device(seat.cursor.wlr_cursor, device);
+}
+
+static void add_input_device(Server& server, Seat& seat, struct wlr_input_device* device)
+{
+    switch (device->type) {
+    case WLR_INPUT_DEVICE_KEYBOARD:
+        add_keyboard(server, seat, device);
+        break;
+    case WLR_INPUT_DEVICE_POINTER:
+        add_pointer(seat, device);
+        break;
+    default:
+        // TODO: touchscreens and drawing tablets
+        break;
+    }
+
+    // set pointer capability even if there is no mouse attached
+    uint32_t capabilities = WL_SEAT_CAPABILITY_POINTER;
+    if (!seat.keyboards.empty()) {
+        capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
+    }
+    wlr_seat_set_capabilities(seat.wlr_seat, capabilities);
+}
+
 void init_seat(Server& server, Seat& seat, const char* name)
 {
     seat.wlr_seat = wlr_seat_create(server.wl_display, name);
@@ -45,87 +92,36 @@ void init_seat(Server& server, Seat& seat, const char* name)
 
 void Seat::register_handlers(Server& server, struct wl_signal* new_input)
 {
-    ::register_handlers(server, this, {
-                                          { new_input, Seat::new_input_handler },
-                                          { &inhibit_manager->events.activate, Seat::activate_inhibit_handler },
-                                          { &inhibit_manager->events.deactivate, Seat::deactivate_inhibit_handler },
-                                      });
-}
-
-void Seat::add_input_device(Server* server, struct wlr_input_device* device)
-{
-    switch (device->type) {
-    case WLR_INPUT_DEVICE_KEYBOARD:
-        add_keyboard(server, device);
-        break;
-    case WLR_INPUT_DEVICE_POINTER:
-        add_pointer(device);
-        break;
-    default:
-        // TODO: touchscreens and drawing tablets
-        break;
-    }
-
-    // set pointer capability even if there is no mouse attached
-    uint32_t capabilities = WL_SEAT_CAPABILITY_POINTER;
-    if (!keyboards.empty()) {
-        capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
-    }
-    wlr_seat_set_capabilities(wlr_seat, capabilities);
-}
-
-void Seat::add_keyboard(Server* server, struct wlr_input_device* device)
-{
-    keyboards.push_back(Keyboard { device });
-    auto& keyboard = keyboards.back();
-    keyboard.device->data = &keyboard;
-
-    struct xkb_rule_names rules = {};
-    struct xkb_context* context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-    struct xkb_keymap* keymap = xkb_map_new_from_names(context, &rules, XKB_KEYMAP_COMPILE_NO_FLAGS);
-
-    wlr_keyboard_set_keymap(device->keyboard, keymap);
-    xkb_keymap_unref(keymap);
-    xkb_context_unref(context);
-    wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
-
-    ::register_handlers(*server,
-                        KeyboardHandleData { this, &keyboard, &server->keybindings_config },
+    ::register_handlers(server,
+                        this,
                         {
-                            { &device->keyboard->events.key, KeyboardHandleData::key_handler },
-                            { &device->keyboard->events.modifiers, KeyboardHandleData::modifiers_handler },
-                            { &device->keyboard->events.destroy, KeyboardHandleData::destroy_handler },
+                            { new_input, Seat::new_input_handler },
+                            { &inhibit_manager->events.activate, Seat::activate_inhibit_handler },
+                            { &inhibit_manager->events.deactivate, Seat::deactivate_inhibit_handler },
                         });
-
-    wlr_seat_set_keyboard(wlr_seat, device);
 }
 
-void Seat::add_pointer(struct wlr_input_device* device)
-{
-    wlr_cursor_attach_input_device(cursor.wlr_cursor, device);
-}
-
-View* Seat::get_focused_view()
+OptionalRef<View> Seat::get_focused_view()
 {
     if (wlr_seat->keyboard_state.focused_surface == nullptr) {
-        return nullptr;
+        return NullRef<View>;
     }
     if (focus_stack.empty()) {
-        return nullptr;
+        return NullRef<View>;
     }
 
-    return focus_stack.front();
+    return OptionalRef(focus_stack.front());
 }
 
-void Seat::hide_view(Server* server, View* view)
+void Seat::hide_view(Server& server, View& view)
 {
     // focus last focused window mapped to an active workspace
-    if (get_focused_view() == view && !focus_stack.empty()) {
-        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [view](auto* v) -> bool {
-            return v != view && v->mapped;
+    if (get_focused_view().raw_pointer() == &view && !focus_stack.empty()) {
+        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [&view](auto* v) -> bool {
+            return v != &view && v->mapped;
         });
         if (to_focus != focus_stack.end()) {
-            focus_view(server, *to_focus, true);
+            focus_view(server, **to_focus, true);
         }
     }
 }
@@ -135,7 +131,7 @@ void Seat::focus_surface(struct wlr_surface* surface)
     keyboard_notify_enter(surface);
 }
 
-void Seat::focus_view(Server* server, View* view, bool condense_workspace)
+void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_workspace)
 {
     if (focused_layer) {
         auto* layer = *focused_layer;
@@ -146,7 +142,7 @@ void Seat::focus_view(Server* server, View* view, bool condense_workspace)
         return;
     }
     // unfocus the currently focused view
-    View* prev_view = get_focused_view();
+    auto prev_view = get_focused_view();
     if (prev_view == view) {
         if (!view) {
             return;
@@ -155,11 +151,11 @@ void Seat::focus_view(Server* server, View* view, bool condense_workspace)
     }
 
     if (view) {
-        auto& ws = server->get_views_workspace(view);
+        auto& ws = server.get_views_workspace(&view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
-        if (ws.fullscreen_view && ws.fullscreen_view.raw_pointer() != view) {
+        if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
-            if (!view->is_transient_for(ws.fullscreen_view.raw_pointer())) {
+            if (!view.unwrap().is_transient_for(ws.fullscreen_view.raw_pointer())) {
                 return;
             }
         }
@@ -167,47 +163,50 @@ void Seat::focus_view(Server* server, View* view, bool condense_workspace)
 
     if (prev_view) {
         // deactivate previous surface
-        prev_view->close_popups();
-        prev_view->set_activated(false);
+        prev_view.unwrap().close_popups();
+        prev_view.unwrap().set_activated(false);
         wlr_seat_keyboard_clear_focus(wlr_seat);
     }
 
     // if the view is null, then focus_view will only
     // unfocus the previously focused one
-    if (view == nullptr) {
+    if (!view) {
         return;
     }
 
-    if (!is_input_allowed(view->get_surface())) {
-        return;
-    }
+    {
+        auto& view_r = view.unwrap();
+        if (!is_input_allowed(view_r.get_surface())) {
+            return;
+        }
 
-    // put view at the beginning of the focus stack
-    if (auto it = std::find(focus_stack.begin(), focus_stack.end(), view); it != focus_stack.end()) {
-        focus_stack.splice(focus_stack.begin(), focus_stack, it);
-    } else {
-        focus_stack.push_front(view);
-    }
+        // put view at the beginning of the focus stack
+        if (auto it = std::find(focus_stack.begin(), focus_stack.end(), &view_r); it != focus_stack.end()) {
+            focus_stack.splice(focus_stack.begin(), focus_stack, it);
+        } else {
+            focus_stack.push_front(&view_r);
+        }
 
-    // move the view to the front
-    server->move_view_to_front(view);
-    // activate surface
-    view->set_activated(true);
-    // the seat will send keyboard events to the view automatically
-    keyboard_notify_enter(view->get_surface());
+        // move the view_r to the front
+        server.move_view_to_front(&view_r);
+        // activate surface
+        view_r.set_activated(true);
+        // the seat will send keyboard events to the view automatically
+        keyboard_notify_enter(view_r.get_surface());
+    }
 
 fit_on_screen:
     // noop if the view is floating
-    server->get_views_workspace(view).fit_view_on_screen(server->output_manager, view, condense_workspace);
+    server.get_views_workspace(&view.unwrap()).fit_view_on_screen(server.output_manager, &view.unwrap(), condense_workspace);
 }
 
-void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
+void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
 {
     if (!layer && focused_layer) {
         focused_layer = std::nullopt;
-        auto* focused_view = get_focused_view();
+        auto focused_view = get_focused_view();
         if (focused_view) {
-            focus_view(server, nullptr); // to clear focus on the layer
+            focus_view(server, NullRef<View>); // to clear focus on the layer
             focus_view(server, focused_view);
         }
         return;
@@ -222,104 +221,104 @@ void Seat::focus_layer(Server* server, struct wlr_layer_surface_v1* layer)
     }
 }
 
-void Seat::focus_by_offset(Server* server, int offset)
+void Seat::focus_by_offset(Server& server, int offset)
 {
-    if (offset == 0 || get_focused_view() == nullptr) {
+    if (offset == 0 || get_focused_view() == NullRef<View>) {
         return;
     }
 
-    auto* focused_view = get_focused_view();
-    if (focused_view == nullptr) {
+    auto focused_view_ = get_focused_view();
+    if (!focused_view_) {
         return;
     }
-    auto ws = server->get_views_workspace(focused_view);
-    if (ws.is_view_floating(focused_view)) {
+    auto& focused_view = focused_view_.unwrap();
+    auto ws = server.get_views_workspace(&focused_view);
+    if (ws.is_view_floating(&focused_view)) {
         return;
     }
 
-    auto it = ws.find_tile(focused_view);
+    auto it = ws.find_tile(&focused_view);
     if (int index = std::distance(ws.tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.tiles.size())) {
         // out of bounds
         return;
     }
 
     std::advance(it, offset);
-    focus_view(server, it->view);
+    focus_view(server, OptionalRef(it->view));
 }
 
-void Seat::remove_from_focus_stack(View* view)
+void Seat::remove_from_focus_stack(View& view)
 {
-    focus_stack.remove(view);
+    focus_stack.remove(&view);
 }
 
-void Seat::begin_move(Server*, View* view)
+void Seat::begin_move(Server&, View& view)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
-    if (view->get_surface() != focused_surface) {
+    if (view.get_surface() != focused_surface) {
         // don't handle the request if the view is not in pointer focus
         return;
     }
 
     grab_state = {
-        .view = view,
         .grab_data = GrabState::Move {
+            .view = &view,
             .lx = cursor.wlr_cursor->x,
             .ly = cursor.wlr_cursor->y,
-            .view_x = view->x,
-            .view_y = view->y,
+            .view_x = view.x,
+            .view_y = view.y,
         },
     };
 }
 
-void Seat::begin_resize(Server* server, View* view, uint32_t edges)
+void Seat::begin_resize(Server& server, View& view, uint32_t edges)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
-    if (view->get_surface() != focused_surface) {
+    if (view.get_surface() != focused_surface) {
         // don't handle the request if the view is not in pointer focus
         return;
     }
 
-    auto& workspace = server->get_views_workspace(view);
+    auto& workspace = server.get_views_workspace(&view);
     grab_state = {
-        .view = view,
         .grab_data = GrabState::Resize {
+            .view = &view,
             .lx = cursor.wlr_cursor->x,
             .ly = cursor.wlr_cursor->y,
-            .geometry = view->geometry,
+            .geometry = view.geometry,
             .resize_edges = edges,
             .workspace = workspace,
             .scroll_x = workspace.scroll_x,
-            .view_x = view->x,
-            .view_y = view->y,
+            .view_x = view.x,
+            .view_y = view.y,
         },
     };
 }
 
-void Seat::begin_workspace_scroll(Server* server, Workspace* workspace)
+void Seat::begin_workspace_scroll(Server& server, Workspace& workspace)
 {
     end_interactive(server);
 
     grab_state = {
-        .view = nullptr,
         .grab_data = GrabState::WorkspaceScroll {
-            .workspace = workspace,
+            .workspace = &workspace,
             .dominant_view = get_focused_view(),
             .speed = 0,
             .delta_since_update = 0,
-            .scroll_x = static_cast<double>(workspace->scroll_x),
+            .scroll_x = static_cast<double>(workspace.scroll_x),
             .ready = false,
             .wants_to_stop = false,
         },
     };
 }
 
-void Seat::process_cursor_motion(Server* server, uint32_t time)
+void Seat::process_cursor_motion(Server& server, uint32_t time)
 {
     if (grab_state) {
         std::visit(
-            [this, server](auto&& arg) {
+            [this, &server](auto&& arg) {
                 using T = std::decay_t<decltype(arg)>;
 
                 if constexpr (std::is_same_v<T, GrabState::Move>) {
@@ -331,29 +330,29 @@ void Seat::process_cursor_motion(Server* server, uint32_t time)
             grab_state->grab_data);
         return;
     }
-    cursor_rebase(*server, *this, cursor, time);
+    cursor_rebase(server, *this, cursor, time);
 }
 
-void Seat::process_cursor_move(Server* server, GrabState::Move move_data)
+void Seat::process_cursor_move(Server& server, GrabState::Move move_data)
 {
     assert(grab_state.has_value());
 
     double dx = cursor.wlr_cursor->x - move_data.lx;
     double dy = cursor.wlr_cursor->y - move_data.ly;
 
-    View* view = grab_state->view;
+    View* view = move_data.view;
 
-    reconfigure_view_position(server, view, move_data.view_x + dx, move_data.view_y + dy);
+    reconfigure_view_position(server, *view, move_data.view_x + dx, move_data.view_y + dy);
 }
 
-void Seat::process_cursor_resize(Server* server, GrabState::Resize resize_data)
+void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
 {
     assert(grab_state.has_value());
 
     double dx = cursor.wlr_cursor->x - resize_data.lx;
     double dy = cursor.wlr_cursor->y - resize_data.ly;
-    double x = grab_state->view->x;
-    double y = grab_state->view->y;
+    double x = resize_data.view->x;
+    double y = resize_data.view->y;
     double width = resize_data.geometry.width;
     double height = resize_data.geometry.height;
 
@@ -374,21 +373,21 @@ void Seat::process_cursor_resize(Server* server, GrabState::Resize resize_data)
         width += dx;
     }
 
-    reconfigure_view_position(server, grab_state->view, x, y);
-    reconfigure_view_size(server, grab_state->view, width, height);
+    reconfigure_view_position(server, *resize_data.view, x, y);
+    reconfigure_view_size(server, *resize_data.view, width, height);
 }
 
-void Seat::process_swipe_begin(Server* server, uint32_t fingers)
+void Seat::process_swipe_begin(Server& server, uint32_t fingers)
 {
     end_touchpad_swipe(server);
     if (fingers == WORKSPACE_SCROLL_FINGERS) {
-        get_focused_workspace(server).and_then([this, server](auto& ws) {
-            begin_workspace_scroll(server, &ws);
+        get_focused_workspace(server).and_then([this, &server](auto& ws) {
+            begin_workspace_scroll(server, ws);
         });
     }
 }
 
-void Seat::process_swipe_update(Server* server, uint32_t fingers, double dx, double)
+void Seat::process_swipe_update(Server& server, uint32_t fingers, double dx)
 {
     GrabState::WorkspaceScroll* data;
     if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
@@ -403,7 +402,7 @@ void Seat::process_swipe_update(Server* server, uint32_t fingers, double dx, dou
     data->ready = true;
 }
 
-void Seat::process_swipe_end(Server*)
+void Seat::process_swipe_end(Server&)
 {
     GrabState::WorkspaceScroll* data;
     if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
@@ -414,17 +413,17 @@ void Seat::process_swipe_end(Server*)
     wlr_log(WLR_DEBUG, "fingers were lifted - swipe stopping");
 }
 
-void Seat::end_interactive(Server* server)
+void Seat::end_interactive(Server& server)
 {
     grab_state = std::nullopt;
-    cursor_rebase(*server, *this, cursor);
+    cursor_rebase(server, *this, cursor);
 }
 
 /**
  * \brief During a touchpad swipe event, for some reason, we don't get a swipe end event if we lift less than the three fingers.
  * So we have to check for this situation in scrolling (usually happens with two fingers) and cursor moving (one finger) events.
  */
-void Seat::end_touchpad_swipe(Server* server)
+void Seat::end_touchpad_swipe(Server& server)
 {
     if (grab_state && std::holds_alternative<Seat::GrabState::WorkspaceScroll>(grab_state->grab_data)) {
         end_interactive(server);
@@ -432,7 +431,7 @@ void Seat::end_touchpad_swipe(Server* server)
     }
 }
 
-void Seat::update_swipe(Server* server)
+void Seat::update_swipe(Server& server)
 {
     GrabState::WorkspaceScroll* data;
     if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
@@ -449,27 +448,50 @@ void Seat::update_swipe(Server* server)
     }
 
     data->scroll_x -= data->speed;
-    scroll_workspace(server->output_manager, data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
-    if (auto* dominant = data->workspace->find_dominant_view(server->output_manager, get_focused_view()); dominant) {
-        data->dominant_view = dominant;
+    scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
+    if (auto* dominant = data->workspace->find_dominant_view(server.output_manager, get_focused_view().raw_pointer()); dominant) {
+        data->dominant_view = OptionalRef(dominant);
     }
     if (data->dominant_view) {
-        get_focused_view()->set_activated(false);
-        data->dominant_view->set_activated(true);
+        get_focused_view().and_then([](auto& view) {
+            view.set_activated(false);
+        });
+        data->dominant_view.unwrap().set_activated(true);
     }
 
     data->speed *= WORKSPACE_SCROLL_FRICTION;
 
     if (data->wants_to_stop && fabs(data->speed) < 1) {
-        focus_view(server, data->dominant_view);
+        focus_view(server, OptionalRef(data->dominant_view));
         end_touchpad_swipe(server);
     }
 }
 
-OptionalRef<Workspace> Seat::get_focused_workspace(Server* server)
+bool Seat::is_grabbing(View& view)
 {
-    for (auto& ws : server->workspaces) {
-        if (ws.output && server->output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+    if (!grab_state) {
+        return false;
+    }
+
+    bool result = false;
+    std::visit([&view, &result](auto&& arg) {
+        using T = std::decay_t<decltype(arg)>;
+
+        if constexpr (std::is_same_v<T, GrabState::Move> || std::is_same_v<T, GrabState::Resize>) {
+            result = &view == arg.view;
+        } else {
+            result = false;
+        }
+    },
+               grab_state->grab_data);
+
+    return result;
+}
+
+OptionalRef<Workspace> Seat::get_focused_workspace(Server& server)
+{
+    for (auto& ws : server.workspaces) {
+        if (ws.output && server.output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
@@ -488,14 +510,14 @@ void Seat::keyboard_notify_enter(struct wlr_surface* surface)
     wlr_seat_keyboard_notify_enter(wlr_seat, surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
 }
 
-void Seat::set_exclusive_client(Server* server, struct wl_client* client)
+void Seat::set_exclusive_client(Server& server, struct wl_client* client)
 {
     // deactivate inhibition
     if (!client) {
         exclusive_client = std::nullopt;
 
-        server->output_manager.get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([server](auto& output_under_cursor) {
-            arrange_layers(*server, output_under_cursor);
+        server.output_manager.get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([&server](auto& output_under_cursor) {
+            arrange_layers(server, output_under_cursor);
         });
         return;
     }
@@ -506,8 +528,8 @@ void Seat::set_exclusive_client(Server* server, struct wl_client* client)
     }
 
     // if the currently focused view is not the client, remove focus
-    if (auto* focused_view = get_focused_view(); focused_view != nullptr && wl_resource_get_client(focused_view->get_surface()->resource) != client) {
-        focus_view(server, nullptr);
+    if (auto focused_view = get_focused_view(); focused_view.has_value() && wl_resource_get_client(focused_view.unwrap().get_surface()->resource) != client) {
+        focus_view(server, NullRef<View>);
     }
 
     // if the seat has pointer focus on someone who is not the client, remove focus
@@ -534,37 +556,37 @@ bool Seat::is_mod_pressed(uint32_t mods)
     return (wlr_keyboard_get_modifiers(keyboard) & mods) == mods;
 }
 
-void Seat::focus(Server* server, Workspace* workspace)
+void Seat::focus(Server& server, Workspace& workspace)
 {
-    if (workspace == get_focused_workspace(server).raw_pointer()) {
+    if (&workspace == get_focused_workspace(server).raw_pointer()) {
         return;
     }
 
-    if (!workspace->output.has_value()) {
+    if (!workspace.output.has_value()) {
         Workspace& previous_workspace = get_focused_workspace(server).unwrap();
-        workspace->activate(previous_workspace.output.unwrap());
+        workspace.activate(previous_workspace.output.unwrap());
         previous_workspace.deactivate();
     }
 
-    const Output& output = workspace->output.unwrap();
-    const struct wlr_box* output_box = server->output_manager.get_output_box(output);
+    const Output& output = workspace.output.unwrap();
+    const struct wlr_box* output_box = server.output_manager.get_output_box(output);
 
     cursor_warp(
-        *server,
+        server,
         *this,
         cursor,
         output_box->x + output.usable_area.x + output.usable_area.width / 2,
         output_box->y + output.usable_area.y + output.usable_area.height / 2);
 
-    if (auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [workspace](View* view) {
-            return view->workspace_id == workspace->index;
+    if (auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [&workspace](View* view) {
+            return view->workspace_id == workspace.index;
         });
         last_focused_view != focus_stack.end()) {
-        focus_view(server, *last_focused_view);
+        focus_view(server, OptionalRef(*last_focused_view));
     } else {
-        focus_view(server, nullptr);
+        focus_view(server, NullRef<View>);
     }
-    cursor_rebase(*server, *this, cursor);
+    cursor_rebase(server, *this, cursor);
 }
 
 void Seat::new_input_handler(struct wl_listener* listener, void* data)
@@ -574,7 +596,7 @@ void Seat::new_input_handler(struct wl_listener* listener, void* data)
 
     auto* device = static_cast<struct wlr_input_device*>(data);
 
-    seat->add_input_device(server, device);
+    add_input_device(*server, *seat, device);
 }
 
 void Seat::activate_inhibit_handler(struct wl_listener* listener, void*)
@@ -582,7 +604,7 @@ void Seat::activate_inhibit_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* seat = get_listener_data<Seat*>(listener);
 
-    seat->set_exclusive_client(server, seat->inhibit_manager->active_client);
+    seat->set_exclusive_client(*server, seat->inhibit_manager->active_client);
 }
 
 void Seat::deactivate_inhibit_handler(struct wl_listener* listener, void*)
@@ -590,7 +612,7 @@ void Seat::deactivate_inhibit_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* seat = get_listener_data<Seat*>(listener);
 
-    seat->set_exclusive_client(server, nullptr);
+    seat->set_exclusive_client(*server, nullptr);
 }
 
 void Seat::request_cursor_handler(struct wl_listener* listener, void* data)
@@ -631,10 +653,10 @@ void Seat::cursor_motion_handler(struct wl_listener* listener, void* data)
     auto* event = static_cast<struct wlr_event_pointer_motion*>(data);
 
     // in case the user was doing a three finger swipe and lifted two fingers.
-    seat->end_touchpad_swipe(server);
+    seat->end_touchpad_swipe(*server);
 
     wlr_cursor_move(seat->cursor.wlr_cursor, event->device, event->delta_x, event->delta_y);
-    seat->process_cursor_motion(server, event->time_msec);
+    seat->process_cursor_motion(*server, event->time_msec);
 }
 
 void Seat::cursor_motion_absolute_handler(struct wl_listener* listener, void* data)
@@ -644,7 +666,7 @@ void Seat::cursor_motion_absolute_handler(struct wl_listener* listener, void* da
     auto* event = static_cast<struct wlr_event_pointer_motion_absolute*>(data);
 
     wlr_cursor_warp_absolute(seat->cursor.wlr_cursor, event->device, event->x, event->y);
-    seat->process_cursor_motion(server, event->time_msec);
+    seat->process_cursor_motion(*server, event->time_msec);
 }
 
 void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
@@ -656,7 +678,7 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
     if (event->state == WLR_BUTTON_RELEASED) {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
         // end grabbing
-        seat->end_interactive(server);
+        seat->end_interactive(*server);
         return;
     }
 
@@ -670,7 +692,7 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
     if (seat->is_mod_pressed(server->config.mouse_mods)) {
         if (event->button == BTN_LEFT) {
             cursor_set_image(*server, *seat, seat->cursor, "grab");
-            seat->begin_move(server, view);
+            seat->begin_move(*server, *view);
             wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_move
         } else if (event->button == BTN_RIGHT) {
             uint32_t edge = 0;
@@ -688,13 +710,13 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
             }
 
             cursor_set_image(*server, *seat, seat->cursor, image);
-            seat->begin_resize(server, view, edge);
+            seat->begin_resize(*server, *view, edge);
             wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_resize
         }
     } else {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
-        if (view != seat->get_focused_view()) {
-            seat->focus_view(server, view);
+        if (view != seat->get_focused_view().raw_pointer()) {
+            seat->focus_view(*server, OptionalRef(view));
         }
     }
 }
@@ -706,7 +728,7 @@ void Seat::cursor_axis_handler(struct wl_listener* listener, void* data)
     auto* event = static_cast<struct wlr_event_pointer_axis*>(data);
 
     // in case the user was doing a three finger swipe and lifted a finger
-    seat->end_touchpad_swipe(server);
+    seat->end_touchpad_swipe(*server);
 
     wlr_seat_pointer_notify_axis(seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
 }
@@ -724,7 +746,7 @@ void Seat::cursor_swipe_begin_handler(struct wl_listener* listener, void* data)
     auto* seat = get_listener_data<Seat*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_swipe_begin*>(data);
 
-    seat->process_swipe_begin(server, event->fingers);
+    seat->process_swipe_begin(*server, event->fingers);
 }
 
 void Seat::cursor_swipe_update_handler(struct wl_listener* listener, void* data)
@@ -733,7 +755,7 @@ void Seat::cursor_swipe_update_handler(struct wl_listener* listener, void* data)
     auto* seat = get_listener_data<Seat*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_swipe_update*>(data);
 
-    seat->process_swipe_update(server, event->fingers, event->dx, event->dy);
+    seat->process_swipe_update(*server, event->fingers, event->dx);
 }
 
 void Seat::cursor_swipe_end_handler(struct wl_listener* listener, void*)
@@ -741,5 +763,5 @@ void Seat::cursor_swipe_end_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* seat = get_listener_data<Seat*>(listener);
 
-    seat->process_swipe_end(server);
+    seat->process_swipe_end(*server);
 }

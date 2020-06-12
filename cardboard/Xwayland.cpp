@@ -18,8 +18,8 @@ XwaylandView::XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland
 void XwaylandView::destroy()
 {
     server->listeners.clear_listeners(this);
-    if (server->seat.grab_state && server->seat.grab_state->view == this) {
-        server->seat.end_interactive(server);
+    if (server->seat.is_grabbing(*this)) {
+        server->seat.end_interactive(*server);
     }
     server->views.remove_if([this](const auto x) { return this == x; });
     delete this;
@@ -309,8 +309,8 @@ void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, void
     if (server->seat.wlr_seat->keyboard_state.focused_surface == xwayland_or_surface->xwayland_surface->surface) {
         // restore focus to the last focused view
         if (!server->seat.focus_stack.empty()) {
-            server->seat.focus_view(server, nullptr);
-            server->seat.focus_view(server, server->seat.focus_stack.front());
+            server->seat.focus_view(*server, NullRef<View>);
+            server->seat.focus_view(*server, *server->seat.focus_stack.front());
         }
     }
 }

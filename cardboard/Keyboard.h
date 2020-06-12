@@ -99,7 +99,9 @@ private:
     /// Notifies the currently focused surface about the pressed state of the modifier keys.
     static void modifiers_handler(struct wl_listener* listener, void* data);
 
-    friend struct Seat;
+    friend void register_keyboard_handlers(Server& server, Seat& seat, Keyboard& keyboard);
 };
+
+void register_keyboard_handlers(Server& server, Seat& seat, Keyboard& keyboard);
 
 #endif // __CARDBOARD_KEYBOARD_H_

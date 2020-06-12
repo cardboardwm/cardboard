@@ -32,10 +32,12 @@ const double WORKSPACE_SCROLL_FRICTION = 0.9; ///< friction multiplier
 struct Seat {
     struct GrabState {
         struct Move {
+            NotNullPointer<View> view;
             double lx, ly;
             int view_x, view_y;
         };
         struct Resize {
+            NotNullPointer<View> view;
             double lx, ly;
             struct wlr_box geometry;
             uint32_t resize_edges;
@@ -44,15 +46,14 @@ struct Seat {
             int view_x, view_y;
         };
         struct WorkspaceScroll {
-            Workspace* workspace;
-            View* dominant_view;
+            NotNullPointer<Workspace> workspace;
+            OptionalRef<View> dominant_view;
             double speed; ///< scrolling speed
             double delta_since_update; ///< how much the fingers moved since the last update
             double scroll_x; ///< the scroll of the workspace stored as a double
             bool ready; ///< set to true after the fingers move for the first time
             bool wants_to_stop; ///< set to true after lifting the fingers off the touchpad
         };
-        View* view;
         std::variant<Move, Resize, WorkspaceScroll> grab_data;
     };
 
@@ -70,17 +71,10 @@ struct Seat {
 
     void register_handlers(Server& server, struct wl_signal* new_input);
 
-    /// Sets up a newly attached input device.
-    void add_input_device(Server* server, struct wlr_input_device* device);
-    /// Sets up a new keyboard device, with events and keymap.
-    void add_keyboard(Server* server, struct wlr_input_device* device);
-    /// Attaches a new pointer device (Server* server, e.g. mouse) to the cursor.
-    void add_pointer(struct wlr_input_device* device);
-
     /// Returns the currently focused View. It is defined as the View currently holding keyboard focus.
-    View* get_focused_view();
+    OptionalRef<View> get_focused_view();
     /// Hides the \a view from the screen without unmapping. Happens when a Workspace is deactivated.
-    void hide_view(Server* server, View* view);
+    void hide_view(Server& server, View& view);
     /// Gives keyboard focus to a plain surface (OR xwayland usually)
     void focus_surface(struct wlr_surface* surface);
     /**
@@ -88,40 +82,43 @@ struct Seat {
      *
      * If \a view is null, the previously focused view will be unfocused and no other view will be focused.
      */
-    void focus_view(Server* server, View* view, bool condense_workspace = false);
+    void focus_view(Server& server, OptionalRef<View> view, bool condense_workspace = false);
     /// Marks the layer as receiving keyboard focus from this seat.
-    void focus_layer(Server* server, struct wlr_layer_surface_v1* layer);
+    void focus_layer(Server& server, struct wlr_layer_surface_v1* layer);
     /**
      * \brief Focus the <em>offset</em>-nth tiled window to the right (or to the left if negative) of the currently
      * focused view.
      */
-    void focus_by_offset(Server* server, int offset);
+    void focus_by_offset(Server& server, int offset);
     /// Removes the \a view from the focus stack.
-    void remove_from_focus_stack(View* view);
+    void remove_from_focus_stack(View& view);
 
-    void begin_move(Server* server, View* view);
-    void begin_resize(Server* server, View* view, uint32_t edges);
-    void begin_workspace_scroll(Server* server, Workspace* workspace);
-    void process_cursor_motion(Server* server, uint32_t time = 0);
-    void process_cursor_move(Server*, GrabState::Move move_data);
-    void process_cursor_resize(Server*, GrabState::Resize resize_data);
-    void process_swipe_begin(Server* server, uint32_t fingers);
-    void process_swipe_update(Server* server, uint32_t fingers, double dx, double dy);
-    void process_swipe_end(Server* server);
-    void end_interactive(Server* server);
-    void end_touchpad_swipe(Server* server);
+    void begin_move(Server& server, View& view);
+    void begin_resize(Server& server, View& view, uint32_t edges);
+    void begin_workspace_scroll(Server& server, Workspace& workspace);
+    void process_cursor_motion(Server& server, uint32_t time = 0);
+    void process_cursor_move(Server&, GrabState::Move move_data);
+    void process_cursor_resize(Server&, GrabState::Resize resize_data);
+    void process_swipe_begin(Server& server, uint32_t fingers);
+    void process_swipe_update(Server& server, uint32_t fingers, double dx);
+    void process_swipe_end(Server& server);
+    void end_interactive(Server& server);
+    void end_touchpad_swipe(Server& server);
 
     /// Updates the scroll of the workspace during three-finger swipe, taking in account speed and friction.
-    void update_swipe(Server* server);
+    void update_swipe(Server& server);
+
+    /// Returns true if the \a view is currently in a grab operation.
+    bool is_grabbing(View& view);
 
     /// Returns the workspace under the cursor.
-    OptionalRef<Workspace> get_focused_workspace(Server* server);
+    OptionalRef<Workspace> get_focused_workspace(Server& server);
 
     /// Moves the focus to a different workspace, if the workspace is already on a monitor, it focuses that monitor
-    void focus(Server* server, Workspace* workspace); // TODO: yikes, passing Server*
+    void focus(Server& server, Workspace& workspace); // TODO: yikes, passing Server*
 
     /// Considers a \a client as exclusive. Only the surfaces of the \a client will get input events.
-    void set_exclusive_client(Server* server, struct wl_client* client);
+    void set_exclusive_client(Server& server, struct wl_client* client);
     /**
      * \brief Returns true if input events can be delivered to \a surface.
      *

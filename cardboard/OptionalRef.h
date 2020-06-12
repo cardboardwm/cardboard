@@ -29,16 +29,14 @@ public:
     {
     }
 
-    OptionalRef(std::nullptr_t)
+    explicit OptionalRef(std::nullptr_t)
         : ptr(nullptr)
     {
     }
 
     T& unwrap()
     {
-        if (ptr == nullptr) {
-            assert("bad access");
-        }
+        assert(ptr != nullptr);
 
         return *ptr;
     }
@@ -46,9 +44,7 @@ public:
     /// Returns the reference. An assertion error will be generated if the reference is null.
     const T& unwrap() const
     {
-        if (ptr == nullptr) {
-            assert("bad access");
-        }
+        assert(ptr != nullptr);
 
         return *ptr;
     }
@@ -121,7 +117,7 @@ public:
     }
 
     /**
-     * \brief Gets the raw_pointer, could be useful
+     * \brief Gets the raw_pointer, could be useful. Doesn't check for nullptr.
      */
     T* raw_pointer()
     {

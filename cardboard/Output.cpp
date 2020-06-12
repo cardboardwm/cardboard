@@ -92,11 +92,11 @@ static void render_surface(struct wlr_surface* surface, int sx, int sy, void* da
 
 static void render_workspace(Server& server, Workspace& ws, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    View* focused_view = server.seat.get_focused_view();
+    auto focused_view = server.seat.get_focused_view();
 
     bool focused_tiled = false;
     for (const auto& tile : ws.tiles) {
-        if (!tile.view->mapped || tile.view == focused_view) {
+        if (!tile.view->mapped || tile.view == focused_view.raw_pointer()) {
             focused_tiled = true;
             continue;
         }
@@ -114,26 +114,27 @@ static void render_workspace(Server& server, Workspace& ws, struct wlr_output* w
     }
 
     if (focused_tiled) {
+        auto& focused_view_r = focused_view.unwrap();
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .lx = focused_view->x,
-            .ly = focused_view->y,
+            .lx = focused_view_r.x,
+            .ly = focused_view_r.y,
             .when = now,
             .server = &server
         };
 
-        focused_view->for_each_surface(render_surface, &rdata);
+        focused_view_r.for_each_surface(render_surface, &rdata);
     }
 }
 
 static void render_floating(Server& server, Workspace& ws, View* ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    View* focused_view = server.seat.get_focused_view();
+    auto focused_view = server.seat.get_focused_view();
 
     bool focused_floating = false;
     for (const auto& view : ws.floating_views) {
-        if (!view->mapped || view == focused_view || (ancestor && !view->is_transient_for(ancestor))) {
+        if (!view->mapped || view == focused_view.raw_pointer() || (ancestor && !view->is_transient_for(ancestor))) {
             focused_floating = true;
             continue;
         }
@@ -151,16 +152,17 @@ static void render_floating(Server& server, Workspace& ws, View* ancestor, struc
     }
 
     if (focused_floating) {
+        auto& focused_view_r = focused_view.unwrap();
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
-            .lx = focused_view->x,
-            .ly = focused_view->y,
+            .lx = focused_view_r.x,
+            .ly = focused_view_r.y,
             .when = now,
             .server = &server
         };
 
-        focused_view->for_each_surface(render_surface, &rdata);
+        focused_view_r.for_each_surface(render_surface, &rdata);
     }
 }
 
@@ -238,7 +240,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    server->seat.update_swipe(server);
+    server->seat.update_swipe(*server);
 
     // make the OpenGL context current
     if (!wlr_output_attach_render(wlr_output, nullptr)) {

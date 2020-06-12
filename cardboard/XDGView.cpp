@@ -211,8 +211,8 @@ void XDGView::surface_destroy_handler(struct wl_listener* listener, void*)
 
     // unmap handler is guaranteed to be called if the view is mapped
 
-    if (server->seat.grab_state && server->seat.grab_state->view == view) {
-        server->seat.end_interactive(server);
+    if (server->seat.is_grabbing(*view)) {
+        server->seat.end_interactive(*server);
     }
     server->views.remove_if([view](const auto x) { return view == x; });
     delete view;
@@ -250,7 +250,7 @@ void XDGView::toplevel_request_move_handler(struct wl_listener* listener, void*)
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
 
-    server->seat.begin_move(server, view);
+    server->seat.begin_move(*server, *view);
 }
 void XDGView::toplevel_request_resize_handler(struct wl_listener* listener, void* data)
 {
@@ -258,7 +258,7 @@ void XDGView::toplevel_request_resize_handler(struct wl_listener* listener, void
     auto* server = get_server(listener);
 
     auto* event = static_cast<struct wlr_xdg_toplevel_resize_event*>(data);
-    server->seat.begin_resize(server, view, event->edges);
+    server->seat.begin_resize(*server, *view, event->edges);
 }
 
 void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, void* data)

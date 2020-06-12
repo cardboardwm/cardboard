@@ -25,7 +25,7 @@ inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
 
 inline CommandResult focus(Server* server, int focus_direction)
 {
-    server->seat.focus_by_offset(server, focus_direction);
+    server->seat.focus_by_offset(*server, focus_direction);
     return { "" };
 }
 
@@ -65,9 +65,9 @@ inline CommandResult exec(Server*, std::vector<std::string> arguments)
 
 inline CommandResult close(Server* server)
 {
-    if (auto* fview = server->seat.get_focused_view(); fview) {
-        fview->close();
-    }
+    server->seat.get_focused_view().and_then([](auto& fview) {
+        fview.close();
+    });
 
     return { "" };
 }
@@ -79,7 +79,7 @@ inline CommandResult workspace_switch(Server* server, int n)
     if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
         return { "Invalid Workspace number" };
 
-    server->seat.focus(server, &server->workspaces[n]);
+    server->seat.focus(*server, server->workspaces[n]);
     server->workspaces[n].arrange_workspace(server->output_manager);
     return { "Changed to workspace: "s + std::to_string(n) };
 }
@@ -91,11 +91,11 @@ inline CommandResult workspace_move(Server* server, int n)
     if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
         return { "Invalid Workspace number" };
 
-    View* view = server->seat.get_focused_view();
+    auto view = server->seat.get_focused_view();
     if (!view) {
         return { "No view to move in current workspace"s };
     }
-    change_view_workspace(server, view, &server->workspaces[n]);
+    change_view_workspace(*server, view.unwrap(), server->workspaces[n]);
     server->workspaces[n].arrange_workspace(server->output_manager);
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
@@ -104,7 +104,7 @@ inline CommandResult workspace_move(Server* server, int n)
 inline CommandResult focus_cycle(Server* server)
 {
     auto& focus_stack = server->seat.focus_stack;
-    auto current_workspace = server->seat.get_focused_workspace(server);
+    auto current_workspace = server->seat.get_focused_workspace(*server);
 
     if (!current_workspace) {
         return { "" };
@@ -118,7 +118,7 @@ inline CommandResult focus_cycle(Server* server)
             });
         it != focus_stack.end()) {
         View* view = *it;
-        server->seat.focus_view(server, view);
+        server->seat.focus_view(*server, OptionalRef(view));
 
         auto previous_view_it = std::next(server->seat.focus_stack.begin());
         auto previous_view = *previous_view_it;
@@ -131,39 +131,41 @@ inline CommandResult focus_cycle(Server* server)
 
 inline CommandResult toggle_floating(Server* server)
 {
-    View* view = server->seat.get_focused_view();
-    if (!view) {
+    auto view_ = server->seat.get_focused_view();
+    if (!view_) {
         return { "" };
     }
-    auto& ws = server->get_views_workspace(view);
+    auto& view = view_.unwrap();
+    auto& ws = server->get_views_workspace(&view);
 
-    bool currently_floating = server->workspaces[view->workspace_id].find_floating(view) != server->workspaces[view->workspace_id].floating_views.end();
+    bool currently_floating = server->workspaces[view.workspace_id].find_floating(&view) != server->workspaces[view.workspace_id].floating_views.end();
 
-    auto prev_size = view->previous_size;
-    view->previous_size = { view->geometry.width, view->geometry.height };
+    auto prev_size = view.previous_size;
+    view.previous_size = { view.geometry.width, view.geometry.height };
 
-    if (ws.fullscreen_view.raw_pointer() == view) {
-        view->saved_state->width = prev_size.first;
-        view->saved_state->height = prev_size.second;
+    if (ws.fullscreen_view.raw_pointer() == &view) {
+        view.saved_state->width = prev_size.first;
+        view.saved_state->height = prev_size.second;
     } else {
-        view->resize(prev_size.first, prev_size.second);
+        view.resize(prev_size.first, prev_size.second);
     }
 
-    ws.remove_view(server->output_manager, view, true);
-    ws.add_view(server->output_manager, view, ws.tiles.back().view, !currently_floating, true);
+    ws.remove_view(server->output_manager, &view, true);
+    ws.add_view(server->output_manager, &view, ws.tiles.back().view, !currently_floating, true);
 
     return { "" };
 }
 
 inline CommandResult move(Server* server, int dx, int dy)
 {
-    View* view = server->seat.get_focused_view();
-    if (!view) {
+    auto view_ = server->seat.get_focused_view();
+    if (!view_) {
         return { "" };
     }
-    Workspace& workspace = server->workspaces[view->workspace_id];
+    auto& view = view_.unwrap();
+    Workspace& workspace = server->workspaces[view.workspace_id];
 
-    if (auto it = workspace.find_tile(view); it != workspace.tiles.end()) {
+    if (auto it = workspace.find_tile(&view); it != workspace.tiles.end()) {
         auto other = it;
 
         std::advance(other, dx / abs(dx));
@@ -175,7 +177,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         std::swap(*other, *it);
         workspace.arrange_workspace(server->output_manager);
     } else {
-        reconfigure_view_position(server, view, view->x + dx, view->y + dy);
+        reconfigure_view_position(*server, view, view.x + dx, view.y + dy);
     }
 
     return { "" };
@@ -183,24 +185,24 @@ inline CommandResult move(Server* server, int dx, int dy)
 
 inline CommandResult resize(Server* server, int width, int height)
 {
-    View* view = server->seat.get_focused_view();
-    if (!view) {
-        return { "" };
-    }
-    reconfigure_view_size(server, view, width, height);
+    server->seat.get_focused_view().and_then([server, width, height](auto& view) {
+        reconfigure_view_size(*server, view, width, height);
+    });
+
     return { "" };
 }
 
 inline CommandResult cycle_width(Server* server)
 {
-    auto* focused_view = server->seat.get_focused_view();
-    if (!focused_view) {
+    auto focused_view_ = server->seat.get_focused_view();
+    if (!focused_view_) {
         return { "" };
     }
+    auto& focused_view = focused_view_.unwrap();
 
-    server->get_views_workspace(focused_view).output.and_then([server, focused_view](const auto& output) {
+    server->get_views_workspace(&focused_view).output.and_then([server, &focused_view](const auto& output) {
         const struct wlr_box* output_box = server->output_manager.get_output_box(output);
-        focused_view->cycle_width(output_box->width);
+        focused_view.cycle_width(output_box->width);
     });
     return { "" };
 }
