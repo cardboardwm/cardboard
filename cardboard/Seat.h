@@ -64,7 +64,7 @@ struct Seat {
     struct wlr_input_inhibit_manager* inhibit_manager;
 
     std::list<Keyboard> keyboards;
-    std::list<View*> focus_stack; ///< Views ordered by the time they were focused, from most recent.
+    std::list<NotNullPointer<View>> focus_stack; ///< Views ordered by the time they were focused, from most recent.
 
     std::optional<struct wlr_layer_surface_v1*> focused_layer;
     std::optional<struct wl_client*> exclusive_client;

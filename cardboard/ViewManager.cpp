@@ -34,7 +34,7 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
             return v->workspace_id == workspace.index && v != &view;
         });
         last_focused_view != server.seat.focus_stack.end()) {
-        server.seat.focus_view(server, OptionalRef(*last_focused_view));
+        server.seat.focus_view(server, OptionalRef<View>(*last_focused_view));
     } else {
         server.seat.focus_view(server, NullRef<View>);
     };

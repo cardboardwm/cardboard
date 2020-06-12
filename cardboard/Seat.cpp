@@ -110,14 +110,14 @@ OptionalRef<View> Seat::get_focused_view()
         return NullRef<View>;
     }
 
-    return OptionalRef(focus_stack.front());
+    return OptionalRef<View>(focus_stack.front());
 }
 
 void Seat::hide_view(Server& server, View& view)
 {
     // focus last focused window mapped to an active workspace
     if (get_focused_view().raw_pointer() == &view && !focus_stack.empty()) {
-        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [&view](auto* v) -> bool {
+        auto to_focus = std::find_if(focus_stack.begin(), focus_stack.end(), [&view](NotNullPointer<View> v) -> bool {
             return v != &view && v->mapped;
         });
         if (to_focus != focus_stack.end()) {
@@ -582,7 +582,7 @@ void Seat::focus(Server& server, Workspace& workspace)
             return view->workspace_id == workspace.index;
         });
         last_focused_view != focus_stack.end()) {
-        focus_view(server, OptionalRef(*last_focused_view));
+        focus_view(server, OptionalRef<View>(*last_focused_view));
     } else {
         focus_view(server, NullRef<View>);
     }
