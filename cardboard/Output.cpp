@@ -96,7 +96,11 @@ static void render_workspace(Server& server, Workspace& ws, struct wlr_output* w
 
     bool focused_tiled = false;
     for (const auto& tile : ws.tiles) {
-        if (!tile.view->mapped || tile.view == focused_view.raw_pointer()) {
+        if (!tile.view->mapped) {
+            continue;
+        }
+
+        if (tile.view == focused_view.raw_pointer()) {
             focused_tiled = true;
             continue;
         }
@@ -134,7 +138,11 @@ static void render_floating(Server& server, Workspace& ws, View* ancestor, struc
 
     bool focused_floating = false;
     for (const auto& view : ws.floating_views) {
-        if (!view->mapped || view == focused_view.raw_pointer() || (ancestor && !view->is_transient_for(ancestor))) {
+        if ((!view->mapped) || (ancestor && !view->is_transient_for(ancestor))) {
+            continue;
+        }
+
+        if (view == focused_view.raw_pointer()) {
             focused_floating = true;
             continue;
         }
