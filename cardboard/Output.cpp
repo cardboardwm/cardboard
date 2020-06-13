@@ -132,13 +132,13 @@ static void render_workspace(Server& server, Workspace& ws, struct wlr_output* w
     }
 }
 
-static void render_floating(Server& server, Workspace& ws, View* ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
+static void render_floating(Server& server, Workspace& ws, OptionalRef<View> ancestor, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
     auto focused_view = server.seat.get_focused_view();
 
     bool focused_floating = false;
     for (const auto& view : ws.floating_views) {
-        if ((!view->mapped) || (ancestor && !view->is_transient_for(ancestor))) {
+        if ((!view->mapped) || (ancestor && !view->is_transient_for(ancestor.unwrap()))) {
             continue;
         }
 
@@ -269,7 +269,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
 #if HAVE_XWAYLAND
         render_xwayland_or_surface(*server, wlr_output, renderer, &now);
 #endif
-        render_floating(*server, ws, &ws.fullscreen_view.unwrap(), wlr_output, renderer, &now);
+        render_floating(*server, ws, ws.fullscreen_view, wlr_output, renderer, &now);
     } else {
         render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
         render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
@@ -282,7 +282,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
         render_xwayland_or_surface(*server, wlr_output, renderer, &now);
 #endif
 
-        render_floating(*server, ws, nullptr, wlr_output, renderer, &now);
+        render_floating(*server, ws, NullRef<View>, wlr_output, renderer, &now);
         render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
     }
     render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], *output, renderer, &now);
