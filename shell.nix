@@ -1,8 +1,7 @@
-{ pkgs ? import <nixpkgs> {} }:
-
-with pkgs;
-
-mkShell {
+let
+  pkgs = import <nixpkgs> {};
+in
+pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     meson
     ninja
