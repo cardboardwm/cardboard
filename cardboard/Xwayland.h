@@ -26,11 +26,11 @@ public:
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) override;
     void resize(int width, int height) override;
     void move(int x, int y) override;
-    void prepare(Server* server) override;
+    void prepare(Server& server) override;
     void set_activated(bool activated) override;
     void set_fullscreen(bool fullscreen) override;
     void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) override;
-    bool is_transient_for(View* ancestor) override;
+    bool is_transient_for(View& ancestor) override;
     void close_popups() override;
     void close() override;
 

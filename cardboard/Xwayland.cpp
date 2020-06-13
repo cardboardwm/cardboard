@@ -70,7 +70,7 @@ void XwaylandView::move(int x_, int y_)
         xwayland_surface, x, y, geometry.width, geometry.height);
 }
 
-void XwaylandView::prepare(Server* server)
+void XwaylandView::prepare(Server& server)
 {
     struct {
         wl_signal* signal;
@@ -83,9 +83,9 @@ void XwaylandView::prepare(Server* server)
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
+        server.listeners.add_listener(
             to_add_listener.signal,
-            Listener { to_add_listener.notify, server, this });
+            Listener { to_add_listener.notify, &server, this });
     }
 }
 
@@ -105,9 +105,9 @@ void XwaylandView::for_each_surface(wlr_surface_iterator_func_t iterator, void* 
     wlr_surface_for_each_surface(xwayland_surface->surface, iterator, data);
 }
 
-bool XwaylandView::is_transient_for(View* ancestor)
+bool XwaylandView::is_transient_for(View& ancestor)
 {
-    auto* xwayland_ancestor = dynamic_cast<XwaylandView*>(ancestor);
+    auto* xwayland_ancestor = dynamic_cast<XwaylandView*>(&ancestor);
     if (xwayland_ancestor == nullptr) {
         return false;
     }

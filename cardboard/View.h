@@ -49,6 +49,7 @@ public:
     };
     enum class ExpansionState {
         NORMAL,
+        /// For Views that have been un-fullscreened but didn't get the commit event yet.
         RECOVERING,
         FULLSCREEN,
     };
@@ -110,7 +111,7 @@ public:
     virtual void move(int x, int y);
 
     /// Prepares the view before registering to the server by attaching some handlers and doing shell-specific stuff.
-    virtual void prepare(Server* server) = 0;
+    virtual void prepare(Server& server) = 0;
 
     /// Set activated (focused) status to \a activated.
     virtual void set_activated(bool activated) = 0;
@@ -121,7 +122,7 @@ public:
     virtual void for_each_surface(wlr_surface_iterator_func_t iterator, void* data) = 0;
 
     /// Returns true if this view is a descendant of \a ancestor.
-    virtual bool is_transient_for(View* ancestor) = 0;
+    virtual bool is_transient_for(View& ancestor) = 0;
 
     /// Closes currently active popups.
     virtual void close_popups() = 0;
@@ -130,7 +131,7 @@ public:
     virtual void close() = 0;
 
     /// Returns the output where this view is drawn on.
-    OptionalRef<Output> get_views_output(Server* server);
+    OptionalRef<Output> get_views_output(Server& server);
 
     /// Marks the change of output where this view is drawn.
     void change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output);
@@ -158,6 +159,6 @@ protected:
 };
 
 /// Registers a view to the server and attaches the event handlers.
-void create_view(Server* server, View* view);
+void create_view(Server& server, NotNullPointer<View> view);
 
 #endif // __CARDBOARD_VIEW_H_

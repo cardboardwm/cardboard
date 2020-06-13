@@ -13,12 +13,12 @@ extern "C" {
 #include "Server.h"
 #include "View.h"
 
-OptionalRef<Output> View::get_views_output(Server* server)
+OptionalRef<Output> View::get_views_output(Server& server)
 {
     if (workspace_id < 0) {
         return NullRef<Output>;
     }
-    return server->get_views_workspace(this).output;
+    return server.get_views_workspace(this).output;
 }
 
 void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output)
@@ -78,10 +78,10 @@ void View::move(int x_, int y_)
     y = y_;
 }
 
-void create_view(Server* server, View* view_)
+void create_view(Server& server, NotNullPointer<View> view_)
 {
-    server->views.push_back(view_);
-    View* view = server->views.back();
+    server.views.push_back(view_);
+    View* view = server.views.back();
 
     view->prepare(server);
 }

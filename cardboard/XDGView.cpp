@@ -44,7 +44,7 @@ void XDGView::resize(int width, int height)
     wlr_xdg_toplevel_set_size(xdg_surface, width, height);
 }
 
-void XDGView::prepare(Server* server)
+void XDGView::prepare(Server& server)
 {
     struct {
         wl_signal* signal;
@@ -58,9 +58,9 @@ void XDGView::prepare(Server* server)
     };
 
     for (const auto& to_add_listener : to_add_listeners) {
-        server->listeners.add_listener(
+        server.listeners.add_listener(
             to_add_listener.signal,
-            Listener { to_add_listener.notify, server, this });
+            Listener { to_add_listener.notify, &server, this });
     }
 }
 
@@ -82,9 +82,9 @@ void XDGView::for_each_surface(wlr_surface_iterator_func_t iterator, void* data)
     wlr_xdg_surface_for_each_surface(xdg_surface, iterator, data);
 }
 
-bool XDGView::is_transient_for(View* ancestor)
+bool XDGView::is_transient_for(View& ancestor)
 {
-    auto* xdg_ancestor = dynamic_cast<XDGView*>(ancestor);
+    auto* xdg_ancestor = dynamic_cast<XDGView*>(&ancestor);
     if (xdg_ancestor == nullptr) {
         return false;
     }
@@ -295,7 +295,7 @@ void XDGPopup::map_handler(struct wl_listener* listener, void*)
     auto* server = get_server(listener);
     auto* popup = get_listener_data<XDGPopup*>(listener);
 
-    popup->parent->get_views_output(server).and_then([popup](const auto& output) {
+    popup->parent->get_views_output(*server).and_then([popup](const auto& output) {
         wlr_surface_send_enter(popup->wlr_popup->base->surface, output.wlr_output);
     });
 }

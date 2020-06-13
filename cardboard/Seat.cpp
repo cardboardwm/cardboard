@@ -155,7 +155,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
-            if (!view.unwrap().is_transient_for(ws.fullscreen_view.raw_pointer())) {
+            if (!view.unwrap().is_transient_for(ws.fullscreen_view.unwrap())) {
                 return;
             }
         }

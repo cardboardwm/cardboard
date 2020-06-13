@@ -336,7 +336,7 @@ void Server::new_xdg_surface_handler(struct wl_listener* listener, void* data)
         return;
     }
 
-    create_view(server, new XDGView(xdg_surface));
+    create_view(*server, new XDGView(xdg_surface));
 }
 
 void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
@@ -391,6 +391,6 @@ void Server::new_xwayland_surface_handler(struct wl_listener* listener, void* da
     }
 
     wlr_log(WLR_DEBUG, "new xwayland surface title='%s' class='%s'", xsurface->title, xsurface->class_);
-    create_view(server, new XwaylandView(server, xsurface));
+    create_view(*server, new XwaylandView(server, xsurface));
 }
 #endif
