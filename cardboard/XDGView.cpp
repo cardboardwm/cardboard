@@ -172,7 +172,7 @@ void XDGView::surface_map_handler(struct wl_listener* listener, void*)
         view->new_view = false;
     }
 
-    server->map_view(view);
+    server->map_view(*view);
 
     struct {
         wl_signal* signal;
@@ -195,7 +195,7 @@ void XDGView::surface_unmap_handler(struct wl_listener* listener, void*)
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
 
-    server->unmap_view(view);
+    server->unmap_view(*view);
 
     for (auto* listener : view->map_unmap_listeners) {
         server->listeners.remove_listener(listener);

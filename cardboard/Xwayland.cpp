@@ -27,7 +27,7 @@ void XwaylandView::destroy()
 
 void XwaylandView::unmap()
 {
-    server->unmap_view(this);
+    server->unmap_view(*this);
 }
 
 struct wlr_surface* XwaylandView::get_surface()
@@ -162,7 +162,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
         &view->xwayland_surface->events.request_fullscreen,
         Listener { XwaylandView::surface_request_fullscreen_handler, server, view });
 
-    server->map_view(view);
+    server->map_view(*view);
 }
 
 void XwaylandView::surface_unmap_handler(struct wl_listener* listener, void*)

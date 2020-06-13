@@ -75,9 +75,9 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    std::list<View*> views;
+    std::list<NotNullPointer<View>> views;
 #if HAVE_XWAYLAND
-    std::list<XwaylandORSurface*> xwayland_or_surfaces;
+    std::list<NotNullPointer<XwaylandORSurface>> xwayland_or_surfaces;
 #endif
     LayerArray layers;
 
@@ -119,11 +119,11 @@ struct Server {
      */
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
     /// Common mapping procedure for views regardless of their underlying shell.
-    void map_view(View* view);
+    void map_view(View& view);
     /// Common unmapping procedure for views regardless of their underlying shell.
-    void unmap_view(View* view);
+    void unmap_view(View& view);
     /// Puts the \a view on top.
-    void move_view_to_front(View* view);
+    void move_view_to_front(View& view);
 
     /// Returns the workspace in which the given \a view resides, if any.
     Workspace& get_views_workspace(NotNullPointer<View> view);

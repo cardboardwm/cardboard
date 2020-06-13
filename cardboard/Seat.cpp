@@ -188,7 +188,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
         }
 
         // move the view_r to the front
-        server.move_view_to_front(&view_r);
+        server.move_view_to_front(view_r);
         // activate surface
         view_r.set_activated(true);
         // the seat will send keyboard events to the view automatically
