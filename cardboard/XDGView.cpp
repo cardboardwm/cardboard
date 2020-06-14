@@ -141,7 +141,7 @@ void XDGPopup::unconstrain(Server* server)
     wlr_xdg_popup_unconstrain_from_box(wlr_popup, &output_toplevel_sx_box);
 }
 
-void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent)
+static void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
 {
     auto* popup = new XDGPopup { wlr_popup, parent };
 

@@ -40,7 +40,7 @@ private:
 
 struct XDGPopup {
     struct wlr_xdg_popup* wlr_popup;
-    XDGView* parent;
+    NotNullPointer<XDGView> parent;
 
     XDGPopup(struct wlr_xdg_popup*, NotNullPointer<XDGView>);
 
@@ -51,7 +51,5 @@ public:
     static void new_popup_handler(struct wl_listener* listener, void* data);
     static void map_handler(struct wl_listener* listener, void* data);
 };
-
-void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, XDGView* parent);
 
 #endif // __CARDBOARD_XDGVIEW_H_
