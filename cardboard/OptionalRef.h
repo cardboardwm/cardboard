@@ -4,6 +4,8 @@
 #include <cassert>
 #include <utility>
 
+#include "NotNull.h"
+
 /**
  * \brief Represents a reference that may or may not be null.
  *
@@ -136,5 +138,8 @@ private:
 /// The null OptionalRef.
 template <typename T>
 const auto NullRef = OptionalRef<T>(nullptr);
+
+template <typename T>
+OptionalRef(NotNullPointer<T> nnptr) -> OptionalRef<T>;
 
 #endif // __CARDBOARD_SAFEPOINTER_H_

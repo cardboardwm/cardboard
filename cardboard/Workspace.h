@@ -34,11 +34,11 @@ struct Server;
 struct Workspace {
     using IndexType = ssize_t;
     struct Tile {
-        View* view;
+        NotNullPointer<View> view;
     };
 
     std::list<Tile> tiles;
-    std::list<View*> floating_views;
+    std::list<NotNullPointer<View>> floating_views;
 
     /**
      * \brief The output assigned to this workspace (or the output to which this workspace is assigned).
@@ -59,25 +59,30 @@ struct Workspace {
 
     /**
      * \brief Returns an iterator to the tile containing \a view.
+     *
+     * \param view - can be null!
      */
     std::list<Tile>::iterator find_tile(View* view);
 
     /**
      * \brief Returns an iterator to the a floating view.
+     *
+     * \param view - can be null!
      */
-    std::list<View*>::iterator find_floating(View* view);
+    std::list<NotNullPointer<View>>::iterator find_floating(View* view);
 
     /**
     * \brief Adds the \a view to the right of the \a next_to view and tiles it accordingly.
     *
     * \param transfering - set to true if we toggle the floating state
+    * \param next_to - can be null!
     */
-    void add_view(OutputManager& output_manager, View* view, View* next_to, bool floating = false, bool transferring = false);
+    void add_view(OutputManager& output_manager, View& view, View* next_to, bool floating = false, bool transferring = false);
 
     /**
     * \brief Removes \a view from the workspace and tiles the others accordingly.
     */
-    void remove_view(OutputManager& output_manager, View* view, bool transferring = false);
+    void remove_view(OutputManager& output_manager, View& view, bool transferring = false);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.
@@ -90,27 +95,27 @@ struct Workspace {
      *
      * \param condense - if true, if \a view is the first or last in the sequence, align it to the border
      */
-    void fit_view_on_screen(OutputManager& output_manager, View* view, bool condense = false);
+    void fit_view_on_screen(OutputManager& output_manager, View& view, bool condense = false);
 
     /**
      * \brief From the currently visible view (those that are inside the viewport), return the one that has
      * most coverage as a ratio of its width. There may be more views having the most coverage.
      * If \a focused_view is one of them, return it directly. Can return nullptr.
      */
-    View* find_dominant_view(OutputManager& output_manager, View* focused_view);
+    OptionalRef<View> find_dominant_view(OutputManager& output_manager, OptionalRef<View> focused_view);
 
     /**
     * \brief Returns the x coordinate of \a view in workspace coordinates.
     * The origin of the workspace plane is the top-left corner of the first window,
     * be it off-screen or not.
     */
-    int get_view_wx(View*);
+    int get_view_wx(View&);
 
     /// Sets \a view as the currently fullscreen view. If null, the fullscreen view will be cleared, if any.
-    void set_fullscreen_view(OutputManager& output_manager, View* view);
+    void set_fullscreen_view(OutputManager& output_manager, OptionalRef<View> view);
 
     /// Returns true if the view is floating in this Workspace.
-    bool is_view_floating(View* view);
+    bool is_view_floating(View& view);
 
     /**
      * \brief Assigns the workspace to an \a output.

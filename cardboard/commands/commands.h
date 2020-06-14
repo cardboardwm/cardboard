@@ -150,8 +150,8 @@ inline CommandResult toggle_floating(Server* server)
         view.resize(prev_size.first, prev_size.second);
     }
 
-    ws.remove_view(server->output_manager, &view, true);
-    ws.add_view(server->output_manager, &view, ws.tiles.back().view, !currently_floating, true);
+    ws.remove_view(server->output_manager, view, true);
+    ws.add_view(server->output_manager, view, ws.tiles.empty() ? nullptr : ws.tiles.back().view.get(), !currently_floating, true);
 
     return { "" };
 }

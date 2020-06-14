@@ -247,7 +247,7 @@ void arrange_layers(Server& server, Output& output)
         assert(ws_it != server.workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
         if (auto focused_view = server.seat.get_focused_view(); focused_view.has_value() && focused_view.unwrap().workspace_id == ws_it->index) {
-            ws_it->fit_view_on_screen(server.output_manager, focused_view.raw_pointer());
+            ws_it->fit_view_on_screen(server.output_manager, focused_view.unwrap());
         } else {
             ws_it->arrange_workspace(server.output_manager);
         }

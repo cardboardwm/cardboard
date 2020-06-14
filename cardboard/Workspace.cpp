@@ -18,14 +18,21 @@ std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
     });
 }
 
-std::list<View*>::iterator Workspace::find_floating(View* view)
+std::list<NotNullPointer<View>>::iterator Workspace::find_floating(View* view)
 {
+    // view can be null. if that's the case, this function will return floating_views.end()
+
+    // this if is not needed but it might be a slight optimisation
+    if (view == nullptr) {
+        return floating_views.end();
+    }
+
     return std::find_if(floating_views.begin(), floating_views.end(), [view](const auto& v) {
         return v == view;
     });
 }
 
-void Workspace::add_view(OutputManager& output_manager, View* view, View* next_to, bool floating, bool transferring)
+void Workspace::add_view(OutputManager& output_manager, View& view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
     if (floating) {
@@ -33,38 +40,38 @@ void Workspace::add_view(OutputManager& output_manager, View* view, View* next_t
 
         floating_views.insert(
             it == floating_views.end() ? it : ++it,
-            view);
+            &view);
     } else {
         auto it = find_tile(next_to);
         if (it != tiles.end()) {
             std::advance(it, 1);
         }
-        tiles.insert(it, { view });
+        tiles.insert(it, { &view });
     }
 
     if (!transferring) {
-        view->workspace_id = index;
+        view.workspace_id = index;
 
         if (output) {
-            view->set_activated(true);
+            view.set_activated(true);
         }
-        view->change_output(NullRef<Output>, output);
+        view.change_output(NullRef<Output>, output);
     }
 
     arrange_workspace(output_manager);
 }
 
-void Workspace::remove_view(OutputManager& output_manager, View* view, bool transferring)
+void Workspace::remove_view(OutputManager& output_manager, View& view, bool transferring)
 {
     if (!transferring) {
-        if (fullscreen_view && &fullscreen_view.unwrap() == view) {
+        if (fullscreen_view && &fullscreen_view.unwrap() == &view) {
             fullscreen_view = NullRef<View>;
         }
-        view->set_activated(false);
-        view->change_output(output, NullRef<Output>);
+        view.set_activated(false);
+        view.change_output(output, NullRef<Output>);
     }
-    tiles.remove_if([view](auto& other) { return other.view == view; });
-    floating_views.remove(view);
+    tiles.remove_if([&view](auto& other) { return other.view == &view; });
+    floating_views.remove(&view);
 
     arrange_workspace(output_manager);
 }
@@ -97,19 +104,15 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
     }
 }
 
-void Workspace::fit_view_on_screen(OutputManager& output_manager, View* view, bool condense)
+void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bool condense)
 {
     // don't do anything if we have a fullscreened view or the previously
     // fullscreened view hasn't been restored
-    if (fullscreen_view || view->expansion_state != View::ExpansionState::NORMAL) {
+    if (fullscreen_view || view.expansion_state != View::ExpansionState::NORMAL) {
         return;
     }
 
-    if (view == nullptr) {
-        return;
-    }
-
-    if (find_tile(view) == tiles.end()) {
+    if (find_tile(&view) == tiles.end()) {
         return;
     }
 
@@ -122,35 +125,36 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View* view, bo
 
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
-    int vx = view->x + view->geometry.x;
+    int vx = view.x + view.geometry.x;
 
-    bool overflowing = vx < 0 || view->x + view->geometry.x + view->geometry.width > usable_area.x + usable_area.width;
-    if (condense && view == tiles.begin()->view) {
+    bool overflowing = vx < 0 || view.x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
+    if (condense && &view == tiles.begin()->view) {
         // align first window to the display's left edge
         scroll_x = -usable_area.x;
-    } else if (condense && view == tiles.rbegin()->view) {
+    } else if (condense && &view == tiles.rbegin()->view) {
         // align last window to the display's right edge
-        scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
     } else if (overflowing && vx < output_box->x + usable_area.x) {
         scroll_x = wx - usable_area.x;
-    } else if (overflowing && vx + view->geometry.width >= output_box->x + usable_area.x + usable_area.width) {
-        scroll_x = wx + view->geometry.width - (usable_area.x + usable_area.width);
+    } else if (overflowing && vx + view.geometry.width >= output_box->x + usable_area.x + usable_area.width) {
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
     }
 
     arrange_workspace(output_manager);
 }
 
-View* Workspace::find_dominant_view(OutputManager& output_manager, View* focused_view)
+OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, OptionalRef<View> focused_view)
 {
     if (!output) {
-        return nullptr;
+        return NullRef<View>;
     }
+
     View* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
     const auto usable_area = output_manager.get_output_real_usable_area(output.unwrap());
     for (auto& tile : tiles) {
-        auto* view = tile.view;
+        NotNullPointer<View> view = tile.view;
         if (!view->mapped) {
             continue;
         }
@@ -172,24 +176,24 @@ View* Workspace::find_dominant_view(OutputManager& output_manager, View* focused
             maximum_visibility = visibility;
             most_visible = view;
         }
-        if (view == focused_view) {
+        if (view == focused_view.raw_pointer()) {
             focused_view_visibility = visibility;
         }
     }
 
     if (!focused_view || (focused_view && maximum_visibility - focused_view_visibility > 0.01)) {
-        return most_visible;
+        return OptionalRef(most_visible);
     }
 
     return focused_view;
 }
 
-int Workspace::get_view_wx(View* view)
+int Workspace::get_view_wx(View& view)
 {
     int acc_wx = 0;
 
     for (auto& tile : tiles) {
-        if (tile.view == view) {
+        if (tile.view == &view) {
             break;
         }
         acc_wx += tile.view->geometry.width;
@@ -198,7 +202,7 @@ int Workspace::get_view_wx(View* view)
     return acc_wx;
 }
 
-void Workspace::set_fullscreen_view(OutputManager& output_manager, View* view)
+void Workspace::set_fullscreen_view(OutputManager& output_manager, OptionalRef<View> view)
 {
     fullscreen_view.and_then([](auto& fview) {
         fview.set_fullscreen(false);
@@ -207,24 +211,24 @@ void Workspace::set_fullscreen_view(OutputManager& output_manager, View* view)
         fview.resize(fview.saved_state->width, fview.saved_state->height);
         fview.saved_state = std::nullopt;
     });
-    if (view != nullptr) {
-        view->save_state({
-            .x = view->x,
-            .y = view->y,
-            .width = view->geometry.width,
-            .height = view->geometry.height,
+    view.and_then([](auto& v) {
+        v.save_state({
+            .x = v.x,
+            .y = v.y,
+            .width = v.geometry.width,
+            .height = v.geometry.height,
         });
-        view->expansion_state = View::ExpansionState::FULLSCREEN;
-        view->set_fullscreen(true);
-    }
-    fullscreen_view = OptionalRef(view);
+        v.expansion_state = View::ExpansionState::FULLSCREEN;
+        v.set_fullscreen(true);
+    });
+    fullscreen_view = view;
 
     arrange_workspace(output_manager);
 }
 
-bool Workspace::is_view_floating(View* view)
+bool Workspace::is_view_floating(View& view)
 {
-    return std::find(floating_views.begin(), floating_views.end(), view) != floating_views.end();
+    return std::find(floating_views.begin(), floating_views.end(), &view) != floating_views.end();
 }
 
 void Workspace::activate(Output& new_output)

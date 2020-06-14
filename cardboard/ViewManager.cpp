@@ -10,14 +10,14 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
 
     if (view.expansion_state == View::ExpansionState::FULLSCREEN) {
         if (new_workspace.fullscreen_view) {
-            new_workspace.set_fullscreen_view(server.output_manager, nullptr);
+            new_workspace.set_fullscreen_view(server.output_manager, NullRef<View>);
         }
         new_workspace.fullscreen_view = OptionalRef(view);
         new_workspace.arrange_workspace(server.output_manager);
     }
 
-    bool floating = workspace.is_view_floating(&view);
-    if (workspace.is_view_floating(&view) && new_workspace.output.has_value() && view.expansion_state != View::ExpansionState::FULLSCREEN) {
+    bool floating = workspace.is_view_floating(view);
+    if (floating && new_workspace.output.has_value() && view.expansion_state != View::ExpansionState::FULLSCREEN) {
         auto output_area = server.output_manager.get_output_real_usable_area(new_workspace.output.unwrap());
 
         if (view.x < output_area.x || view.x >= output_area.x + output_area.width || view.y < output_area.y || view.y >= output_area.y + output_area.height) {
@@ -27,8 +27,8 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
         }
     }
 
-    workspace.remove_view(server.output_manager, &view);
-    new_workspace.add_view(server.output_manager, &view, nullptr, floating);
+    workspace.remove_view(server.output_manager, view);
+    new_workspace.add_view(server.output_manager, view, nullptr, floating);
 
     if (auto last_focused_view = std::find_if(server.seat.focus_stack.begin(), server.seat.focus_stack.end(), [&workspace, &view](View* v) {
             return v->workspace_id == workspace.index && v != &view;

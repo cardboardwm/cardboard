@@ -269,7 +269,7 @@ void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, 
 
     bool set = event->fullscreen;
 
-    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? view : nullptr);
+    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 void XDGPopup::destroy_handler(struct wl_listener* listener, void*)

@@ -229,7 +229,7 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? view : nullptr);
+    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

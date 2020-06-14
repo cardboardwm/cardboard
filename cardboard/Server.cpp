@@ -202,7 +202,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     }
 
     // third, floating views
-    for (auto* floating_view : ws_it->floating_views) {
+    for (NotNullPointer<View> floating_view : ws_it->floating_views) {
         if (!floating_view->mapped) {
             continue;
         }
@@ -214,7 +214,7 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
 
     // fourth, regular, tiled views
     for (auto& tile : ws_it->tiles) {
-        auto* view = tile.view;
+        NotNullPointer<View> view = tile.view;
         if (!view->mapped) {
             continue;
         }
@@ -244,10 +244,11 @@ void Server::map_view(View& view)
 {
     view.mapped = true;
 
+    // can be nullptr, this is fine
     auto* prev_focused = seat.get_focused_view().raw_pointer();
 
     seat.get_focused_workspace(*this).and_then([this, &view, prev_focused](auto& ws) {
-        ws.add_view(output_manager, &view, prev_focused);
+        ws.add_view(output_manager, view, prev_focused);
     });
     seat.focus_view(*this, view);
 }
@@ -256,7 +257,7 @@ void Server::unmap_view(View& view)
 {
     if (view.mapped) {
         view.mapped = false;
-        get_views_workspace(&view).remove_view(output_manager, &view);
+        get_views_workspace(&view).remove_view(output_manager, view);
     }
 
     seat.hide_view(*this, view);
