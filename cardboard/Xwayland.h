@@ -54,6 +54,7 @@ struct XwaylandORSurface {
     struct wlr_xwayland_surface* xwayland_surface;
     struct wl_listener* commit_listener;
     int lx, ly;
+    bool mapped;
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
     void map(Server* server);

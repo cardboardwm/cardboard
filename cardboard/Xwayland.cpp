@@ -21,8 +21,7 @@ void XwaylandView::destroy()
     if (server->seat.is_grabbing(*this)) {
         server->seat.end_interactive(*server);
     }
-    server->views.remove_if([this](const auto x) { return this == x; });
-    delete this;
+    server->views.remove_if([this](const auto& x) { return this == x.get(); });
 }
 
 void XwaylandView::unmap()
@@ -143,6 +142,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
         view->unmap();
         view->destroy();
         auto* xwayland_or_surface = create_xwayland_or_surface(server, xwayland_surface);
+        server->xwayland_or_surfaces.emplace_back(xwayland_or_surface);
         xwayland_or_surface->map(server);
         return;
     }
@@ -253,7 +253,7 @@ bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wl
 
 void XwaylandORSurface::map(Server* server)
 {
-    server->xwayland_or_surfaces.push_back(this);
+    mapped = true;
     commit_listener = server->listeners.add_listener(&xwayland_surface->surface->events.commit,
                                                      Listener { XwaylandORSurface::surface_commit_handler, server, this });
 
@@ -304,7 +304,7 @@ void XwaylandORSurface::surface_unmap_handler(struct wl_listener* listener, void
     auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 
-    server->xwayland_or_surfaces.remove(xwayland_or_surface);
+    xwayland_or_surface->mapped = false;
     server->listeners.remove_listener(xwayland_or_surface->commit_listener);
     if (server->seat.wlr_seat->keyboard_state.focused_surface == xwayland_or_surface->xwayland_surface->surface) {
         // restore focus to the last focused view
@@ -321,7 +321,7 @@ void XwaylandORSurface::surface_destroy_handler(struct wl_listener* listener, vo
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 
     server->listeners.clear_listeners(xwayland_or_surface);
-    delete xwayland_or_surface;
+    server->xwayland_or_surfaces.remove_if([xwayland_or_surface](const auto& x) { return xwayland_or_surface == x.get(); });
 }
 
 void XwaylandORSurface::surface_request_configure_handler(struct wl_listener* listener, void* data)

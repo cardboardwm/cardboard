@@ -190,7 +190,10 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
 
     // second, unmanaged xwayland surfaces
 #if HAVE_XWAYLAND
-    for (const auto xwayland_or_surface : xwayland_or_surfaces) {
+    for (const auto& xwayland_or_surface : xwayland_or_surfaces) {
+        if (!xwayland_or_surface->mapped) {
+            continue;
+        }
         if (xwayland_or_surface->get_surface_under_coords(lx, ly, surface, sx, sy)) {
             return nullptr;
         }
@@ -266,7 +269,7 @@ void Server::unmap_view(View& view)
 
 void Server::move_view_to_front(View& view)
 {
-    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [&view](const NotNullPointer<View> x) { return &view == x; }));
+    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [&view](const std::unique_ptr<View>& x) { return &view == x.get(); }));
 }
 
 Workspace& Server::get_views_workspace(NotNullPointer<View> view)
@@ -387,7 +390,7 @@ void Server::new_xwayland_surface_handler(struct wl_listener* listener, void* da
     auto* xsurface = static_cast<struct wlr_xwayland_surface*>(data);
 
     if (xsurface->override_redirect) {
-        create_xwayland_or_surface(server, xsurface);
+        server->xwayland_or_surfaces.emplace_back(create_xwayland_or_surface(server, xsurface));
         return;
     }
 

@@ -23,6 +23,7 @@ extern "C" {
 
 #include <cstdint>
 #include <list>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -75,9 +76,9 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    std::list<NotNullPointer<View>> views;
+    std::list<std::unique_ptr<View>> views;
 #if HAVE_XWAYLAND
-    std::list<NotNullPointer<XwaylandORSurface>> xwayland_or_surfaces;
+    std::list<std::unique_ptr<XwaylandORSurface>> xwayland_or_surfaces;
 #endif
     LayerArray layers;
 

@@ -80,8 +80,8 @@ void View::move(int x_, int y_)
 
 void create_view(Server& server, NotNullPointer<View> view_)
 {
-    server.views.push_back(view_);
-    View* view = server.views.back();
+    server.views.emplace_back(view_);
+    auto* view = server.views.back().get();
 
     view->prepare(server);
 }

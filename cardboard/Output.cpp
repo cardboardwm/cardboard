@@ -198,7 +198,10 @@ static void render_layer(Server& server, LayerArray::value_type& surfaces, Outpu
 #if HAVE_XWAYLAND
 static void render_xwayland_or_surface(Server& server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    for (const auto xwayland_or_surface : server.xwayland_or_surfaces) {
+    for (const auto& xwayland_or_surface : server.xwayland_or_surfaces) {
+        if (!xwayland_or_surface->mapped) {
+            continue;
+        }
         RenderData rdata = {
             .output = wlr_output,
             .renderer = renderer,
