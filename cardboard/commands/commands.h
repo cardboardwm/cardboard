@@ -11,7 +11,7 @@
 #include "../IPC.h"
 #include "../Server.h"
 #include "../Spawn.h"
-#include "../ViewManager.h"
+#include "../ViewOperations.h"
 
 extern char** environ;
 

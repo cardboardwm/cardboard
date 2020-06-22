@@ -14,7 +14,7 @@ extern "C" {
 #include "Listener.h"
 #include "Seat.h"
 #include "Server.h"
-#include "ViewManager.h"
+#include "ViewOperations.h"
 
 static void add_keyboard(Server& server, Seat& seat, struct wlr_input_device* device)
 {

@@ -1,4 +1,4 @@
-#include "ViewManager.h"
+#include "ViewOperations.h"
 
 /// Moves the view from a workspace to another. Handles special cases like fullscreen views, floating views etc.
 void change_view_workspace(Server& server, View& view, Workspace& new_workspace)

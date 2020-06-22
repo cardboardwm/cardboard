@@ -1,11 +1,19 @@
-#ifndef CARDBOARD_WINDOWMANAGER_H
-#define CARDBOARD_WINDOWMANAGER_H
+#ifndef __CARDBOARD_VIEW_OPERATIONS_H_
+#define __CARDBOARD_VIEW_OPERATIONS_H_
 
 #include "Server.h"
 #include "View.h"
 
 #include "NotNull.h"
 #include "StrongAlias.h"
+
+/**
+ * \file
+ * \brief ViewOperations hosts high-level View management functions, handling various low-level details.
+ *
+ * For example, if you want to move a View to a Workspace, you should use change_view_workspace instead of
+ * assigning the workspace_id field manually.
+ * */
 
 struct Workspace;
 
@@ -27,4 +35,4 @@ void scroll_workspace(OutputManager&, Workspace&, AbsoluteScroll scroll);
 /// Scrolls workspace with as `scroll` as offset.
 void scroll_workspace(OutputManager&, Workspace&, RelativeScroll scroll);
 
-#endif //CARDBOARD_WINDOWMANAGER_H
+#endif //__CARDBOARD_VIEW_OPERATIONS_H_

@@ -8,7 +8,7 @@ extern "C" {
 #include "OptionalRef.h"
 #include "Output.h"
 #include "View.h"
-#include "ViewManager.h"
+#include "ViewOperations.h"
 #include "Workspace.h"
 
 std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
