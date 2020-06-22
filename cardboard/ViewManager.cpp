@@ -1,5 +1,6 @@
 #include "ViewManager.h"
 
+/// Moves the view from a workspace to another. Handles special cases like fullscreen views, floating views etc.
 void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
 {
     Workspace& workspace = server.get_views_workspace(&view);
@@ -41,20 +42,15 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
     cursor_rebase(server, server.seat, server.seat.cursor);
 }
 
-static void validate_output(Server& server, View& view)
+/// If a floating view changed the output it appears on (for example by dragging), move it to that output's workspace.
+static void update_view_workspace(Server& server, View& view)
 {
     if (server.workspaces[view.workspace_id].find_floating(&view) != server.workspaces[view.workspace_id].floating_views.end()) {
+        OptionalRef<Output> current_output = server.output_manager.get_output_at(view.x, view.y);
 
-        Output* current_output;
-        if (auto optional_output = server.output_manager.get_output_at(view.x, view.y); optional_output) {
-            current_output = optional_output.raw_pointer();
-        } else {
-            return;
-        }
-
-        if (current_output && current_output != server.workspaces[view.workspace_id].output.raw_pointer()) {
+        if (current_output && current_output != server.workspaces[view.workspace_id].output) {
             auto workspace = std::find_if(server.workspaces.begin(), server.workspaces.end(), [current_output](auto& w) {
-                return w.output.raw_pointer() == current_output;
+                return w.output == current_output;
             });
 
             change_view_workspace(server, view, *workspace);
@@ -62,6 +58,7 @@ static void validate_output(Server& server, View& view)
     }
 }
 
+/// Does the appropriate movement for tiled and floating views. When moved, tiled views scroll the workspace, and floating views need to be updated when changing outputs.
 void reconfigure_view_position(Server& server, View& view, int x, int y)
 {
     if (auto& workspace = server.workspaces[view.workspace_id]; workspace.find_tile(&view) != workspace.tiles.end()) {
@@ -70,10 +67,11 @@ void reconfigure_view_position(Server& server, View& view, int x, int y)
         scroll_workspace(server.output_manager, workspace, RelativeScroll { dx });
     } else {
         view.move(x, y);
-        validate_output(server, view);
+        update_view_workspace(server, view);
     }
 }
 
+/// Resizes \a view to the given size. Tiled views are maximized vertically, therefore they don't change height.
 void reconfigure_view_size(Server& server, View& view, int width, int height)
 {
     auto& workspace = server.workspaces[view.workspace_id];
@@ -85,12 +83,14 @@ void reconfigure_view_size(Server& server, View& view, int width, int height)
     view.resize(width, height);
 }
 
+/// Sets the workspace scroll to an absolute value.
 void scroll_workspace(OutputManager& output_manager, Workspace& workspace, AbsoluteScroll scroll)
 {
     workspace.scroll_x = scroll.get();
     workspace.arrange_workspace(output_manager);
 }
 
+/// Scrolls the workspace by a delta value.
 void scroll_workspace(OutputManager& output_manager, Workspace& workspace, RelativeScroll scroll)
 {
     workspace.scroll_x += scroll.get();
