@@ -1,5 +1,5 @@
-#ifndef __LIBCARDBOARD_COMMAND_PROTOCOL_H_
-#define __LIBCARDBOARD_COMMAND_PROTOCOL_H_
+#ifndef LIBCARDBOARD_COMMAND_PROTOCOL_H_INCLUDED
+#define LIBCARDBOARD_COMMAND_PROTOCOL_H_INCLUDED
 
 #include <memory>
 #include <optional>
@@ -133,4 +133,4 @@ tl::expected<CommandData, std::string> read_command_data(void* data, size_t);
  */
 tl::expected<std::string, std::string> write_command_data(const CommandData&);
 
-#endif //__LIBCARDBOARD_COMMAND_PROTOCOL_H_
+#endif //LIBCARDBOARD_COMMAND_PROTOCOL_H_INCLUDED

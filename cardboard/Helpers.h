@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_HELPERS_H_
-#define __CARDBOARD_HELPERS_H_
+#ifndef CARDBOARD_HELPERS_H_INCLUDED
+#define CARDBOARD_HELPERS_H_INCLUDED
 
 #include <initializer_list>
 
@@ -14,4 +14,4 @@ constexpr void register_handlers(Server& server, ListenerData subject, std::init
     }
 }
 
-#endif // __CARDBOARD_HELPERS_H_
+#endif // CARDBOARD_HELPERS_H_INCLUDED

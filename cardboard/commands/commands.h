@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
-#define __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
+#ifndef CARDBOARD_COMMANDS_COMMANDS_H_INCLUDED
+#define CARDBOARD_COMMANDS_COMMANDS_H_INCLUDED
 
 #include <csignal>
 #include <cstdint>
@@ -209,4 +209,4 @@ inline CommandResult cycle_width(Server* server)
 
 };
 
-#endif // __CARDBOARD_IPC_HANDLERS_HANDLERS_H_
+#endif // CARDBOARD_COMMANDS_COMMANDS_H_INCLUDED

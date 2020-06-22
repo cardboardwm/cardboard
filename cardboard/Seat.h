@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_SEAT_H_
-#define __CARDBOARD_SEAT_H_
+#ifndef CARDBOARD_SEAT_H_INCLUDED
+#define CARDBOARD_SEAT_H_INCLUDED
 
 extern "C" {
 #include <wayland-server-core.h>
@@ -228,4 +228,4 @@ public:
 
 void init_seat(Server& server, Seat& seat, const char* name);
 
-#endif // __CARDBOARD_SEAT_H_
+#endif // CARDBOARD_SEAT_H_INCLUDED

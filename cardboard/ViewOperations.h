@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_VIEW_OPERATIONS_H_
-#define __CARDBOARD_VIEW_OPERATIONS_H_
+#ifndef CARDBOARD_VIEW_OPERATIONS_H_INCLUDED
+#define CARDBOARD_VIEW_OPERATIONS_H_INCLUDED
 
 #include "Server.h"
 #include "View.h"
@@ -35,4 +35,4 @@ void scroll_workspace(OutputManager&, Workspace&, AbsoluteScroll scroll);
 /// Scrolls workspace with as `scroll` as offset.
 void scroll_workspace(OutputManager&, Workspace&, RelativeScroll scroll);
 
-#endif //__CARDBOARD_VIEW_OPERATIONS_H_
+#endif //CARDBOARD_VIEW_OPERATIONS_H_INCLUDED

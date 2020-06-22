@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_OUTPUT_H_
-#define __CARDBOARD_OUTPUT_H_
+#ifndef CARDBOARD_OUTPUT_H_INCLUDED
+#define CARDBOARD_OUTPUT_H_INCLUDED
 
 extern "C" {
 #include <wayland-server.h>
@@ -42,4 +42,4 @@ struct Output {
 /// Registers event listeners and does bookkeeping for a newly added output.
 void register_output(Server& server, Output&& output);
 
-#endif // __CARDBOARD_OUTPUT_H_
+#endif // CARDBOARD_OUTPUT_H_INCLUDED

@@ -1,9 +1,10 @@
-#ifndef BUILD_CLIENT_H
-#define BUILD_CLIENT_H
+#ifndef LIBCARDBOARD_CLIENT_H_INCLUDED
+#define LIBCARDBOARD_CLIENT_H_INCLUDED
 
-#include "../../../subprojects/expected/include/tl/expected.hpp"
 #include <memory>
 #include <string>
+
+#include <tl/expected.hpp>
 
 #include "command_protocol.h"
 
@@ -47,4 +48,4 @@ tl::expected<Client, std::string> open_client();
 
 }
 
-#endif //BUILD_CLIENT_H
+#endif //LIBCARDBOARD_CLIENT_H_INCLUDED

@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_OUTPUT_MANAGER_H_
-#define __CARDBOARD_OUTPUT_MANAGER_H_
+#ifndef CARDBOARD_OUTPUT_MANAGER_H_INCLUDED
+#define CARDBOARD_OUTPUT_MANAGER_H_INCLUDED
 
 extern "C" {
 #include <wlr/types/wlr_output_layout.h>
@@ -55,4 +55,4 @@ private:
     static void output_layout_add_handler(struct wl_listener* listener, void* data);
 };
 
-#endif // __CARDBOARD_OUTPUT_MANAGER_H_
+#endif // CARDBOARD_OUTPUT_MANAGER_H_INCLUDED

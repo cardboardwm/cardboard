@@ -1,5 +1,5 @@
-#ifndef __CUTTER_PARSE_ARGUMENTS_H_
-#define __CUTTER_PARSE_ARGUMENTS_H_
+#ifndef CUTTER_PARSE_ARGUMENTS_H_INCLUDED
+#define CUTTER_PARSE_ARGUMENTS_H_INCLUDED
 
 #include <locale>
 #include <optional>
@@ -247,4 +247,4 @@ tl::expected<CommandData, std::string> parse_arguments(int argc, char* argv[])
     return detail::parse_arguments(std::move(arguments));
 }
 
-#endif //__CUTTER_PARSE_ARGUMENTS_H_
+#endif //CUTTER_PARSE_ARGUMENTS_H_INCLUDED

@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_TILING_H_
-#define __CARDBOARD_TILING_H_
+#ifndef CARDBOARD_TILING_H_INCLUDED
+#define CARDBOARD_TILING_H_INCLUDED
 
 extern "C" {
 #include <wlr/types/wlr_output.h>
@@ -128,4 +128,4 @@ struct Workspace {
     void deactivate();
 };
 
-#endif //  __CARDBOARD_TILING_H_
+#endif //  CARDBOARD_TILING_H_INCLUDED

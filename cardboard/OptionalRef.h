@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_SAFEPOINTER_H_
-#define __CARDBOARD_SAFEPOINTER_H_
+#ifndef CARDBOARD_OPTIONAL_REF_H_INCLUDED
+#define CARDBOARD_OPTIONAL_REF_H_INCLUDED
 
 #include <cassert>
 #include <utility>
@@ -142,4 +142,4 @@ const auto NullRef = OptionalRef<T>(nullptr);
 template <typename T>
 OptionalRef(NotNullPointer<T> nnptr) -> OptionalRef<T>;
 
-#endif // __CARDBOARD_SAFEPOINTER_H_
+#endif // CARDBOARD_OPTIONAL_REF_H_INCLUDED

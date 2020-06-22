@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_XDGVIEW_H_
-#define __CARDBOARD_XDGVIEW_H_
+#ifndef CARDBOARD_XDGVIEW_H_INCLUDED
+#define CARDBOARD_XDGVIEW_H_INCLUDED
 
 #include <array>
 
@@ -52,4 +52,4 @@ public:
     static void map_handler(struct wl_listener* listener, void* data);
 };
 
-#endif // __CARDBOARD_XDGVIEW_H_
+#endif // CARDBOARD_XDGVIEW_H_INCLUDED

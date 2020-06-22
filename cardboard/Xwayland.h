@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_XWAYLAND_H_
-#define __CARDBOARD_XWAYLAND_H_
+#ifndef CARDBOARD_XWAYLAND_H_INCLUDED
+#define CARDBOARD_XWAYLAND_H_INCLUDED
 
 extern "C" {
 #include <wayland-server.h>
@@ -72,4 +72,4 @@ private:
 /// Registers an XwaylandORSurface.
 XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwayland_surface* xwayland_surface);
 
-#endif // __CARDBOARD_XWAYLAND_H_
+#endif // CARDBOARD_XWAYLAND_H_INCLUDED

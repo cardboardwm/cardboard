@@ -1,5 +1,5 @@
-#ifndef BUILD_CARDBOARD_NOTNULL_H
-#define BUILD_CARDBOARD_NOTNULL_H
+#ifndef CARDBOARD_NOT_NULL_H_INCLUDED
+#define CARDBOARD_NOT_NULL_H_INCLUDED
 
 #include <cassert>
 #include <type_traits>
@@ -65,4 +65,4 @@ private:
     pointer_type ptr_;
 };
 
-#endif //BUILD_CARDBOARD_NOTNULL_H
+#endif //CARDBOARD_NOT_NULL_H_INCLUDED

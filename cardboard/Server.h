@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_SERVER_H_
-#define __CARDBOARD_SERVER_H_
+#ifndef CARDBOARD_SERVER_H_INCLUDED
+#define CARDBOARD_SERVER_H_INCLUDED
 
 #include "BuildConfig.h"
 
@@ -163,4 +163,4 @@ private:
     static void new_xwayland_surface_handler(struct wl_listener* listener, void* data);
 };
 
-#endif // __CARDBOARD_SERVER_H_
+#endif // CARDBOARD_SERVER_H_INCLUDED

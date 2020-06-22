@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_SPAWN_H_
-#define __CARDBOARD_SPAWN_H_
+#ifndef CARDBOARD_SPAWN_H_INCLUDED
+#define CARDBOARD_SPAWN_H_INCLUDED
 
 #include <functional>
 #include <system_error>
@@ -24,4 +24,4 @@
  * */
 std::error_code spawn(std::function<int()> fn);
 
-#endif // __CARDBOARD_SPAWN_H_
+#endif // CARDBOARD_SPAWN_H_INCLUDED

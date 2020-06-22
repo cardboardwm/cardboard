@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_KEYBOARD_H_
-#define __CARDBOARD_KEYBOARD_H_
+#ifndef CARDBOARD_KEYBOARD_H_INCLUDED
+#define CARDBOARD_KEYBOARD_H_INCLUDED
 
 extern "C" {
 #include <wayland-server.h>
@@ -104,4 +104,4 @@ private:
 
 void register_keyboard_handlers(Server& server, Seat& seat, Keyboard& keyboard);
 
-#endif // __CARDBOARD_KEYBOARD_H_
+#endif // CARDBOARD_KEYBOARD_H_INCLUDED

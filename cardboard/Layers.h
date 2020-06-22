@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_LAYERS_H_
-#define __CARDBOARD_LAYERS_H_
+#ifndef CARDBOARD_LAYERS_H_INCLUDED
+#define CARDBOARD_LAYERS_H_INCLUDED
 
 extern "C" {
 #include <wayland-server-core.h>
@@ -59,4 +59,4 @@ void create_layer(Server& server, LayerSurface&& layer_surface);
 /// Arranges all the layers of an \a output.
 void arrange_layers(Server& server, Output& output);
 
-#endif // __CARDBOARD_LAYERS_H_
+#endif // CARDBOARD_LAYERS_H_INCLUDED

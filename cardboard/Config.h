@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_CONFIG_H_
-#define __CARDBOARD_CONFIG_H_
+#ifndef CARDBOARD_CONFIG_H_INCLUDED
+#define CARDBOARD_CONFIG_H_INCLUDED
 
 #include <cstdint>
 
@@ -15,4 +15,4 @@ struct Config {
     uint32_t mouse_mods;
 };
 
-#endif // __CARDBOARD_CONFIG_H_
+#endif // CARDBOARD_CONFIG_H_INCLUDED

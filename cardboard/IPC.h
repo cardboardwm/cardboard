@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_IPC_H_
-#define __CARDBOARD_IPC_H_
+#ifndef CARDBOARD_IPC_H_INCLUDED
+#define CARDBOARD_IPC_H_INCLUDED
 
 #include <cstdint>
 #include <optional>
@@ -127,4 +127,4 @@ private:
  */
 std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
 
-#endif // __CARDBOARD_IPC_H_
+#endif // CARDBOARD_IPC_H_INCLUDED

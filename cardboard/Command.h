@@ -1,5 +1,5 @@
-#ifndef BUILD_CARDBOARD_COMMAND_H
-#define BUILD_CARDBOARD_COMMAND_H
+#ifndef CARDBOARD_COMMAND_H_INCLUDED
+#define CARDBOARD_COMMAND_H_INCLUDED
 
 #include <functional>
 #include <variant>
@@ -26,4 +26,4 @@ using Command = std::function<CommandResult(Server*)>;
  */
 Command dispatch_command(const CommandData&);
 
-#endif //BUILD_CARDBOARD_COMMAND_H
+#endif //CARDBOARD_COMMAND_H_INCLUDED

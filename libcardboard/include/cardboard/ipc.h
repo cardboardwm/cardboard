@@ -1,5 +1,5 @@
-#ifndef __LIBCARDBOARD_IPC_H_
-#define __LIBCARDBOARD_IPC_H_
+#ifndef LIBCARDBOARD_IPC_H_INCLUDED
+#define LIBCARDBOARD_IPC_H_INCLUDED
 
 #include <array>
 #include <cstddef>
@@ -43,4 +43,4 @@ AlignedHeaderBuffer create_header_buffer(const Header&);
 
 };
 
-#endif //__LIBCARDBOARD_IPC_H_
+#endif //LIBCARDBOARD_IPC_H_INCLUDED

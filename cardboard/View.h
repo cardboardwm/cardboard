@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_VIEW_H_
-#define __CARDBOARD_VIEW_H_
+#ifndef CARDBOARD_VIEW_H_INCLUDED
+#define CARDBOARD_VIEW_H_INCLUDED
 
 extern "C" {
 #include <wayland-server.h>
@@ -161,4 +161,4 @@ protected:
 /// Registers a view to the server and attaches the event handlers.
 void create_view(Server& server, NotNullPointer<View> view);
 
-#endif // __CARDBOARD_VIEW_H_
+#endif // CARDBOARD_VIEW_H_INCLUDED

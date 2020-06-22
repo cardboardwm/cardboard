@@ -1,5 +1,5 @@
-#ifndef __CARDBOARD_CURSOR_H_
-#define __CARDBOARD_CURSOR_H_
+#ifndef CARDBOARD_CURSOR_H_INCLUDED
+#define CARDBOARD_CURSOR_H_INCLUDED
 
 extern "C" {
 #include <wayland-server.h>
@@ -50,4 +50,4 @@ void cursor_rebase(Server& server, Seat& seat, SeatCursor& cursor, uint32_t time
 /// Warps the cursor to the given output layout coordinates.
 void cursor_warp(Server& server, Seat& seat, SeatCursor& cursor, int lx, int ly);
 
-#endif // __CARDBOARD_CURSOR_H_
+#endif // CARDBOARD_CURSOR_H_INCLUDED
