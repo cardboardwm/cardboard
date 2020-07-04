@@ -16,7 +16,6 @@ extern "C" {
 class View;
 struct Output;
 struct OutputManager;
-struct Server;
 
 /**
  * \brief A Workspace is a group of tiled windows.

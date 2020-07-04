@@ -122,7 +122,7 @@ XDGPopup::XDGPopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> pare
 
 void XDGPopup::unconstrain(Server* server)
 {
-    const auto output = server->get_views_workspace(parent).output;
+    const auto output = server->view_manager.get_views_workspace(*server, *parent).output;
     if (!output) {
         return;
     }
@@ -172,7 +172,7 @@ void XDGView::surface_map_handler(struct wl_listener* listener, void*)
         view->new_view = false;
     }
 
-    server->map_view(*view);
+    server->view_manager.map_view(*server, *view);
 
     struct {
         wl_signal* signal;
@@ -195,7 +195,7 @@ void XDGView::surface_unmap_handler(struct wl_listener* listener, void*)
     auto* view = get_listener_data<XDGView*>(listener);
     auto* server = get_server(listener);
 
-    server->unmap_view(*view);
+    server->view_manager.unmap_view(*server, *view);
 
     for (auto* listener : view->map_unmap_listeners) {
         server->listeners.remove_listener(listener);
@@ -214,7 +214,7 @@ void XDGView::surface_destroy_handler(struct wl_listener* listener, void*)
     if (server->seat.is_grabbing(*view)) {
         server->seat.end_interactive(*server);
     }
-    server->views.remove_if([view](const auto& x) { return view == x.get(); });
+    server->view_manager.views.remove_if([view](const auto& x) { return view == x.get(); });
 }
 
 void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
@@ -224,7 +224,7 @@ void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
 
     struct wlr_box new_geo;
     wlr_xdg_surface_get_geometry(view->xdg_surface, &new_geo);
-    auto& ws = server->get_views_workspace(view);
+    auto& ws = server->view_manager.get_views_workspace(*server, *view);
     if (memcmp(&new_geo, &view->geometry, sizeof(struct wlr_box)) != 0) {
         // the view has set a new size
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
@@ -268,7 +268,7 @@ void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, 
 
     bool set = event->fullscreen;
 
-    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
+    server->view_manager.get_views_workspace(*server, *view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 void XDGPopup::destroy_handler(struct wl_listener* listener, void*)

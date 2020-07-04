@@ -40,6 +40,7 @@ extern "C" {
 #include "OutputManager.h"
 #include "Seat.h"
 #include "View.h"
+#include "ViewManager.h"
 #include "Workspace.h"
 
 #if HAVE_XWAYLAND
@@ -76,7 +77,6 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    std::list<std::unique_ptr<View>> views;
 #if HAVE_XWAYLAND
     std::list<std::unique_ptr<XwaylandORSurface>> xwayland_or_surfaces;
 #endif
@@ -85,6 +85,7 @@ struct Server {
     std::vector<Workspace> workspaces;
 
     OutputManager output_manager;
+    ViewManager view_manager;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
@@ -119,15 +120,7 @@ struct Server {
      * \param[out] sy The y coordinate of the found surface in root coordinates.
      */
     View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
-    /// Common mapping procedure for views regardless of their underlying shell.
-    void map_view(View& view);
-    /// Common unmapping procedure for views regardless of their underlying shell.
-    void unmap_view(View& view);
-    /// Puts the \a view on top.
-    void move_view_to_front(View& view);
 
-    /// Returns the workspace in which the given \a view resides, if any.
-    Workspace& get_views_workspace(NotNullPointer<View> view);
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
 

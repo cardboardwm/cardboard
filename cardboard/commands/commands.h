@@ -136,7 +136,7 @@ inline CommandResult toggle_floating(Server* server)
         return { "" };
     }
     auto& view = view_.unwrap();
-    auto& ws = server->get_views_workspace(&view);
+    auto& ws = server->view_manager.get_views_workspace(*server, view);
 
     bool currently_floating = server->workspaces[view.workspace_id].find_floating(&view) != server->workspaces[view.workspace_id].floating_views.end();
 
@@ -200,7 +200,7 @@ inline CommandResult cycle_width(Server* server)
     }
     auto& focused_view = focused_view_.unwrap();
 
-    server->get_views_workspace(&focused_view).output.and_then([server, &focused_view](const auto& output) {
+    server->view_manager.get_views_workspace(*server, focused_view).output.and_then([server, &focused_view](const auto& output) {
         const struct wlr_box* output_box = server->output_manager.get_output_box(output);
         focused_view.cycle_width(output_box->width);
     });

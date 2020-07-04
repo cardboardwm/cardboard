@@ -243,41 +243,6 @@ View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*
     return nullptr;
 }
 
-void Server::map_view(View& view)
-{
-    view.mapped = true;
-
-    // can be nullptr, this is fine
-    auto* prev_focused = seat.get_focused_view().raw_pointer();
-
-    seat.get_focused_workspace(*this).and_then([this, &view, prev_focused](auto& ws) {
-        ws.add_view(output_manager, view, prev_focused);
-    });
-    seat.focus_view(*this, view);
-}
-
-void Server::unmap_view(View& view)
-{
-    if (view.mapped) {
-        view.mapped = false;
-        get_views_workspace(&view).remove_view(output_manager, view);
-    }
-
-    seat.hide_view(*this, view);
-    seat.remove_from_focus_stack(view);
-}
-
-void Server::move_view_to_front(View& view)
-{
-    views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [&view](const std::unique_ptr<View>& x) { return &view == x.get(); }));
-}
-
-Workspace& Server::get_views_workspace(NotNullPointer<View> view)
-{
-    assert(view->workspace_id >= 0);
-    return workspaces[view->workspace_id];
-}
-
 Workspace& Server::create_workspace()
 {
     workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });

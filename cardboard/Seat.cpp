@@ -151,7 +151,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
     }
 
     if (view) {
-        auto& ws = server.get_views_workspace(&view.unwrap());
+        auto& ws = server.view_manager.get_views_workspace(server, view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
@@ -188,7 +188,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
         }
 
         // move the view_r to the front
-        server.move_view_to_front(view_r);
+        server.view_manager.move_view_to_front(view_r);
         // activate surface
         view_r.set_activated(true);
         // the seat will send keyboard events to the view automatically
@@ -197,7 +197,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
 
 fit_on_screen:
     // noop if the view is floating
-    server.get_views_workspace(&view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
+    server.view_manager.get_views_workspace(server, view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
 }
 
 void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
@@ -232,7 +232,7 @@ void Seat::focus_by_offset(Server& server, int offset)
         return;
     }
     auto& focused_view = focused_view_.unwrap();
-    auto ws = server.get_views_workspace(&focused_view);
+    auto ws = server.view_manager.get_views_workspace(server, focused_view);
     if (ws.is_view_floating(focused_view)) {
         return;
     }
@@ -281,7 +281,7 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
         return;
     }
 
-    auto& workspace = server.get_views_workspace(&view);
+    auto& workspace = server.view_manager.get_views_workspace(server, view);
     grab_state = {
         .grab_data = GrabState::Resize {
             .view = &view,

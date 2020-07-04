@@ -18,7 +18,7 @@ OptionalRef<Output> View::get_views_output(Server& server)
     if (workspace_id < 0) {
         return NullRef<Output>;
     }
-    return server.get_views_workspace(this).output;
+    return server.view_manager.get_views_workspace(server, *this).output;
 }
 
 void View::change_output(OptionalRef<Output> old_output, OptionalRef<Output> new_output)
@@ -80,8 +80,8 @@ void View::move(int x_, int y_)
 
 void create_view(Server& server, NotNullPointer<View> view_)
 {
-    server.views.emplace_back(view_);
-    auto* view = server.views.back().get();
+    server.view_manager.views.emplace_back(view_);
+    auto* view = server.view_manager.views.back().get();
 
     view->prepare(server);
 }

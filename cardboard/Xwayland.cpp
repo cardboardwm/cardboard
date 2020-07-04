@@ -21,12 +21,12 @@ void XwaylandView::destroy()
     if (server->seat.is_grabbing(*this)) {
         server->seat.end_interactive(*server);
     }
-    server->views.remove_if([this](const auto& x) { return this == x.get(); });
+    server->view_manager.views.remove_if([this](const auto& x) { return this == x.get(); });
 }
 
 void XwaylandView::unmap()
 {
-    server->unmap_view(*this);
+    server->view_manager.unmap_view(*server, *this);
 }
 
 struct wlr_surface* XwaylandView::get_surface()
@@ -162,7 +162,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
         &view->xwayland_surface->events.request_fullscreen,
         Listener { XwaylandView::surface_request_fullscreen_handler, server, view });
 
-    server->map_view(*view);
+    server->view_manager.map_view(*server, *view);
 }
 
 void XwaylandView::surface_unmap_handler(struct wl_listener* listener, void*)
@@ -211,7 +211,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
     if (view->workspace_id < 0) {
         return;
     }
-    auto& ws = server->get_views_workspace(view);
+    auto& ws = server->view_manager.get_views_workspace(*server, *view);
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
         view->x = xsurface->x;
         view->y = xsurface->y;
@@ -229,7 +229,7 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->get_views_workspace(view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
+    server->view_manager.get_views_workspace(*server, *view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
