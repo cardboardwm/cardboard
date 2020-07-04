@@ -18,7 +18,7 @@ extern "C" {
 #include <cardboard/ipc.h>
 
 std::optional<IPCInstance> create_ipc(
-    Server* server,
+    Server& server,
     const std::string& socket_path,
     std::function<std::string(const CommandData&)> command_callback)
 {
@@ -60,9 +60,9 @@ std::optional<IPCInstance> create_ipc(
 
     // add destroy display handling
     IPCInstance ipc = std::make_unique<IPC>(IPC {
-        server, ipc_socket_fd, std::move(socket_address), std::move(command_callback) });
+        &server, ipc_socket_fd, std::move(socket_address), std::move(command_callback) });
     wl_event_loop_add_fd(
-        server->event_loop,
+        server.event_loop,
         ipc_socket_fd,
         WL_EVENT_READABLE,
         IPC::handle_client_connection,

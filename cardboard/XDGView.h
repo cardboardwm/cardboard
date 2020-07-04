@@ -44,7 +44,7 @@ struct XDGPopup {
 
     XDGPopup(struct wlr_xdg_popup*, NotNullPointer<XDGView>);
 
-    void unconstrain(Server* server);
+    void unconstrain(Server& server);
 
 public:
     static void destroy_handler(struct wl_listener* listener, void* data);

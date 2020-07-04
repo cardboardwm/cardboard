@@ -120,14 +120,14 @@ XDGPopup::XDGPopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> pare
 {
 }
 
-void XDGPopup::unconstrain(Server* server)
+void XDGPopup::unconstrain(Server& server)
 {
-    const auto output = server->view_manager.get_views_workspace(*server, *parent).output;
+    const auto output = server.view_manager.get_views_workspace(server, *parent).output;
     if (!output) {
         return;
     }
 
-    const struct wlr_box* output_box = server->output_manager.get_output_box(output.unwrap());
+    const struct wlr_box* output_box = server.output_manager.get_output_box(output.unwrap());
 
     // the output box expressed in the coordinate system of the
     // toplevel parent of the popup
@@ -141,11 +141,11 @@ void XDGPopup::unconstrain(Server* server)
     wlr_xdg_popup_unconstrain_from_box(wlr_popup, &output_toplevel_sx_box);
 }
 
-static void create_xdg_popup(Server* server, struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
+static void create_xdg_popup(Server& server, struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> parent)
 {
     auto* popup = new XDGPopup { wlr_popup, parent };
 
-    register_handlers(*server,
+    register_handlers(server,
                       popup,
                       {
                           { &popup->wlr_popup->base->events.destroy, &XDGPopup::destroy_handler },
@@ -241,7 +241,7 @@ void XDGView::surface_new_popup_handler(struct wl_listener* listener, void* data
     auto* view = get_listener_data<XDGView*>(listener);
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
-    create_xdg_popup(server, wlr_popup, view);
+    create_xdg_popup(*server, wlr_popup, view);
 }
 
 void XDGView::toplevel_request_move_handler(struct wl_listener* listener, void*)
@@ -286,7 +286,7 @@ void XDGPopup::new_popup_handler(struct wl_listener* listener, void* data)
     auto* popup = get_listener_data<XDGPopup*>(listener);
     auto* wlr_popup = static_cast<struct wlr_xdg_popup*>(data);
 
-    create_xdg_popup(server, wlr_popup, popup->parent);
+    create_xdg_popup(*server, wlr_popup, popup->parent);
 }
 
 void XDGPopup::map_handler(struct wl_listener* listener, void*)

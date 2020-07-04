@@ -99,7 +99,7 @@ bool Server::init_ipc()
         socket_path = "/tmp/cardboard-" + display;
     }
 
-    ipc = create_ipc(this, socket_path, [this](const CommandData& command_data) -> std::string {
+    ipc = create_ipc(*this, socket_path, [this](const CommandData& command_data) -> std::string {
               return dispatch_command(command_data)(this).message;
           }).value();
 
@@ -355,7 +355,7 @@ void Server::new_xwayland_surface_handler(struct wl_listener* listener, void* da
     auto* xsurface = static_cast<struct wlr_xwayland_surface*>(data);
 
     if (xsurface->override_redirect) {
-        server->xwayland_or_surfaces.emplace_back(create_xwayland_or_surface(server, xsurface));
+        server->xwayland_or_surfaces.emplace_back(create_xwayland_or_surface(*server, xsurface));
         return;
     }
 

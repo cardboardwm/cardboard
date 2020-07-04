@@ -57,7 +57,7 @@ struct XwaylandORSurface {
     bool mapped;
 
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
-    void map(Server* server);
+    void map(Server& server);
 
 public:
     static void surface_map_handler(struct wl_listener* listener, void* data);
@@ -70,6 +70,6 @@ private:
 };
 
 /// Registers an XwaylandORSurface.
-XwaylandORSurface* create_xwayland_or_surface(Server* server, struct wlr_xwayland_surface* xwayland_surface);
+XwaylandORSurface* create_xwayland_or_surface(Server& server, struct wlr_xwayland_surface* xwayland_surface);
 
 #endif // CARDBOARD_XWAYLAND_H_INCLUDED

@@ -9,6 +9,7 @@
 #include <sys/un.h>
 
 #include "Listener.h"
+#include "NotNull.h"
 
 /**
  * \file
@@ -108,14 +109,14 @@ private:
 
 private:
     ListenerList ipc_listeners;
-    Server* server;
+    NotNullPointer<Server> server;
     int socket_fd;
     std::unique_ptr<sockaddr_un> socket_address;
     std::function<std::string(CommandData)> command_callback;
 
     std::list<Client> clients;
 
-    friend std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
+    friend std::optional<IPCInstance> create_ipc(Server& server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
 };
 
 /**
@@ -125,6 +126,6 @@ private:
  * \param command_callback callable that will be called when a command will be received
  * \return returns the newly created IPC instance
  */
-std::optional<IPCInstance> create_ipc(Server* server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
+std::optional<IPCInstance> create_ipc(Server& server, const std::string& socket_path, std::function<std::string(const CommandData&)> command_callback);
 
 #endif // CARDBOARD_IPC_H_INCLUDED
