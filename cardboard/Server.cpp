@@ -70,7 +70,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        workspaces.push_back({ .index = i });
+        workspace_manager.create_workspace();
     }
 
     register_handlers(*this, NoneT {}, {
@@ -155,12 +155,6 @@ bool Server::load_settings()
     }
 
     return true;
-}
-
-Workspace& Server::create_workspace()
-{
-    workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
-    return workspaces.back();
 }
 
 bool Server::run()

@@ -252,3 +252,9 @@ void Workspace::deactivate()
     }
     output = NullRef<Output>;
 }
+
+Workspace& WorkspaceManager::create_workspace()
+{
+    workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
+    return workspaces.back();
+}

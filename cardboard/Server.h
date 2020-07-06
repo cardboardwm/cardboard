@@ -77,10 +77,9 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    std::vector<Workspace> workspaces;
-
     OutputManager output_manager;
     SurfaceManager surface_manager;
+    WorkspaceManager workspace_manager;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
@@ -102,9 +101,6 @@ struct Server {
 #endif
     /// Runs the config script in background. Executed before Server::init_ipc2.
     bool load_settings();
-
-    /// Creates a new workspace, without any assigned output.
-    Workspace& create_workspace();
 
     /// Runs the event loop.
     bool run();

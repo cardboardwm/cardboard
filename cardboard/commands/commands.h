@@ -76,11 +76,11 @@ inline CommandResult workspace_switch(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->workspace_manager.workspaces.size())
         return { "Invalid Workspace number" };
 
-    server->seat.focus(*server, server->workspaces[n]);
-    server->workspaces[n].arrange_workspace(server->output_manager);
+    server->seat.focus(*server, server->workspace_manager.workspaces[n]);
+    server->workspace_manager.workspaces[n].arrange_workspace(server->output_manager);
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
@@ -88,15 +88,15 @@ inline CommandResult workspace_move(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->workspace_manager.workspaces.size())
         return { "Invalid Workspace number" };
 
     auto view = server->seat.get_focused_view();
     if (!view) {
         return { "No view to move in current workspace"s };
     }
-    change_view_workspace(*server, view.unwrap(), server->workspaces[n]);
-    server->workspaces[n].arrange_workspace(server->output_manager);
+    change_view_workspace(*server, view.unwrap(), server->workspace_manager.workspaces[n]);
+    server->workspace_manager.workspaces[n].arrange_workspace(server->output_manager);
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
@@ -138,7 +138,7 @@ inline CommandResult toggle_floating(Server* server)
     auto& view = view_.unwrap();
     auto& ws = server->surface_manager.get_views_workspace(*server, view);
 
-    bool currently_floating = server->workspaces[view.workspace_id].find_floating(&view) != server->workspaces[view.workspace_id].floating_views.end();
+    bool currently_floating = server->workspace_manager.workspaces[view.workspace_id].find_floating(&view) != server->workspace_manager.workspaces[view.workspace_id].floating_views.end();
 
     auto prev_size = view.previous_size;
     view.previous_size = { view.geometry.width, view.geometry.height };
@@ -163,7 +163,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         return { "" };
     }
     auto& view = view_.unwrap();
-    Workspace& workspace = server->workspaces[view.workspace_id];
+    Workspace& workspace = server->workspace_manager.workspaces[view.workspace_id];
 
     if (auto it = workspace.find_tile(&view); it != workspace.tiles.end()) {
         auto other = it;

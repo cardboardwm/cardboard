@@ -490,7 +490,7 @@ bool Seat::is_grabbing(View& view)
 
 OptionalRef<Workspace> Seat::get_focused_workspace(Server& server)
 {
-    for (auto& ws : server.workspaces) {
+    for (auto& ws : server.workspace_manager.workspaces) {
         if (ws.output && server.output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }

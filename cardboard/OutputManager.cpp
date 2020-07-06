@@ -85,7 +85,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     auto& output = server->output_manager.outputs.back();
 
     Workspace* ws_to_assign = nullptr;
-    for (auto& ws : server->workspaces) {
+    for (auto& ws : server->workspace_manager.workspaces) {
         if (!ws.output) {
             ws_to_assign = &ws;
             break;
@@ -93,7 +93,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     }
 
     if (!ws_to_assign) {
-        ws_to_assign = &server->create_workspace();
+        ws_to_assign = &server->workspace_manager.create_workspace();
     }
 
     ws_to_assign->activate(output);

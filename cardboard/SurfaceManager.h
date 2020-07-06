@@ -7,10 +7,10 @@
 #include <memory>
 
 #include "Layers.h"
+#include "OptionalRef.h"
 #include "View.h"
 #include "Workspace.h"
 #include "Xwayland.h"
-#include "OptionalRef.h"
 
 struct SurfaceManager {
     std::list<std::unique_ptr<View>> views;

@@ -33,16 +33,16 @@ void SurfaceManager::move_view_to_front(View& view)
 Workspace& SurfaceManager::get_views_workspace(Server& server, View& view)
 {
     assert(view.workspace_id >= 0);
-    return server.workspaces[view.workspace_id];
+    return server.workspace_manager.workspaces[view.workspace_id];
 }
 
 OptionalRef<View> SurfaceManager::get_surface_under_cursor(Server& server, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
     OptionalRef<Output> output = server.output_manager.get_output_at(lx, ly);
-    const auto ws_it = std::find_if(server.workspaces.begin(), server.workspaces.end(), [output](const auto& other) {
+    const auto ws_it = std::find_if(server.workspace_manager.workspaces.begin(), server.workspace_manager.workspaces.end(), [output](const auto& other) {
         return other.output == output;
     });
-    if (ws_it == server.workspaces.end() || !ws_it->output) {
+    if (ws_it == server.workspace_manager.workspaces.end() || !ws_it->output) {
         return NullRef<View>;
     }
 

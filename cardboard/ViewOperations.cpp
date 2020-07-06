@@ -45,11 +45,11 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
 /// If a floating view changed the output it appears on (for example by dragging), move it to that output's workspace.
 static void update_view_workspace(Server& server, View& view)
 {
-    if (server.workspaces[view.workspace_id].find_floating(&view) != server.workspaces[view.workspace_id].floating_views.end()) {
+    if (server.workspace_manager.workspaces[view.workspace_id].find_floating(&view) != server.workspace_manager.workspaces[view.workspace_id].floating_views.end()) {
         OptionalRef<Output> current_output = server.output_manager.get_output_at(view.x, view.y);
 
-        if (current_output && current_output != server.workspaces[view.workspace_id].output) {
-            auto workspace = std::find_if(server.workspaces.begin(), server.workspaces.end(), [current_output](auto& w) {
+        if (current_output && current_output != server.workspace_manager.workspaces[view.workspace_id].output) {
+            auto workspace = std::find_if(server.workspace_manager.workspaces.begin(), server.workspace_manager.workspaces.end(), [current_output](auto& w) {
                 return w.output == current_output;
             });
 
@@ -61,7 +61,7 @@ static void update_view_workspace(Server& server, View& view)
 /// Does the appropriate movement for tiled and floating views. When moved, tiled views scroll the workspace, and floating views need to be updated when changing outputs.
 void reconfigure_view_position(Server& server, View& view, int x, int y)
 {
-    if (auto& workspace = server.workspaces[view.workspace_id]; workspace.find_tile(&view) != workspace.tiles.end()) {
+    if (auto& workspace = server.workspace_manager.workspaces[view.workspace_id]; workspace.find_tile(&view) != workspace.tiles.end()) {
         int dx = view.x - x;
 
         scroll_workspace(server.output_manager, workspace, RelativeScroll { dx });
@@ -74,7 +74,7 @@ void reconfigure_view_position(Server& server, View& view, int x, int y)
 /// Resizes \a view to the given size. Tiled views are maximized vertically, therefore they don't change height.
 void reconfigure_view_size(Server& server, View& view, int width, int height)
 {
-    auto& workspace = server.workspaces[view.workspace_id];
+    auto& workspace = server.workspace_manager.workspaces[view.workspace_id];
 
     if (workspace.find_tile(&view) != workspace.tiles.end()) {
         height = view.geometry.height;

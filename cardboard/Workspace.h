@@ -9,6 +9,7 @@ extern "C" {
 #include <algorithm>
 #include <list>
 #include <optional>
+#include <vector>
 
 #include "NotNull.h"
 #include "OptionalRef.h"
@@ -125,6 +126,13 @@ struct Workspace {
      * \brief Marks the workspace as inactive: it is not assigned to any output.
      */
     void deactivate();
+};
+
+struct WorkspaceManager {
+    std::vector<Workspace> workspaces;
+
+    /// Creates a new workspace, without any assigned output.
+    Workspace& create_workspace();
 };
 
 #endif //  CARDBOARD_TILING_H_INCLUDED
