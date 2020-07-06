@@ -2,11 +2,11 @@ extern "C" {
 #include <wlr/util/log.h>
 }
 
+#include "Helpers.h"
 #include "Listener.h"
 #include "Server.h"
 #include "View.h"
 #include "Xwayland.h"
-#include "Helpers.h"
 
 XwaylandView::XwaylandView(Server* server, struct wlr_xwayland_surface* xwayland_surface)
     : View()
@@ -22,12 +22,12 @@ void XwaylandView::destroy()
     if (server->seat.is_grabbing(*this)) {
         server->seat.end_interactive(*server);
     }
-    server->view_manager.views.remove_if([this](const auto& x) { return this == x.get(); });
+    server->surface_manager.views.remove_if([this](const auto& x) { return this == x.get(); });
 }
 
 void XwaylandView::unmap()
 {
-    server->view_manager.unmap_view(*server, *this);
+    server->surface_manager.unmap_view(*server, *this);
 }
 
 struct wlr_surface* XwaylandView::get_surface()
@@ -73,11 +73,11 @@ void XwaylandView::move(int x_, int y_)
 void XwaylandView::prepare(Server& server)
 {
     register_handlers(server, this, {
-        { &xwayland_surface->events.map, XwaylandView::surface_map_handler },
-        { &xwayland_surface->events.unmap, XwaylandView::surface_unmap_handler },
-        { &xwayland_surface->events.destroy, XwaylandView::surface_destroy_handler },
-        { &xwayland_surface->events.request_configure, XwaylandView::surface_request_configure_handler },
-    });
+                                        { &xwayland_surface->events.map, XwaylandView::surface_map_handler },
+                                        { &xwayland_surface->events.unmap, XwaylandView::surface_unmap_handler },
+                                        { &xwayland_surface->events.destroy, XwaylandView::surface_destroy_handler },
+                                        { &xwayland_surface->events.request_configure, XwaylandView::surface_request_configure_handler },
+                                    });
 }
 
 void XwaylandView::set_activated(bool activated)
@@ -134,7 +134,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
         view->unmap();
         view->destroy();
         auto* xwayland_or_surface = create_xwayland_or_surface(*server, xwayland_surface);
-        server->xwayland_or_surfaces.emplace_back(xwayland_or_surface);
+        server->surface_manager.xwayland_or_surfaces.emplace_back(xwayland_or_surface);
         xwayland_or_surface->map(*server);
         return;
     }
@@ -154,7 +154,7 @@ void XwaylandView::surface_map_handler(struct wl_listener* listener, void*)
         &view->xwayland_surface->events.request_fullscreen,
         Listener { XwaylandView::surface_request_fullscreen_handler, server, view });
 
-    server->view_manager.map_view(*server, *view);
+    server->surface_manager.map_view(*server, *view);
 }
 
 void XwaylandView::surface_unmap_handler(struct wl_listener* listener, void*)
@@ -203,7 +203,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
     if (view->workspace_id < 0) {
         return;
     }
-    auto& ws = server->view_manager.get_views_workspace(*server, *view);
+    auto& ws = server->surface_manager.get_views_workspace(*server, *view);
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
         view->x = xsurface->x;
         view->y = xsurface->y;
@@ -221,7 +221,7 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->view_manager.get_views_workspace(*server, *view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
+    server->surface_manager.get_views_workspace(*server, *view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
@@ -247,7 +247,7 @@ void XwaylandORSurface::map(Server& server)
 {
     mapped = true;
     commit_listener = server.listeners.add_listener(&xwayland_surface->surface->events.commit,
-                                                     Listener { XwaylandORSurface::surface_commit_handler, &server, this });
+                                                    Listener { XwaylandORSurface::surface_commit_handler, &server, this });
 
     lx = xwayland_surface->x;
     ly = xwayland_surface->y;
@@ -265,12 +265,7 @@ XwaylandORSurface* create_xwayland_or_surface(Server& server, struct wlr_xwaylan
     xwayland_or_surface->server = &server;
     xwayland_or_surface->xwayland_surface = xwayland_surface;
 
-    register_handlers(server, xwayland_or_surface, {
-        { &xwayland_or_surface->xwayland_surface->events.map, XwaylandORSurface::surface_map_handler },
-        { &xwayland_or_surface->xwayland_surface->events.unmap, XwaylandORSurface::surface_unmap_handler },
-        { &xwayland_or_surface->xwayland_surface->events.destroy, XwaylandORSurface::surface_destroy_handler },
-        { &xwayland_or_surface->xwayland_surface->events.request_configure, XwaylandORSurface::surface_request_configure_handler }
-    });
+    register_handlers(server, xwayland_or_surface, { { &xwayland_or_surface->xwayland_surface->events.map, XwaylandORSurface::surface_map_handler }, { &xwayland_or_surface->xwayland_surface->events.unmap, XwaylandORSurface::surface_unmap_handler }, { &xwayland_or_surface->xwayland_surface->events.destroy, XwaylandORSurface::surface_destroy_handler }, { &xwayland_or_surface->xwayland_surface->events.request_configure, XwaylandORSurface::surface_request_configure_handler } });
 
     return xwayland_or_surface;
 }
@@ -305,7 +300,7 @@ void XwaylandORSurface::surface_destroy_handler(struct wl_listener* listener, vo
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 
     server->listeners.clear_listeners(xwayland_or_surface);
-    server->xwayland_or_surfaces.remove_if([xwayland_or_surface](const auto& x) { return xwayland_or_surface == x.get(); });
+    server->surface_manager.xwayland_or_surfaces.remove_if([xwayland_or_surface](const auto& x) { return xwayland_or_surface == x.get(); });
 }
 
 void XwaylandORSurface::surface_request_configure_handler(struct wl_listener* listener, void* data)

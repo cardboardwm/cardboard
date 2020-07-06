@@ -198,7 +198,7 @@ static void render_layer(Server& server, LayerArray::value_type& surfaces, Outpu
 #if HAVE_XWAYLAND
 static void render_xwayland_or_surface(Server& server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    for (const auto& xwayland_or_surface : server.xwayland_or_surfaces) {
+    for (const auto& xwayland_or_surface : server.surface_manager.xwayland_or_surfaces) {
         if (!xwayland_or_surface->mapped) {
             continue;
         }
@@ -274,8 +274,8 @@ void Output::frame_handler(struct wl_listener* listener, void*)
 #endif
         render_floating(*server, ws, ws.fullscreen_view, wlr_output, renderer, &now);
     } else {
-        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
-        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
+        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
+        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
         render_workspace(*server, ws, wlr_output, renderer, &now);
@@ -286,9 +286,9 @@ void Output::frame_handler(struct wl_listener* listener, void*)
 #endif
 
         render_floating(*server, ws, NullRef<View>, wlr_output, renderer, &now);
-        render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
+        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
     }
-    render_layer(*server, server->layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], *output, renderer, &now);
+    render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], *output, renderer, &now);
 
     // in case of software rendered cursor, render it
     wlr_output_render_software_cursors(wlr_output, nullptr);

@@ -151,7 +151,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
     }
 
     if (view) {
-        auto& ws = server.view_manager.get_views_workspace(server, view.unwrap());
+        auto& ws = server.surface_manager.get_views_workspace(server, view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
@@ -188,7 +188,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
         }
 
         // move the view_r to the front
-        server.view_manager.move_view_to_front(view_r);
+        server.surface_manager.move_view_to_front(view_r);
         // activate surface
         view_r.set_activated(true);
         // the seat will send keyboard events to the view automatically
@@ -197,7 +197,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
 
 fit_on_screen:
     // noop if the view is floating
-    server.view_manager.get_views_workspace(server, view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
+    server.surface_manager.get_views_workspace(server, view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
 }
 
 void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
@@ -232,7 +232,7 @@ void Seat::focus_by_offset(Server& server, int offset)
         return;
     }
     auto& focused_view = focused_view_.unwrap();
-    auto ws = server.view_manager.get_views_workspace(server, focused_view);
+    auto ws = server.surface_manager.get_views_workspace(server, focused_view);
     if (ws.is_view_floating(focused_view)) {
         return;
     }
@@ -281,7 +281,7 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
         return;
     }
 
-    auto& workspace = server.view_manager.get_views_workspace(server, view);
+    auto& workspace = server.surface_manager.get_views_workspace(server, view);
     grab_state = {
         .grab_data = GrabState::Resize {
             .view = &view,
@@ -684,20 +684,21 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
 
     double sx, sy;
     struct wlr_surface* surface;
-    View* view = server->get_surface_under_cursor(seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
+    auto view = server->surface_manager.get_surface_under_cursor(*server, seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
     if (!view) {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
         return;
     }
+    auto& view_r = view.unwrap();
     if (seat->is_mod_pressed(server->config.mouse_mods)) {
         if (event->button == BTN_LEFT) {
             cursor_set_image(*server, *seat, seat->cursor, "grab");
-            seat->begin_move(*server, *view);
+            seat->begin_move(*server, view_r);
             wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_move
         } else if (event->button == BTN_RIGHT) {
             uint32_t edge = 0;
-            edge |= seat->cursor.wlr_cursor->x > view->x + view->geometry.x + view->geometry.width / 2 ? WLR_EDGE_RIGHT : WLR_EDGE_LEFT;
-            edge |= seat->cursor.wlr_cursor->y > view->y + view->geometry.y + view->geometry.height / 2 ? WLR_EDGE_BOTTOM : WLR_EDGE_TOP;
+            edge |= seat->cursor.wlr_cursor->x > view_r.x + view_r.geometry.x + view_r.geometry.width / 2 ? WLR_EDGE_RIGHT : WLR_EDGE_LEFT;
+            edge |= seat->cursor.wlr_cursor->y > view_r.y + view_r.geometry.y + view_r.geometry.height / 2 ? WLR_EDGE_BOTTOM : WLR_EDGE_TOP;
             const char* image = NULL;
             if (edge == (WLR_EDGE_LEFT | WLR_EDGE_TOP)) {
                 image = "nw-resize";
@@ -710,13 +711,13 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
             }
 
             cursor_set_image(*server, *seat, seat->cursor, image);
-            seat->begin_resize(*server, *view, edge);
+            seat->begin_resize(*server, view_r, edge);
             wlr_seat_pointer_clear_focus(seat->wlr_seat); // must be _after_ begin_resize
         }
     } else {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
-        if (view != seat->get_focused_view().raw_pointer()) {
-            seat->focus_view(*server, OptionalRef(view));
+        if (view != seat->get_focused_view()) {
+            seat->focus_view(*server, view);
         }
     }
 }

@@ -157,92 +157,6 @@ bool Server::load_settings()
     return true;
 }
 
-View* Server::get_surface_under_cursor(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
-{
-    OptionalRef<Output> output = output_manager.get_output_at(lx, ly);
-    const auto ws_it = std::find_if(workspaces.begin(), workspaces.end(), [output](const auto& other) {
-        return other.output == output;
-    });
-    if (ws_it == workspaces.end() || !ws_it->output) {
-        return nullptr;
-    }
-
-    // it is guaranteed that the workspace is activated on an output
-
-    // we are trying surfaces from top to bottom
-
-    // first, overlays and top layers
-    for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP }) {
-        // fullscreen views render on top of the TOP layer
-        if (ws_it->fullscreen_view && layer == ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
-            continue;
-        }
-        for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.surface->mapped || !layer_surface.is_on_output(ws_it->output.unwrap())) {
-                continue;
-            }
-
-            if (layer_surface.get_surface_under_coords(lx, ly, surface, sx, sy)) {
-                return nullptr;
-            }
-        }
-    }
-
-    // second, unmanaged xwayland surfaces
-#if HAVE_XWAYLAND
-    for (const auto& xwayland_or_surface : xwayland_or_surfaces) {
-        if (!xwayland_or_surface->mapped) {
-            continue;
-        }
-        if (xwayland_or_surface->get_surface_under_coords(lx, ly, surface, sx, sy)) {
-            return nullptr;
-        }
-    }
-#endif
-
-    if (ws_it->fullscreen_view && ws_it->fullscreen_view.unwrap().get_surface_under_coords(lx, ly, surface, sx, sy)) {
-        return ws_it->fullscreen_view.raw_pointer();
-    }
-
-    // third, floating views
-    for (NotNullPointer<View> floating_view : ws_it->floating_views) {
-        if (!floating_view->mapped) {
-            continue;
-        }
-
-        if (floating_view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
-            return floating_view;
-        }
-    }
-
-    // fourth, regular, tiled views
-    for (auto& tile : ws_it->tiles) {
-        NotNullPointer<View> view = tile.view;
-        if (!view->mapped) {
-            continue;
-        }
-
-        if (view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
-            return view;
-        }
-    }
-
-    // and the very last, bottom layers and backgrounds
-    for (const auto layer : { ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM, ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND }) {
-        for (const auto& layer_surface : layers[layer]) {
-            if (!layer_surface.surface->mapped) {
-                continue;
-            }
-
-            if (layer_surface.get_surface_under_coords(lx, ly, surface, sx, sy)) {
-                return nullptr;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 Workspace& Server::create_workspace()
 {
     workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
@@ -355,7 +269,7 @@ void Server::new_xwayland_surface_handler(struct wl_listener* listener, void* da
     auto* xsurface = static_cast<struct wlr_xwayland_surface*>(data);
 
     if (xsurface->override_redirect) {
-        server->xwayland_or_surfaces.emplace_back(create_xwayland_or_surface(*server, xsurface));
+        server->surface_manager.xwayland_or_surfaces.emplace_back(create_xwayland_or_surface(*server, xsurface));
         return;
     }
 

@@ -39,8 +39,8 @@ extern "C" {
 #include "Output.h"
 #include "OutputManager.h"
 #include "Seat.h"
+#include "SurfaceManager.h"
 #include "View.h"
-#include "ViewManager.h"
 #include "Workspace.h"
 
 #if HAVE_XWAYLAND
@@ -77,15 +77,10 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-#if HAVE_XWAYLAND
-    std::list<std::unique_ptr<XwaylandORSurface>> xwayland_or_surfaces;
-#endif
-    LayerArray layers;
-
     std::vector<Workspace> workspaces;
 
     OutputManager output_manager;
-    ViewManager view_manager;
+    SurfaceManager surface_manager;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
@@ -95,9 +90,7 @@ struct Server {
 
     int exit_code = EXIT_SUCCESS;
 
-    Server()
-    {
-    }
+    Server() = default;
     Server(const Server&) = delete;
 
     /// Initializes the Wayland compositor.
@@ -109,17 +102,6 @@ struct Server {
 #endif
     /// Runs the config script in background. Executed before Server::init_ipc2.
     bool load_settings();
-
-    /**
-     * \brief Returns the xdg surface leaf of the first view under the cursor.
-     *
-     * \a rx and \a ry are root coordinates. That is, coordinates relative to the imaginary plane of all surfaces.
-     *
-     * \param[out] surface The \c wlr_surface found under the cursor.
-     * \param[out] sx The x coordinate of the found surface in root coordinates.
-     * \param[out] sy The y coordinate of the found surface in root coordinates.
-     */
-    View* get_surface_under_cursor(double rx, double ry, struct wlr_surface*& surface, double& sx, double& sy);
 
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();

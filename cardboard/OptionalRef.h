@@ -140,6 +140,6 @@ template <typename T>
 const auto NullRef = OptionalRef<T>(nullptr);
 
 template <typename T>
-OptionalRef(NotNullPointer<T> nnptr) -> OptionalRef<T>;
+OptionalRef(NotNullPointer<T> nnptr)->OptionalRef<T>;
 
 #endif // CARDBOARD_OPTIONAL_REF_H_INCLUDED
