@@ -76,11 +76,11 @@ inline CommandResult workspace_switch(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->workspace_manager.workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->output_manager.workspaces.size())
         return { "Invalid Workspace number" };
 
-    server->seat.focus(*server, server->workspace_manager.workspaces[n]);
-    server->workspace_manager.workspaces[n].arrange_workspace(server->output_manager);
+    server->seat.focus(*server, server->output_manager.workspaces[n]);
+    server->output_manager.workspaces[n].arrange_workspace(server->output_manager);
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
@@ -88,15 +88,15 @@ inline CommandResult workspace_move(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->workspace_manager.workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->output_manager.workspaces.size())
         return { "Invalid Workspace number" };
 
     auto view = server->seat.get_focused_view();
     if (!view) {
         return { "No view to move in current workspace"s };
     }
-    change_view_workspace(*server, view.unwrap(), server->workspace_manager.workspaces[n]);
-    server->workspace_manager.workspaces[n].arrange_workspace(server->output_manager);
+    change_view_workspace(*server, view.unwrap(), server->output_manager.workspaces[n]);
+    server->output_manager.workspaces[n].arrange_workspace(server->output_manager);
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
@@ -136,9 +136,9 @@ inline CommandResult toggle_floating(Server* server)
         return { "" };
     }
     auto& view = view_.unwrap();
-    auto& ws = server->workspace_manager.get_view_workspace(view);
+    auto& ws = server->output_manager.get_view_workspace(view);
 
-    bool currently_floating = server->workspace_manager.workspaces[view.workspace_id].find_floating(&view) != server->workspace_manager.workspaces[view.workspace_id].floating_views.end();
+    bool currently_floating = server->output_manager.workspaces[view.workspace_id].find_floating(&view) != server->output_manager.workspaces[view.workspace_id].floating_views.end();
 
     auto prev_size = view.previous_size;
     view.previous_size = { view.geometry.width, view.geometry.height };
@@ -163,7 +163,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         return { "" };
     }
     auto& view = view_.unwrap();
-    Workspace& workspace = server->workspace_manager.workspaces[view.workspace_id];
+    Workspace& workspace = server->output_manager.workspaces[view.workspace_id];
 
     if (auto it = workspace.find_tile(&view); it != workspace.tiles.end()) {
         auto other = it;
@@ -200,7 +200,7 @@ inline CommandResult cycle_width(Server* server)
     }
     auto& focused_view = focused_view_.unwrap();
 
-    server->workspace_manager.get_view_workspace(focused_view).output.and_then([server, &focused_view](const auto& output) {
+    server->output_manager.get_view_workspace(focused_view).output.and_then([server, &focused_view](const auto& output) {
         const struct wlr_box* output_box = server->output_manager.get_output_box(output);
         focused_view.cycle_width(output_box->width);
     });

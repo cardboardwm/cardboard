@@ -37,7 +37,7 @@ struct SurfaceManager {
      * \param[out] sx The x coordinate of the found surface in root coordinates.
      * \param[out] sy The y coordinate of the found surface in root coordinates.
      */
-    OptionalRef<View> get_surface_under_cursor(OutputManager&, WorkspaceManager&, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+    OptionalRef<View> get_surface_under_cursor(OutputManager&, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
 };
 
 #endif // CARDBOARD_VIEW_MANAGER_H_INCLUDED

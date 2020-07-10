@@ -122,7 +122,7 @@ XDGPopup::XDGPopup(struct wlr_xdg_popup* wlr_popup, NotNullPointer<XDGView> pare
 
 void XDGPopup::unconstrain(Server& server)
 {
-    const auto output = server.workspace_manager.get_view_workspace(*parent).output;
+    const auto output = server.output_manager.get_view_workspace(*parent).output;
     if (!output) {
         return;
     }
@@ -224,7 +224,7 @@ void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
 
     struct wlr_box new_geo;
     wlr_xdg_surface_get_geometry(view->xdg_surface, &new_geo);
-    auto& ws = server->workspace_manager.get_view_workspace(*view);
+    auto& ws = server->output_manager.get_view_workspace(*view);
     if (memcmp(&new_geo, &view->geometry, sizeof(struct wlr_box)) != 0) {
         // the view has set a new size
         wlr_log(WLR_DEBUG, "new size (%3d %3d) -> (%3d %3d)", view->geometry.width, view->geometry.height, new_geo.width, new_geo.height);
@@ -268,7 +268,7 @@ void XDGView::toplevel_request_fullscreen_handler(struct wl_listener* listener, 
 
     bool set = event->fullscreen;
 
-    server->workspace_manager.get_view_workspace(*view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
+    server->output_manager.get_view_workspace(*view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 void XDGPopup::destroy_handler(struct wl_listener* listener, void*)

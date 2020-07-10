@@ -85,7 +85,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     auto& output = server->output_manager.outputs.back();
 
     Workspace* ws_to_assign = nullptr;
-    for (auto& ws : server->workspace_manager.workspaces) {
+    for (auto& ws : server->output_manager.workspaces) {
         if (!ws.output) {
             ws_to_assign = &ws;
             break;
@@ -93,7 +93,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     }
 
     if (!ws_to_assign) {
-        ws_to_assign = &server->workspace_manager.create_workspace();
+        ws_to_assign = &server->output_manager.create_workspace();
     }
 
     ws_to_assign->activate(output);
@@ -101,4 +101,15 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
 
     // the output doesn't need to be exposed as a wayland global
     // because wlr_output_layout does it for us already
+}
+
+Workspace& OutputManager::create_workspace()
+{
+    workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
+    return workspaces.back();
+}
+
+Workspace& OutputManager::get_view_workspace(View& view)
+{
+    return workspaces[view.workspace_id];
 }

@@ -51,8 +51,8 @@ void register_output(Server& server, Output&& output_)
 /// Arrange the workspace associated with \a output.
 static void arrange_output(Server& server, Output& output)
 {
-    auto ws_it = std::find_if(server.workspace_manager.workspaces.begin(), server.workspace_manager.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
-    if (ws_it == server.workspace_manager.workspaces.end()) {
+    auto ws_it = std::find_if(server.output_manager.workspaces.begin(), server.output_manager.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
+    if (ws_it == server.output_manager.workspaces.end()) {
         return;
     }
     ws_it->arrange_workspace(server.output_manager);
@@ -266,7 +266,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    auto& ws = *std::find_if(server->workspace_manager.workspaces.begin(), server->workspace_manager.workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
+    auto& ws = *std::find_if(server->output_manager.workspaces.begin(), server->output_manager.workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
     if (ws.fullscreen_view) {
         render_workspace(*server, ws, wlr_output, renderer, &now);
 #if HAVE_XWAYLAND
@@ -311,7 +311,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
 
-    for (auto& ws : server->workspace_manager.workspaces) {
+    for (auto& ws : server->output_manager.workspaces) {
         if (ws.output && &ws.output.unwrap() == output) {
             ws.deactivate();
             break;

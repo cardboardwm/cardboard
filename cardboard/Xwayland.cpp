@@ -203,7 +203,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
     if (view->workspace_id < 0) {
         return;
     }
-    auto& ws = server->workspace_manager.get_view_workspace(*view);
+    auto& ws = server->output_manager.get_view_workspace(*view);
     if (xsurface->x != view->x || xsurface->y != view->y || xsurface->width != view->geometry.width || xsurface->height != view->geometry.height) {
         view->x = xsurface->x;
         view->y = xsurface->y;
@@ -221,7 +221,7 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
     auto* view = get_listener_data<XwaylandView*>(listener);
 
     bool set = view->xwayland_surface->fullscreen;
-    server->workspace_manager.get_view_workspace(*view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
+    server->output_manager.get_view_workspace(*view).set_fullscreen_view(server->output_manager, set ? OptionalRef<View>(view) : NullRef<View>);
 }
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)

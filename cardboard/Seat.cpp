@@ -151,7 +151,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
     }
 
     if (view) {
-        auto& ws = server.workspace_manager.get_view_workspace(view.unwrap());
+        auto& ws = server.output_manager.get_view_workspace(view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
@@ -197,7 +197,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
 
 fit_on_screen:
     // noop if the view is floating
-    server.workspace_manager.get_view_workspace(view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
+    server.output_manager.get_view_workspace(view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
 }
 
 void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
@@ -232,7 +232,7 @@ void Seat::focus_by_offset(Server& server, int offset)
         return;
     }
     auto& focused_view = focused_view_.unwrap();
-    auto ws = server.workspace_manager.get_view_workspace(focused_view);
+    auto ws = server.output_manager.get_view_workspace(focused_view);
     if (ws.is_view_floating(focused_view)) {
         return;
     }
@@ -281,7 +281,7 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
         return;
     }
 
-    auto& workspace = server.workspace_manager.get_view_workspace(view);
+    auto& workspace = server.output_manager.get_view_workspace(view);
     grab_state = {
         .grab_data = GrabState::Resize {
             .view = &view,
@@ -490,7 +490,7 @@ bool Seat::is_grabbing(View& view)
 
 OptionalRef<Workspace> Seat::get_focused_workspace(Server& server)
 {
-    for (auto& ws : server.workspace_manager.workspaces) {
+    for (auto& ws : server.output_manager.workspaces) {
         if (ws.output && server.output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
@@ -684,7 +684,7 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
 
     double sx, sy;
     struct wlr_surface* surface;
-    auto view = server->surface_manager.get_surface_under_cursor(*server, seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
+    auto view = server->surface_manager.get_surface_under_cursor(server->output_manager, seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
     if (!view) {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
         return;

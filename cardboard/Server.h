@@ -79,7 +79,6 @@ struct Server {
 
     OutputManager output_manager;
     SurfaceManager surface_manager;
-    WorkspaceManager workspace_manager;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;

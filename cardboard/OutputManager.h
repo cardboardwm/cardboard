@@ -9,6 +9,7 @@ extern "C" {
 
 #include "NotNull.h"
 #include "OptionalRef.h"
+#include "Workspace.h"
 
 struct Output;
 struct Server;
@@ -16,6 +17,7 @@ struct Server;
 struct OutputManager {
     struct wlr_output_layout* output_layout;
     std::list<Output> outputs;
+    std::vector<Workspace> workspaces;
 
     void register_handlers(Server& server, struct wl_signal* new_output);
 
@@ -33,6 +35,10 @@ struct OutputManager {
 
     /// Removes \a output from the output list. Doesn't do anything else.
     void remove_output_from_list(Output& output);
+
+    /// Creates a new workspace, without any assigned output.
+    Workspace& create_workspace();
+    Workspace& get_view_workspace(View&);
 
 private:
     /**

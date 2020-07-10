@@ -70,7 +70,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        workspace_manager.create_workspace();
+        output_manager.create_workspace();
     }
 
     register_handlers(*this, NoneT {}, {
