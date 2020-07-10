@@ -8,6 +8,7 @@
 
 #include "Layers.h"
 #include "OptionalRef.h"
+#include "OutputManager.h"
 #include "View.h"
 #include "Workspace.h"
 #include "Xwayland.h"
@@ -26,8 +27,6 @@ struct SurfaceManager {
     /// Puts the \a view on top.
     void move_view_to_front(View&);
 
-    Workspace& get_views_workspace(Server&, View&);
-
     /**
      * \brief Returns the xdg / xwayland / layer_shell surface leaf of the first
      * view / layer / xwayland override redirect surface under the cursor.
@@ -38,7 +37,7 @@ struct SurfaceManager {
      * \param[out] sx The x coordinate of the found surface in root coordinates.
      * \param[out] sy The y coordinate of the found surface in root coordinates.
      */
-    OptionalRef<View> get_surface_under_cursor(Server&, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
+    OptionalRef<View> get_surface_under_cursor(OutputManager&, WorkspaceManager&, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy);
 };
 
 #endif // CARDBOARD_VIEW_MANAGER_H_INCLUDED

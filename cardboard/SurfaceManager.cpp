@@ -18,7 +18,7 @@ void SurfaceManager::unmap_view(Server& server, View& view)
 {
     if (view.mapped) {
         view.mapped = false;
-        get_views_workspace(server, view).remove_view(server.output_manager, view);
+        server.workspace_manager.get_view_workspace(view).remove_view(server.output_manager, view);
     }
 
     server.seat.hide_view(server, view);
@@ -30,19 +30,13 @@ void SurfaceManager::move_view_to_front(View& view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [&view](const std::unique_ptr<View>& x) { return &view == x.get(); }));
 }
 
-Workspace& SurfaceManager::get_views_workspace(Server& server, View& view)
+OptionalRef<View> SurfaceManager::get_surface_under_cursor(OutputManager& output_manager, WorkspaceManager& workspace_manager, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
-    assert(view.workspace_id >= 0);
-    return server.workspace_manager.workspaces[view.workspace_id];
-}
-
-OptionalRef<View> SurfaceManager::get_surface_under_cursor(Server& server, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
-{
-    OptionalRef<Output> output = server.output_manager.get_output_at(lx, ly);
-    const auto ws_it = std::find_if(server.workspace_manager.workspaces.begin(), server.workspace_manager.workspaces.end(), [output](const auto& other) {
+    OptionalRef<Output> output = output_manager.get_output_at(lx, ly);
+    const auto ws_it = std::find_if(workspace_manager.workspaces.begin(), workspace_manager.workspaces.end(), [output](const auto& other) {
         return other.output == output;
     });
-    if (ws_it == server.workspace_manager.workspaces.end() || !ws_it->output) {
+    if (ws_it == workspace_manager.workspaces.end() || !ws_it->output) {
         return NullRef<View>;
     }
 

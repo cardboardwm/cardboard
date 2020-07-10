@@ -3,7 +3,7 @@
 /// Moves the view from a workspace to another. Handles special cases like fullscreen views, floating views etc.
 void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
 {
-    Workspace& workspace = server.surface_manager.get_views_workspace(server, view);
+    Workspace& workspace = server.workspace_manager.get_view_workspace(view);
 
     if (&workspace == &new_workspace) {
         return;

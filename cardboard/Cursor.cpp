@@ -35,11 +35,11 @@ static void register_image_surface(Server& server, SeatCursor& cursor, struct wl
     }
 }
 
-void init_cursor(Server& server, SeatCursor& cursor)
+void init_cursor(OutputManager& output_manager, SeatCursor& cursor)
 {
     cursor.wlr_cursor = wlr_cursor_create();
     cursor.wlr_cursor->data = &cursor;
-    wlr_cursor_attach_output_layout(cursor.wlr_cursor, server.output_manager.output_layout);
+    wlr_cursor_attach_output_layout(cursor.wlr_cursor, output_manager.output_layout);
 
     cursor.wlr_xcursor_manager = wlr_xcursor_manager_create(nullptr, 24);
     wlr_xcursor_manager_load(cursor.wlr_xcursor_manager, 1);
@@ -80,7 +80,7 @@ void cursor_rebase(Server& server, Seat& seat, SeatCursor& cursor, uint32_t time
 
     double sx, sy;
     struct wlr_surface* surface = nullptr;
-    server.surface_manager.get_surface_under_cursor(server, cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
+    server.surface_manager.get_surface_under_cursor(server.output_manager, server.workspace_manager, cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
     if (!surface) {
         // set the cursor to default
         cursor_set_image(server, seat, cursor, "left_ptr");

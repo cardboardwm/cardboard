@@ -258,3 +258,8 @@ Workspace& WorkspaceManager::create_workspace()
     workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
     return workspaces.back();
 }
+
+Workspace& WorkspaceManager::get_view_workspace(View& view)
+{
+    return workspaces[view.workspace_id];
+}

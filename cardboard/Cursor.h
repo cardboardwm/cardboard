@@ -10,6 +10,7 @@ extern "C" {
 #include <cstdint>
 
 #include "OptionalRef.h"
+#include "OutputManager.h"
 
 struct Server;
 struct Seat;
@@ -25,7 +26,7 @@ private:
     static void image_surface_destroy_handler(struct wl_listener* listener, void* data);
 };
 
-void init_cursor(Server& server, SeatCursor& cursor);
+void init_cursor(OutputManager&, SeatCursor& cursor);
 
 /**
   * \brief Sets the cursor image to an xcursor named \a image.

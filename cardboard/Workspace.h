@@ -133,6 +133,7 @@ struct WorkspaceManager {
 
     /// Creates a new workspace, without any assigned output.
     Workspace& create_workspace();
+    Workspace& get_view_workspace(View&);
 };
 
 #endif //  CARDBOARD_TILING_H_INCLUDED

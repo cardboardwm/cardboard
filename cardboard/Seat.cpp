@@ -69,7 +69,7 @@ void init_seat(Server& server, Seat& seat, const char* name)
     seat.wlr_seat->data = &seat;
 
     seat.cursor = SeatCursor {};
-    init_cursor(server, seat.cursor);
+    init_cursor(server.output_manager, seat.cursor);
 
     seat.inhibit_manager = wlr_input_inhibit_manager_create(server.wl_display);
 
@@ -151,7 +151,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
     }
 
     if (view) {
-        auto& ws = server.surface_manager.get_views_workspace(server, view.unwrap());
+        auto& ws = server.workspace_manager.get_view_workspace(view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
@@ -197,7 +197,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
 
 fit_on_screen:
     // noop if the view is floating
-    server.surface_manager.get_views_workspace(server, view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
+    server.workspace_manager.get_view_workspace(view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
 }
 
 void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
@@ -232,7 +232,7 @@ void Seat::focus_by_offset(Server& server, int offset)
         return;
     }
     auto& focused_view = focused_view_.unwrap();
-    auto ws = server.surface_manager.get_views_workspace(server, focused_view);
+    auto ws = server.workspace_manager.get_view_workspace(focused_view);
     if (ws.is_view_floating(focused_view)) {
         return;
     }
@@ -281,7 +281,7 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
         return;
     }
 
-    auto& workspace = server.surface_manager.get_views_workspace(server, view);
+    auto& workspace = server.workspace_manager.get_view_workspace(view);
     grab_state = {
         .grab_data = GrabState::Resize {
             .view = &view,
