@@ -15,6 +15,7 @@ extern "C" {
 #include "OptionalRef.h"
 
 class View;
+struct Server;
 struct Output;
 struct OutputManager;
 
@@ -49,6 +50,7 @@ struct Workspace {
     /// The currently full screened view, if any.
     OptionalRef<View> fullscreen_view;
     std::optional<std::pair<int, int>> fullscreen_original_size;
+    Server* server;
 
     IndexType index;
 

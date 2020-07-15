@@ -37,7 +37,7 @@ struct OutputManager {
     void remove_output_from_list(Output& output);
 
     /// Creates a new workspace, without any assigned output.
-    Workspace& create_workspace();
+    Workspace& create_workspace(Server* server);
     Workspace& get_view_workspace(View&);
 
 private:

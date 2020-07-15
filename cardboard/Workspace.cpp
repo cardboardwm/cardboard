@@ -96,8 +96,12 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
         if (!tile.view->mapped || tile.view->expansion_state == View::ExpansionState::FULLSCREEN || tile.view->expansion_state == View::ExpansionState::RECOVERING) {
             continue;
         }
-        tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
-        tile.view->y = output_box->y + usable_area.y - tile.view->geometry.y;
+
+        server->view_animation->enqueue_task({
+            tile.view,
+            output_box->x + acc_width - tile.view->geometry.x - scroll_x,
+            output_box->y + usable_area.y - tile.view->geometry.y
+        });
         tile.view->resize(tile.view->geometry.width, usable_area.height);
 
         acc_width += tile.view->geometry.width;

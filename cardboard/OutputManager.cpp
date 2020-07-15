@@ -93,7 +93,7 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     }
 
     if (!ws_to_assign) {
-        ws_to_assign = &server->output_manager.create_workspace();
+        ws_to_assign = &server->output_manager.create_workspace(server);
     }
 
     ws_to_assign->activate(output);
@@ -103,9 +103,9 @@ void OutputManager::output_layout_add_handler(struct wl_listener* listener, void
     // because wlr_output_layout does it for us already
 }
 
-Workspace& OutputManager::create_workspace()
+Workspace& OutputManager::create_workspace(Server* server)
 {
-    workspaces.push_back({ .index = static_cast<Workspace::IndexType>(workspaces.size()) });
+    workspaces.push_back({ .server = server, .index = static_cast<Workspace::IndexType>(workspaces.size()) });
     return workspaces.back();
 }
 
