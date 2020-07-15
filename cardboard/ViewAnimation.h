@@ -28,7 +28,7 @@ struct AnimationSettings {
 };
 
 class ViewAnimation {
-    ViewAnimation(Server* server, AnimationSettings);
+    ViewAnimation(AnimationSettings);
 
 public:
     void enqueue_task(const AnimationTask&);
@@ -45,7 +45,6 @@ private:
 
     std::deque<Task> tasks;
 
-    Server* server;
     wl_event_source* event_source;
     AnimationSettings settings;
     static int timer_callback(void* data);

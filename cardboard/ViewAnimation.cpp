@@ -2,8 +2,7 @@
 
 #include "Server.h"
 
-ViewAnimation::ViewAnimation(Server *server, AnimationSettings settings):
-    server{server},
+ViewAnimation::ViewAnimation(AnimationSettings settings):
     settings{settings}
 {
 }
@@ -61,7 +60,7 @@ int ViewAnimation::timer_callback(void *data)
 
 ViewAnimationInstance create_view_animation(Server* server, AnimationSettings settings)
 {
-    auto view_animation = std::make_unique<ViewAnimation>(ViewAnimation{server, settings});
+    auto view_animation = std::make_unique<ViewAnimation>(ViewAnimation{settings});
     view_animation->event_source =
             wl_event_loop_add_timer(server->event_loop, ViewAnimation::timer_callback, view_animation.get());
 
