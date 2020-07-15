@@ -181,6 +181,8 @@ bool Server::run()
         return false;
     }
 
+    view_animation = create_view_animation(this, 17);
+
     wlr_log(WLR_INFO, "Running Cardboard on WAYLAND_DISPLAY=%s", socket);
     wl_display_run(wl_display);
 

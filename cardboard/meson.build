@@ -49,6 +49,7 @@ cardboard_sources = files(
   'Workspace.cpp',
   'XDGView.cpp',
   'ViewOperations.cpp',
+  'ViewAnimation.cpp',
   'SurfaceManager.cpp',
   'main.cpp',
   'commands/dispatch_command.cpp'

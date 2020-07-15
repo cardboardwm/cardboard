@@ -42,6 +42,7 @@ extern "C" {
 #include "SurfaceManager.h"
 #include "View.h"
 #include "Workspace.h"
+#include "ViewAnimation.h"
 
 #if HAVE_XWAYLAND
 #include <wlr_cpp_fixes/xwayland.h>
@@ -79,6 +80,7 @@ struct Server {
 
     OutputManager output_manager;
     SurfaceManager surface_manager;
+    ViewAnimationInstance view_animation;
 
     ListenerList listeners;
     KeybindingsConfig keybindings_config;
