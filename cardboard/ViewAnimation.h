@@ -32,6 +32,8 @@ class ViewAnimation {
 
 public:
     void enqueue_task(const AnimationTask&);
+    /// Cancel animation tasks for the given view and warp it to its target coords.
+    void cancel_tasks(View&);
 
 private:
     struct Task
@@ -41,6 +43,7 @@ private:
         int targetx, targety;
         std::chrono::time_point<std::chrono::high_resolution_clock> begin;
         std::function<void()> animation_finished_callback;
+        bool cancelled;
 
         // aggregate initialization not working wtf
         Task(View* view, int startx, int starty, int targetx, int targety, std::chrono::time_point<std::chrono::high_resolution_clock> begin, std::function<void()> animation_finished_callback)
@@ -51,6 +54,7 @@ private:
             , targety(targety)
             , begin(begin)
             , animation_finished_callback(animation_finished_callback)
+            , cancelled(false)
         {
         }
     };

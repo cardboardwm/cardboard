@@ -252,13 +252,23 @@ void Seat::remove_from_focus_stack(View& view)
     focus_stack.remove(&view);
 }
 
-void Seat::begin_move(Server&, View& view)
+void Seat::begin_move(Server& server, View& view)
 {
     assert(grab_state == std::nullopt);
     struct wlr_surface* focused_surface = wlr_seat->pointer_state.focused_surface;
     if (view.get_surface() != focused_surface) {
         // don't handle the request if the view is not in pointer focus
         return;
+    }
+
+    auto& workspace = server.output_manager.get_view_workspace(view);
+    auto floating_it = std::find(workspace.floating_views.begin(), workspace.floating_views.end(), &view);
+    bool is_tiled = floating_it == workspace.floating_views.end();
+
+    if (is_tiled) {
+        for (auto& tile : workspace.tiles) {
+            server.view_animation->cancel_tasks(*tile.view);
+        }
     }
 
     grab_state = {
@@ -342,7 +352,7 @@ void Seat::process_cursor_move(Server& server, GrabState::Move move_data)
 
     View* view = move_data.view;
 
-    reconfigure_view_position(server, *view, move_data.view_x + dx, move_data.view_y + dy);
+    reconfigure_view_position(server, *view, move_data.view_x + dx, move_data.view_y + dy, false);
 }
 
 void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)

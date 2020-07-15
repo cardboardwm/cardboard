@@ -18,6 +18,17 @@ void ViewAnimation::enqueue_task(const AnimationTask& task)
     );
 }
 
+void ViewAnimation::cancel_tasks(View& view)
+{
+    for (auto& task : tasks) {
+        if (task.view == &view) {
+            task.cancelled = true;
+            task.view->x = task.view->target_x;
+            task.view->y = task.view->target_y;
+        }
+    }
+}
+
 static float beziere_blend(float t)
 {
     t = std::min(1.0f, t);
@@ -34,6 +45,10 @@ int ViewAnimation::timer_callback(void *data)
     {
         auto task = view_animation->tasks.front();
         view_animation->tasks.pop_front();
+
+        if (task.cancelled) {
+            continue;
+        }
 
         auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
                 current_time - task.begin);

@@ -76,7 +76,7 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
     arrange_workspace(output_manager);
 }
 
-void Workspace::arrange_workspace(OutputManager& output_manager)
+void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
 {
     if (!output) {
         return;
@@ -100,11 +100,16 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
         tile.view->target_x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
         tile.view->target_y = output_box->y + usable_area.y - tile.view->geometry.y;
 
-        server->view_animation->enqueue_task({
-            tile.view,
-            tile.view->target_x,
-            tile.view->target_y
-        });
+        if (animate) {
+            server->view_animation->enqueue_task({
+                tile.view,
+                tile.view->target_x,
+                tile.view->target_y
+            });
+        } else {
+            tile.view->x = tile.view->target_x;
+            tile.view->y = tile.view->target_y;
+        }
 
         tile.view->resize(tile.view->geometry.width, usable_area.height);
 

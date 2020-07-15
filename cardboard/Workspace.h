@@ -89,7 +89,7 @@ struct Workspace {
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.
     */
-    void arrange_workspace(OutputManager& output_manager);
+    void arrange_workspace(OutputManager& output_manager, bool animate = true);
 
     /**
      * \brief Scrolls the viewport of the workspace just enough to make the
