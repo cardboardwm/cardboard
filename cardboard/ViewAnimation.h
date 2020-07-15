@@ -10,7 +10,7 @@ extern "C" {
 #include <chrono>
 #include "View.h"
 
-class Server;
+struct Server;
 
 class ViewAnimation;
 using ViewAnimationInstance = std::unique_ptr<ViewAnimation>;
