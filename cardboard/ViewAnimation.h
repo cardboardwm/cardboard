@@ -6,25 +6,50 @@ extern "C" {
 };
 
 #include <memory>
+#include <deque>
+#include <chrono>
+#include "View.h"
 
 class Server;
 
 class ViewAnimation;
 using ViewAnimationInstance = std::unique_ptr<ViewAnimation>;
 
-class ViewAnimation {
-    ViewAnimation(Server* server, int ms_per_frame);
-
-public:
-
-private:
-    Server* server;
-    wl_event_source* event_source;
-    int ms_per_frame;
-    static int timer_callback(void* data);
-    friend ViewAnimationInstance create_view_animation(Server* server, int ms_per_frame);
+struct AnimationTask {
+    View* view;
+    int targetx;
+    int targety;
 };
 
-ViewAnimationInstance create_view_animation(Server* server, int ms_per_frame);
+struct AnimationSettings {
+    int ms_per_frame;
+    int animation_duration; //ms
+};
+
+class ViewAnimation {
+    ViewAnimation(Server* server, AnimationSettings);
+
+public:
+    void enqueue_task(const AnimationTask&);
+
+private:
+    struct Task
+    {
+        View* view;
+        int startx, starty;
+        int targetx, targety;
+        std::chrono::time_point<std::chrono::high_resolution_clock> begin;
+    };
+
+    std::deque<Task> tasks;
+
+    Server* server;
+    wl_event_source* event_source;
+    AnimationSettings settings;
+    static int timer_callback(void* data);
+    friend ViewAnimationInstance create_view_animation(Server* server, AnimationSettings);
+};
+
+ViewAnimationInstance create_view_animation(Server* server, AnimationSettings);
 
 #endif //BUILD_VIEWANIMATION_H
