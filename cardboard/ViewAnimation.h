@@ -41,6 +41,18 @@ private:
         int targetx, targety;
         std::chrono::time_point<std::chrono::high_resolution_clock> begin;
         std::function<void()> animation_finished_callback;
+
+        // aggregate initialization not working wtf
+        Task(View* view, int startx, int starty, int targetx, int targety, std::chrono::time_point<std::chrono::high_resolution_clock> begin, std::function<void()> animation_finished_callback)
+            : view(view)
+            , startx(startx)
+            , starty(starty)
+            , targetx(targetx)
+            , targety(targety)
+            , begin(begin)
+            , animation_finished_callback(animation_finished_callback)
+        {
+        }
     };
 
     std::deque<Task> tasks;
