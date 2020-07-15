@@ -14,7 +14,8 @@ void ViewAnimation::enqueue_task(const AnimationTask& task)
         task.view,
         task.view->x, task.view->y,
         task.targetx, task.targety,
-        std::chrono::high_resolution_clock::now()
+        std::chrono::high_resolution_clock::now(),
+        task.animation_finished_callback
     );
 }
 
@@ -47,6 +48,10 @@ int ViewAnimation::timer_callback(void *data)
 
         if(completeness < 0.999) { // animation incomplete;
             view_animation->tasks.push_back(task);
+        } else {
+            if(task.animation_finished_callback) {
+                task.animation_finished_callback();
+            }
         }
     }
 

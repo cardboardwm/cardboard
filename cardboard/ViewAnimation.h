@@ -19,6 +19,7 @@ struct AnimationTask {
     View* view;
     int targetx;
     int targety;
+    std::function<void()> animation_finished_callback = nullptr;
 };
 
 struct AnimationSettings {
@@ -39,6 +40,7 @@ private:
         int startx, starty;
         int targetx, targety;
         std::chrono::time_point<std::chrono::high_resolution_clock> begin;
+        std::function<void()> animation_finished_callback;
     };
 
     std::deque<Task> tasks;
