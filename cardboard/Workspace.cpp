@@ -97,11 +97,15 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
             continue;
         }
 
+        tile.view->target_x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
+        tile.view->target_y = output_box->y + usable_area.y - tile.view->geometry.y;
+
         server->view_animation->enqueue_task({
             tile.view,
-            output_box->x + acc_width - tile.view->geometry.x - scroll_x,
-            output_box->y + usable_area.y - tile.view->geometry.y
+            tile.view->target_x,
+            tile.view->target_y
         });
+
         tile.view->resize(tile.view->geometry.width, usable_area.height);
 
         acc_width += tile.view->geometry.width;
@@ -129,9 +133,9 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
 
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
-    int vx = view.x + view.geometry.x;
+    int vx = view.target_x + view.geometry.x;
 
-    bool overflowing = vx < 0 || view.x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
+    bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
     if (condense && &view == tiles.begin()->view) {
         // align first window to the display's left edge
         scroll_x = -usable_area.x;

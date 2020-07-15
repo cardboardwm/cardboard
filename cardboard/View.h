@@ -85,6 +85,14 @@ public:
     Workspace::IndexType workspace_id;
 
     int x, y; ///< Coordinates of the surface, relative to the output layout (root coordinates).
+    /**
+     * \brief Computed coordinates of the surface after applying the tiling algorithm.
+     *
+     * The x and y coordinates represent the current coords on the screen and may be altered by ongoing animations.
+     * target_x and target_y reflect the most recent computation of the tiling algorithm, without being disturbed by the
+     * animation system.
+     * */
+    int target_x, target_y;
     bool mapped;
     bool new_view; ///< True if the view didn't have its first map.
 
@@ -152,6 +160,8 @@ protected:
         , workspace_id(-1)
         , x(0)
         , y(0)
+        , target_x(0)
+        , target_y(0)
         , mapped(false)
         , new_view(true)
     {
