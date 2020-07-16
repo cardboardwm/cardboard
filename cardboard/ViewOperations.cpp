@@ -61,7 +61,7 @@ static void update_view_workspace(Server& server, View& view)
 /// Does the appropriate movement for tiled and floating views. When moved, tiled views scroll the workspace, and floating views need to be updated when changing outputs.
 void reconfigure_view_position(Server& server, View& view, int x, int y)
 {
-    if (auto& workspace = server.output_manager.workspaces[view.workspace_id]; workspace.find_tile(&view) != workspace.tiles.end()) {
+    if (auto& workspace = server.output_manager.workspaces[view.workspace_id]; workspace.find_column(&view) != workspace.columns.end()) {
         int dx = view.x - x;
 
         scroll_workspace(server.output_manager, workspace, RelativeScroll { dx });
@@ -76,7 +76,7 @@ void reconfigure_view_size(Server& server, View& view, int width, int height)
 {
     auto& workspace = server.output_manager.workspaces[view.workspace_id];
 
-    if (workspace.find_tile(&view) != workspace.tiles.end()) {
+    if (workspace.find_column(&view) != workspace.columns.end()) {
         height = view.geometry.height;
     }
 

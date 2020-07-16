@@ -95,26 +95,28 @@ static void render_workspace(Server& server, Workspace& ws, struct wlr_output* w
     auto focused_view = server.seat.get_focused_view();
 
     bool focused_tiled = false;
-    for (const auto& tile : ws.tiles) {
-        if (!tile.view->mapped) {
-            continue;
+    for (const auto& column : ws.columns) {
+        for (const auto& tile : column.tiles) {
+            if (!tile.view->mapped) {
+                continue;
+            }
+
+            if (tile.view == focused_view.raw_pointer()) {
+                focused_tiled = true;
+                continue;
+            }
+
+            RenderData rdata = {
+                .output = wlr_output,
+                .renderer = renderer,
+                .lx = tile.view->x,
+                .ly = tile.view->y,
+                .when = now,
+                .server = &server
+            };
+
+            tile.view->for_each_surface(render_surface, &rdata);
         }
-
-        if (tile.view == focused_view.raw_pointer()) {
-            focused_tiled = true;
-            continue;
-        }
-
-        RenderData rdata = {
-            .output = wlr_output,
-            .renderer = renderer,
-            .lx = tile.view->x,
-            .ly = tile.view->y,
-            .when = now,
-            .server = &server
-        };
-
-        tile.view->for_each_surface(render_surface, &rdata);
     }
 
     if (focused_tiled) {

@@ -151,7 +151,7 @@ inline CommandResult toggle_floating(Server* server)
     }
 
     ws.remove_view(server->output_manager, view, true);
-    ws.add_view(server->output_manager, view, ws.tiles.empty() ? nullptr : ws.tiles.back().view.get(), !currently_floating, true);
+    ws.add_view(server->output_manager, view, ws.columns.empty() ? nullptr : ws.columns.back().tiles.back().view.get(), !currently_floating, true);
 
     return { "" };
 }
@@ -165,12 +165,12 @@ inline CommandResult move(Server* server, int dx, int dy)
     auto& view = view_.unwrap();
     Workspace& workspace = server->output_manager.workspaces[view.workspace_id];
 
-    if (auto it = workspace.find_tile(&view); it != workspace.tiles.end()) {
+    if (auto it = workspace.find_column(&view); it != workspace.columns.end()) {
         auto other = it;
 
         std::advance(other, dx / abs(dx));
 
-        if ((it == workspace.tiles.begin() && dx < 0) || other == workspace.tiles.end()) {
+        if ((it == workspace.columns.begin() && dx < 0) || other == workspace.columns.end()) {
             return { "" };
         }
 

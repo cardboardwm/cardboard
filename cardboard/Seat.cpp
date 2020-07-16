@@ -8,6 +8,7 @@ extern "C" {
 #include <functional>
 #include <memory>
 #include <optional>
+#include <unordered_set>
 
 #include "Cursor.h"
 #include "Helpers.h"
@@ -237,14 +238,20 @@ void Seat::focus_by_offset(Server& server, int offset)
         return;
     }
 
-    auto it = ws.find_tile(&focused_view);
-    if (int index = std::distance(ws.tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.tiles.size())) {
+    auto it = ws.find_column(&focused_view);
+    if (int index = std::distance(ws.columns.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.columns.size())) {
         // out of bounds
         return;
     }
 
     std::advance(it, offset);
-    focus_view(server, OptionalRef(it->view));
+
+    auto column_views = it->get_mapped_and_normal_set();
+    for (auto view_ptr : focus_stack) {
+        if (column_views.contains(view_ptr)) {
+            focus_view(server, OptionalRef(view_ptr));
+        }
+    }
 }
 
 void Seat::remove_from_focus_stack(View& view)
@@ -449,7 +456,7 @@ void Seat::update_swipe(Server& server)
 
     data->scroll_x -= data->speed;
     scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
-    data->workspace->find_dominant_view(server.output_manager, get_focused_view()).and_then([data](auto& dominant) {
+    data->workspace->find_dominant_view(server.output_manager, *this, get_focused_view()).and_then([data](auto& dominant) {
         data->dominant_view = OptionalRef(dominant);
     });
     if (data->dominant_view) {

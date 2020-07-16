@@ -145,6 +145,9 @@ public:
     /// Cycles through predefined widths expressed as ratios of the screen's width.
     void cycle_width(int screen_width);
 
+    /// Returns true if the view is mapped and in not fullscreen state.
+    bool is_mapped_and_normal();
+
 protected:
     View()
         : geometry { 0, 0, 0, 0 }

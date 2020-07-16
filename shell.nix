@@ -6,9 +6,11 @@ pkgs.mkShell {
     meson
     ninja
     pkg-config
-    wayland
-    libffi
+    gcc10
   ] ++ pkgs.wlroots.nativeBuildInputs;
 
-  buildInputs = pkgs.wlroots.buildInputs;
+  buildInputs = with pkgs; [
+    wayland
+    libffi
+  ] ++ pkgs.wlroots.buildInputs;
 }

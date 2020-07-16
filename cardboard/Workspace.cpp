@@ -4,6 +4,7 @@ extern "C" {
 
 #include <algorithm>
 #include <cassert>
+#include <unordered_set>
 
 #include "OptionalRef.h"
 #include "Output.h"
@@ -11,10 +12,25 @@ extern "C" {
 #include "ViewOperations.h"
 #include "Workspace.h"
 
-std::list<Workspace::Tile>::iterator Workspace::find_tile(View* view)
+std::unordered_set<View*> Workspace::Column::get_mapped_and_normal_set()
 {
-    return std::find_if(tiles.begin(), tiles.end(), [view](const auto& t) {
-        return t.view == view;
+    std::unordered_set<View*> set;
+    for (auto& tile : tiles) {
+        if (tile.view->is_mapped_and_normal()) {
+            set.insert(tile.view);
+        }
+    }
+
+    return set;
+}
+
+std::list<Workspace::Column>::iterator Workspace::find_column(View* view)
+{
+    return std::find_if(columns.begin(), columns.end(), [view](const auto& column) {
+        return std::find_if(column.tiles.begin(), column.tiles.end(), [view](const auto& tile) {
+                   return tile.view == view;
+               })
+            != column.tiles.end();
     });
 }
 
@@ -42,11 +58,12 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
             it == floating_views.end() ? it : ++it,
             &view);
     } else {
-        auto it = find_tile(next_to);
-        if (it != tiles.end()) {
+        auto it = find_column(next_to);
+        if (it != columns.end()) {
             std::advance(it, 1);
         }
-        tiles.insert(it, { &view });
+        auto new_it = columns.insert(it, Column {});
+        new_it->tiles.push_back({ &view, &*new_it });
     }
 
     if (!transferring) {
@@ -70,7 +87,14 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
         view.set_activated(false);
         view.change_output(output, NullRef<Output>);
     }
-    tiles.remove_if([&view](auto& other) { return other.view == &view; });
+    auto column_it = find_column(&view);
+    if (column_it != columns.end()) {
+        column_it->tiles.remove_if([&view](auto& other) { return other.view == &view; });
+        // destroy column if no tiles left
+        if (column_it->tiles.empty()) {
+            columns.erase(column_it);
+        }
+    }
     floating_views.remove(&view);
 
     arrange_workspace(output_manager);
@@ -91,16 +115,25 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
         view.resize(output_box->width, output_box->height);
     });
 
-    // arrange tiles
-    for (auto& tile : tiles) {
-        if (!tile.view->mapped || tile.view->expansion_state == View::ExpansionState::FULLSCREEN || tile.view->expansion_state == View::ExpansionState::RECOVERING) {
+    // arrange columns
+    for (auto& column : columns) {
+        bool should_skip = false;
+        for (auto& tile : column.tiles) {
+            if (!tile.view->is_mapped_and_normal()) {
+                should_skip = true;
+            }
+        }
+        if (should_skip) {
             continue;
         }
-        tile.view->x = output_box->x + acc_width - tile.view->geometry.x - scroll_x;
-        tile.view->y = output_box->y + usable_area.y - tile.view->geometry.y;
-        tile.view->resize(tile.view->geometry.width, usable_area.height);
 
-        acc_width += tile.view->geometry.width;
+        // TODO: this
+        auto& view = *column.tiles.begin()->view;
+        view.x = output_box->x + acc_width - view.geometry.x - scroll_x;
+        view.y = output_box->y + usable_area.y - view.geometry.y;
+        view.resize(view.geometry.width, usable_area.height);
+
+        acc_width += view.geometry.width;
     }
 }
 
@@ -112,7 +145,8 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
         return;
     }
 
-    if (find_tile(&view) == tiles.end()) {
+    auto column_it = find_column(&view);
+    if (column_it == columns.end()) {
         return;
     }
 
@@ -128,10 +162,10 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     int vx = view.x + view.geometry.x;
 
     bool overflowing = vx < 0 || view.x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
-    if (condense && &view == tiles.begin()->view) {
+    if (condense && column_it == columns.begin()) {
         // align first window to the display's left edge
         scroll_x = -usable_area.x;
-    } else if (condense && &view == tiles.rbegin()->view) {
+    } else if (condense && &*column_it == &*columns.rbegin()) { // epic identity checking
         // align last window to the display's right edge
         scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
     } else if (overflowing && vx < output_box->x + usable_area.x) {
@@ -143,27 +177,39 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     arrange_workspace(output_manager);
 }
 
-OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, OptionalRef<View> focused_view)
+OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, Seat& seat, OptionalRef<View> focused_view)
 {
     if (!output) {
         return NullRef<View>;
     }
 
-    View* most_visible = nullptr;
+    Workspace::Column* most_visible = nullptr;
     double maximum_visibility = 0;
     double focused_view_visibility = 0;
     const auto usable_area = output_manager.get_output_real_usable_area(output.unwrap());
-    for (auto& tile : tiles) {
-        NotNullPointer<View> view = tile.view;
-        if (!view->mapped) {
+
+    // we will find the most visible column, based on its width and position,
+    // and select the most recently focused tile
+    for (auto& column : columns) {
+        // Find first mapped view of the column.
+        // We need it only for its width.
+        View* view = nullptr;
+        for (auto& tile : column.tiles) {
+            view = tile.view;
+            if (view->mapped) {
+                break;
+            }
+        }
+        if (!view) {
             continue;
         }
 
+        // let's consider that our column has only one view
         const struct wlr_box view_box = {
             .x = view->x + view->geometry.x,
-            .y = view->y + view->geometry.y,
+            .y = usable_area.x + view->geometry.y,
             .width = view->geometry.width,
-            .height = view->geometry.height,
+            .height = usable_area.height,
         };
         struct wlr_box intersection;
         bool ok = wlr_box_intersection(&intersection, &usable_area, &view_box);
@@ -174,15 +220,27 @@ OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, O
         double visibility = static_cast<double>(intersection.width * intersection.height) / (view_box.width * view_box.height);
         if (visibility > maximum_visibility) {
             maximum_visibility = visibility;
-            most_visible = view;
+            most_visible = &column;
         }
-        if (view == focused_view.raw_pointer()) {
+
+        bool focused_view_in_this_column = false;
+        for (auto& tile : column.tiles) {
+            if (tile.view == focused_view.raw_pointer()) {
+                focused_view_in_this_column = true;
+            }
+        }
+        if (focused_view_in_this_column) {
             focused_view_visibility = visibility;
         }
     }
 
     if (!focused_view || (focused_view && maximum_visibility - focused_view_visibility > 0.01)) {
-        return OptionalRef(most_visible);
+        auto view_set = most_visible->get_mapped_and_normal_set();
+        for (auto view_ptr : seat.focus_stack) {
+            if (view_set.contains(view_ptr)) {
+                return OptionalRef(view_ptr);
+            }
+        }
     }
 
     return focused_view;
@@ -192,11 +250,18 @@ int Workspace::get_view_wx(View& view)
 {
     int acc_wx = 0;
 
-    for (auto& tile : tiles) {
-        if (tile.view == &view) {
-            break;
+    for (auto& column : columns) {
+        View* reference_view = nullptr;
+        for (auto& tile : column.tiles) {
+            if (tile.view == &view) {
+                return acc_wx;
+            }
+
+            if (tile.view->is_mapped_and_normal()) {
+                reference_view = tile.view;
+            }
         }
-        acc_wx += tile.view->geometry.width;
+        acc_wx += reference_view->geometry.width;
     }
 
     return acc_wx;
@@ -233,9 +298,11 @@ bool Workspace::is_view_floating(View& view)
 
 void Workspace::activate(Output& new_output)
 {
-    for (const auto& tile : tiles) {
-        tile.view->change_output(output, new_output);
-        tile.view->set_activated(true);
+    for (const auto& column : columns) {
+        for (const auto& tile : column.tiles) {
+            tile.view->change_output(output, new_output);
+            tile.view->set_activated(true);
+        }
     }
 
     output = OptionalRef<Output>(new_output);
@@ -246,9 +313,11 @@ void Workspace::deactivate()
     if (!output) {
         return;
     }
-    for (const auto& tile : tiles) {
-        tile.view->change_output(output.unwrap(), NullRef<Output>);
-        tile.view->set_activated(false);
+    for (const auto& column : columns) {
+        for (const auto& tile : column.tiles) {
+            tile.view->change_output(output.unwrap(), NullRef<Output>);
+            tile.view->set_activated(false);
+        }
     }
     output = NullRef<Output>;
 }
