@@ -192,6 +192,27 @@ inline CommandResult resize(Server* server, int width, int height)
     return { "" };
 }
 
+inline CommandResult vertically_tile(Server* server)
+{
+    using namespace std::string_literals;
+
+    auto view = server->seat.get_focused_view();
+    if (!view) {
+        return { "No view to move in current workspace"s };
+    }
+
+    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto column_it = workspace.find_column(&view.unwrap());
+    if (&*column_it == &workspace.columns.back()) {
+        // nothing to do
+        return { "Nothing to do"s };
+    }
+
+    workspace.add_to_column(server->output_manager, view.unwrap(), *std::next(column_it));
+
+    return { "" };
+}
+
 inline CommandResult cycle_width(Server* server)
 {
     auto focused_view_ = server->seat.get_focused_view();

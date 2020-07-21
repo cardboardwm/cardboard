@@ -114,6 +114,9 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::resize(server, resize.width, resize.height);
                               };
                           },
+                          [](const command_arguments::vertically_tile&) -> Command {
+                              return commands::vertically_tile;
+                          },
                           [](const command_arguments::config& config) -> Command {
                               return dispatch_config(config);
                           },

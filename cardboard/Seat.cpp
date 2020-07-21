@@ -246,10 +246,12 @@ void Seat::focus_by_offset(Server& server, int offset)
 
     std::advance(it, offset);
 
+    // focus the most recently focused view of the column
     auto column_views = it->get_mapped_and_normal_set();
     for (auto view_ptr : focus_stack) {
         if (column_views.contains(view_ptr)) {
             focus_view(server, OptionalRef(view_ptr));
+            break;
         }
     }
 }
@@ -381,7 +383,17 @@ void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
     }
 
     reconfigure_view_position(server, *resize_data.view, x, y);
-    reconfigure_view_size(server, *resize_data.view, width, height);
+    auto column_it = resize_data.workspace.unwrap().find_column(resize_data.view);
+    if (column_it == resize_data.workspace.unwrap().columns.end()) {
+        reconfigure_view_size(server, *resize_data.view, width, height);
+    } else {
+        // resize all views in the column
+        for (auto& tile : column_it->tiles) {
+            if (tile.view->is_mapped_and_normal()) {
+                reconfigure_view_size(server, *tile.view, width, tile.view->geometry.height);
+            }
+        }
+    }
 }
 
 void Seat::process_swipe_begin(Server& server, uint32_t fingers)

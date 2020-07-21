@@ -74,13 +74,18 @@ void reconfigure_view_position(Server& server, View& view, int x, int y)
 /// Resizes \a view to the given size. Tiled views are maximized vertically, therefore they don't change height.
 void reconfigure_view_size(Server& server, View& view, int width, int height)
 {
-    auto& workspace = server.output_manager.workspaces[view.workspace_id];
+    auto& workspace = server.output_manager.get_view_workspace(view);
 
-    if (workspace.find_column(&view) != workspace.columns.end()) {
+    if (auto column_it = workspace.find_column(&view); column_it != workspace.columns.end()) {
         height = view.geometry.height;
+        for (auto& tile : column_it->tiles) {
+            if (tile.view->is_mapped_and_normal()) {
+                view.resize(width, height);
+            }
+        }
+    } else {
+        view.resize(width, height);
     }
-
-    view.resize(width, height);
 }
 
 /// Sets the workspace scroll to an absolute value.

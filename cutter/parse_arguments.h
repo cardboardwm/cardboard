@@ -185,6 +185,11 @@ tl::expected<CommandData, std::string> parse_resize(const std::vector<std::strin
     return command_arguments::resize { std::stoi(args[0]), std::stoi(args[1]) };
 }
 
+tl::expected<CommandData, std::string> parse_vertically_tile(const std::vector<std::string>&)
+{
+    return command_arguments::vertically_tile {};
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -216,6 +221,7 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "toggle_floating", parse_toggle_floating },
     { "move", parse_move },
     { "resize", parse_resize },
+    { "vertically_tile", parse_vertically_tile },
     { "config", parse_config },
     { "cycle_width", parse_cycle_width },
 };

@@ -56,6 +56,9 @@ struct resize {
     int width, height;
 };
 
+struct vertically_tile {
+};
+
 struct config {
     struct mouse_mod {
         std::vector<std::string> modifiers;
@@ -81,6 +84,7 @@ using CommandData = std::variant<
     command_arguments::toggle_floating,
     command_arguments::move,
     command_arguments::resize,
+    command_arguments::vertically_tile,
     command_arguments::config,
     command_arguments::cycle_width>;
 

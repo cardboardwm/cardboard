@@ -69,13 +69,6 @@ struct Workspace {
     int scroll_x = 0;
 
     /**
-     * \brief Returns an iterator to the tile containing \a view.
-     *
-     * \param view - can be null!
-     */
-    //std::list<Tile>::iterator find_tile(View* view);
-
-    /**
      * \brief Returns an iterator to the column containing \a view.
      *
      * \param view - can be null!
@@ -106,6 +99,14 @@ struct Workspace {
     * If the \a view is the sole view of a column, the column is destroyed too.
     */
     void remove_view(OutputManager& output_manager, View& view, bool transferring = false);
+
+    /**
+     * \brief Takes \a view from its column and attaches it at the end of \a column.
+     *
+     * \param view - must be tiled in this workspace
+     * \param column - must be from this workspace
+     */
+    void add_to_column(OutputManager& output_manager, View& view, Column& column);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.

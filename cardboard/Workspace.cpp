@@ -100,6 +100,25 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
     arrange_workspace(output_manager);
 }
 
+void Workspace::add_to_column(OutputManager& output_manager, View& view, Column& column)
+{
+    int max_width = 0;
+    for (auto& tile : column.tiles) {
+        if (tile.view->is_mapped_and_normal()) {
+            max_width = std::max(max_width, tile.view->geometry.width);
+        }
+    }
+    remove_view(output_manager, view, true);
+    column.tiles.push_back({ &view, &column });
+
+    // Match view's width with the rest of the column.
+    // You might consider this a terrible hack. It makes arrange_workspace "think" that the view has been resized.
+    // The correct width is going to be set in arrange_workspace anyway.
+    view.geometry.width = max_width;
+
+    arrange_workspace(output_manager);
+}
+
 void Workspace::arrange_workspace(OutputManager& output_manager)
 {
     if (!output) {
@@ -115,25 +134,38 @@ void Workspace::arrange_workspace(OutputManager& output_manager)
         view.resize(output_box->width, output_box->height);
     });
 
-    // arrange columns
     for (auto& column : columns) {
+        // ignore columns that are not ready for tiling
         bool should_skip = false;
+        float scale_sum = 0; // sum of all weights for height calculation
         for (auto& tile : column.tiles) {
             if (!tile.view->is_mapped_and_normal()) {
                 should_skip = true;
+            } else {
+                scale_sum += tile.vertical_scale;
             }
         }
         if (should_skip) {
             continue;
         }
 
-        // TODO: this
-        auto& view = *column.tiles.begin()->view;
-        view.x = output_box->x + acc_width - view.geometry.x - scroll_x;
-        view.y = output_box->y + usable_area.y - view.geometry.y;
-        view.resize(view.geometry.width, usable_area.height);
+        int current_y = output_box->y + usable_area.y;
+        int max_width = 0;
+        for (auto& tile : column.tiles) {
+            auto& view = *tile.view;
 
-        acc_width += view.geometry.width;
+            max_width = std::max(max_width, tile.view->geometry.width);
+
+            view.x = output_box->x + acc_width - view.geometry.x - scroll_x;
+            view.y = current_y - view.geometry.y;
+
+            int height = static_cast<int>(static_cast<float>(usable_area.height) * (tile.vertical_scale / scale_sum));
+            view.resize(view.geometry.width, height);
+
+            current_y += height;
+        }
+
+        acc_width += max_width;
     }
 }
 
