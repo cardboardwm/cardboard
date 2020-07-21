@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 
 // Adapted from GSL::not_null from Microsoft's GSL library, MIT licensed
@@ -64,5 +65,15 @@ public:
 private:
     pointer_type ptr_;
 };
+
+namespace std {
+template <class Type>
+struct hash<NotNullPointer<Type>> {
+    std::size_t operator()(NotNullPointer<Type> const& ptr) const noexcept
+    {
+        return std::hash<Type*> {}(ptr.get());
+    }
+};
+}
 
 #endif //CARDBOARD_NOT_NULL_H_INCLUDED

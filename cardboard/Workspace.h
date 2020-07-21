@@ -45,7 +45,7 @@ struct Workspace {
 
         std::list<Tile> tiles;
 
-        std::unordered_set<View*> get_mapped_and_normal_set();
+        std::unordered_set<NotNullPointer<View>> get_mapped_and_normal_set();
     };
 
     std::list<Column> columns;

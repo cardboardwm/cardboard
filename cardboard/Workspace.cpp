@@ -12,9 +12,9 @@ extern "C" {
 #include "ViewOperations.h"
 #include "Workspace.h"
 
-std::unordered_set<View*> Workspace::Column::get_mapped_and_normal_set()
+std::unordered_set<NotNullPointer<View>> Workspace::Column::get_mapped_and_normal_set()
 {
-    std::unordered_set<View*> set;
+    std::unordered_set<NotNullPointer<View>> set;
     for (auto& tile : tiles) {
         if (tile.view->is_mapped_and_normal()) {
             set.insert(tile.view);
