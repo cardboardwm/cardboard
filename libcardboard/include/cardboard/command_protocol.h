@@ -18,7 +18,9 @@ struct quit {
 struct focus {
     enum class Direction {
         Left,
-        Right
+        Right,
+        Up,
+        Down,
     } direction;
 
     bool cycle;

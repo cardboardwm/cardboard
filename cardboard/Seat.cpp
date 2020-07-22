@@ -222,32 +222,10 @@ void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
     }
 }
 
-void Seat::focus_by_offset(Server& server, int offset)
+void Seat::focus_column(Server& server, Workspace::Column& column)
 {
-    if (offset == 0 || get_focused_view() == NullRef<View>) {
-        return;
-    }
-
-    auto focused_view_ = get_focused_view();
-    if (!focused_view_) {
-        return;
-    }
-    auto& focused_view = focused_view_.unwrap();
-    auto ws = server.output_manager.get_view_workspace(focused_view);
-    if (ws.is_view_floating(focused_view)) {
-        return;
-    }
-
-    auto it = ws.find_column(&focused_view);
-    if (int index = std::distance(ws.columns.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.columns.size())) {
-        // out of bounds
-        return;
-    }
-
-    std::advance(it, offset);
-
     // focus the most recently focused view of the column
-    auto column_views = it->get_mapped_and_normal_set();
+    auto column_views = column.get_mapped_and_normal_set();
     for (auto view_ptr : focus_stack) {
         if (column_views.contains(view_ptr)) {
             focus_view(server, OptionalRef(view_ptr));

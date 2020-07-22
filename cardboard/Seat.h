@@ -86,10 +86,11 @@ struct Seat {
     /// Marks the layer as receiving keyboard focus from this seat.
     void focus_layer(Server& server, struct wlr_layer_surface_v1* layer);
     /**
-     * \brief Focus the <em>offset</em>-nth tiled window to the right (or to the left if negative) of the currently
-     * focused view.
+     * \brief Focus the most recently focused view on \a column.
+     *
+     * \param column - must be from this workspace
      */
-    void focus_by_offset(Server& server, int offset);
+    void focus_column(Server& server, Workspace::Column& column);
     /// Removes the \a view from the focus stack.
     void remove_from_focus_stack(View& view);
 

@@ -23,9 +23,64 @@ inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
     return { "" };
 }
 
-inline CommandResult focus(Server* server, int focus_direction)
+inline CommandResult focus(Server* server, command_arguments::focus::Direction direction)
 {
-    server->seat.focus_by_offset(*server, focus_direction);
+    using namespace std::string_literals;
+
+    auto focused_view_ = server->seat.get_focused_view();
+    if (!focused_view_) {
+        return { "No focused view to use as reference"s };
+    }
+    auto& focused_view = focused_view_.unwrap();
+    auto& workspace = server->output_manager.get_view_workspace(focused_view);
+
+    auto column_it = workspace.find_column(&focused_view);
+    if (column_it == workspace.columns.end()) {
+        return { "Focused view is floating"s };
+    }
+
+    if (direction == command_arguments::focus::Direction::Left || direction == command_arguments::focus::Direction::Right) {
+        int offset = direction == command_arguments::focus::Direction::Left ? -1 : +1;
+        if (int index = std::distance(workspace.columns.begin(), column_it) + offset;
+            index < 0 || index >= static_cast<int>(workspace.columns.size())) {
+            // out of bounds
+            return { "" };
+        }
+
+        std::advance(column_it, offset);
+        server->seat.focus_column(*server, *column_it);
+    } else {
+        if (direction == command_arguments::focus::Direction::Up) {
+            auto tile_it = std::find_if(column_it->tiles.rbegin(), column_it->tiles.rend(), [&focused_view](const auto& tile) {
+                return tile.view == &focused_view;
+            });
+            if (tile_it == column_it->tiles.rend()) {
+                return { "" };
+            }
+
+            for (tile_it++; tile_it != column_it->tiles.rend(); tile_it++) {
+                if (tile_it->view->is_mapped_and_normal()) {
+                    server->seat.focus_view(*server, OptionalRef(tile_it->view));
+                    break;
+                }
+            }
+        } else {
+            auto tile_it = std::find_if(column_it->tiles.begin(), column_it->tiles.end(), [&focused_view](const auto& tile) {
+                return tile.view == &focused_view;
+            });
+            if (tile_it == column_it->tiles.end()) {
+                return { "" };
+            }
+
+            for (tile_it++; tile_it != column_it->tiles.end(); tile_it++) {
+                if (tile_it->view->is_mapped_and_normal()) {
+                    server->seat.focus_view(*server, OptionalRef(tile_it->view));
+                    break;
+                }
+            }
+        }
+    }
+
     return { "" };
 }
 

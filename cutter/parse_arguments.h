@@ -72,6 +72,10 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
         return command_arguments::focus { command_arguments::focus::Direction::Left, false };
     } else if (args[0] == "right") {
         return command_arguments::focus { command_arguments::focus::Direction::Right, false };
+    } else if (args[0] == "up") {
+        return command_arguments::focus { command_arguments::focus::Direction::Up, false };
+    } else if (args[0] == "down") {
+        return command_arguments::focus { command_arguments::focus::Direction::Down, false };
     } else if (args[0] == "cycle") {
         return command_arguments::focus { {}, true };
     }

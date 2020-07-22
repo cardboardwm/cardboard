@@ -66,9 +66,7 @@ Command dispatch_command(const CommandData& command_data)
                           [](const command_arguments::focus focus_data) -> Command {
                               if (!focus_data.cycle) {
                                   return [focus_data](Server* server) {
-                                      return commands::focus(
-                                          server,
-                                          focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
+                                      return commands::focus(server, focus_data.direction);
                                   };
                               } else {
                                   return commands::focus_cycle;
