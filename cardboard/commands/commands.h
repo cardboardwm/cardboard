@@ -192,7 +192,7 @@ inline CommandResult resize(Server* server, int width, int height)
     return { "" };
 }
 
-inline CommandResult vertically_tile(Server* server)
+inline CommandResult insert_into_column(Server* server)
 {
     using namespace std::string_literals;
 
@@ -207,9 +207,31 @@ inline CommandResult vertically_tile(Server* server)
         // nothing to do
         return { "Nothing to do"s };
     }
+    auto next_column_it = std::next(column_it);
 
-    workspace.add_to_column(server->output_manager, view.unwrap(), *std::next(column_it));
+    for (auto& tile : next_column_it->tiles) {
+        if (tile.view->is_mapped_and_normal()) {
+            workspace.insert_into_column(server->output_manager, *tile.view, *column_it);
+            return { "" };
+        }
+    }
 
+    return { "Nothing to do"s };
+}
+
+inline CommandResult pop_from_column(Server* server)
+{
+    using namespace std::string_literals;
+
+    auto view = server->seat.get_focused_view();
+    if (!view) {
+        return { "No view to move in current workspace"s };
+    }
+
+    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto column_it = workspace.find_column(&view.unwrap());
+
+    workspace.pop_from_column(server->output_manager, *column_it);
     return { "" };
 }
 

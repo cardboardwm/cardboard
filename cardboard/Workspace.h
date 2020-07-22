@@ -106,7 +106,14 @@ struct Workspace {
      * \param view - must be tiled in this workspace
      * \param column - must be from this workspace
      */
-    void add_to_column(OutputManager& output_manager, View& view, Column& column);
+    void insert_into_column(OutputManager& output_manager, View& view, Column& column);
+
+    /**
+     * \brief Takes the least (bottom-most) view from the \a column and puts it in its own column on the right.
+     *
+     * \param column - must be from this workspace
+     */
+    void pop_from_column(OutputManager& output_manager, Column& column);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.

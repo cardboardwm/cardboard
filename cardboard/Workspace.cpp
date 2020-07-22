@@ -100,7 +100,7 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
     arrange_workspace(output_manager);
 }
 
-void Workspace::add_to_column(OutputManager& output_manager, View& view, Column& column)
+void Workspace::insert_into_column(OutputManager& output_manager, View& view, Column& column)
 {
     int max_width = 0;
     for (auto& tile : column.tiles) {
@@ -115,6 +115,20 @@ void Workspace::add_to_column(OutputManager& output_manager, View& view, Column&
     // You might consider this a terrible hack. It makes arrange_workspace "think" that the view has been resized.
     // The correct width is going to be set in arrange_workspace anyway.
     view.geometry.width = max_width;
+
+    arrange_workspace(output_manager);
+}
+
+void Workspace::pop_from_column(OutputManager& output_manager, Column& column)
+{
+    if (column.tiles.size() < 2) {
+        return;
+    }
+
+    auto& to_pop = *column.tiles.back().view;
+    auto& next_to = *column.tiles.front().view;
+    remove_view(output_manager, to_pop);
+    add_view(output_manager, to_pop, &next_to, false, true);
 
     arrange_workspace(output_manager);
 }

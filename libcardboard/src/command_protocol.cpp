@@ -80,7 +80,12 @@ void serialize(Archive& ar, command_arguments::resize& resize)
 }
 
 template <typename Archive>
-void serialize(Archive&, command_arguments::vertically_tile&)
+void serialize(Archive&, command_arguments::insert_into_column&)
+{
+}
+
+template <typename Archive>
+void serialize(Archive&, command_arguments::pop_from_column&)
 {
 }
 

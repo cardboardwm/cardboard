@@ -9,7 +9,7 @@ struct overloaded : Ts... {
     using Ts::operator()...;
 };
 template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+overloaded(Ts...)->overloaded<Ts...>;
 
 uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
 {
@@ -114,8 +114,11 @@ Command dispatch_command(const CommandData& command_data)
                                   return commands::resize(server, resize.width, resize.height);
                               };
                           },
-                          [](const command_arguments::vertically_tile&) -> Command {
-                              return commands::vertically_tile;
+                          [](const command_arguments::insert_into_column&) -> Command {
+                              return commands::insert_into_column;
+                          },
+                          [](const command_arguments::pop_from_column&) -> Command {
+                              return commands::pop_from_column;
                           },
                           [](const command_arguments::config& config) -> Command {
                               return dispatch_config(config);
