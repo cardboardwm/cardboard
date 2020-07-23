@@ -5,9 +5,10 @@ extern "C" {
 #include <wayland-server.h>
 };
 
-#include <memory>
-#include <deque>
 #include <chrono>
+#include <deque>
+#include <memory>
+
 #include "View.h"
 
 struct Server;
@@ -17,8 +18,8 @@ using ViewAnimationInstance = std::unique_ptr<ViewAnimation>;
 
 struct AnimationTask {
     View* view;
-    int targetx;
-    int targety;
+    int target_x;
+    int target_y;
     std::function<void()> animation_finished_callback = nullptr;
 };
 
@@ -36,8 +37,7 @@ public:
     void cancel_tasks(View&);
 
 private:
-    struct Task
-    {
+    struct Task {
         View* view;
         int startx, starty;
         int targetx, targety;

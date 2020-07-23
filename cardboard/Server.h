@@ -41,8 +41,8 @@ extern "C" {
 #include "Seat.h"
 #include "SurfaceManager.h"
 #include "View.h"
-#include "Workspace.h"
 #include "ViewAnimation.h"
+#include "Workspace.h"
 
 #if HAVE_XWAYLAND
 #include <wlr_cpp_fixes/xwayland.h>

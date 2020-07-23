@@ -254,7 +254,7 @@ void Seat::begin_move(Server& server, View& view)
 
     if (is_tiled) {
         for (auto& column : workspace.columns) {
-            for(auto& tile: column.tiles) {
+            for (auto& tile : column.tiles) {
                 server.view_animation->cancel_tasks(*tile.view);
             }
         }

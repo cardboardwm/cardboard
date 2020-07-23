@@ -59,7 +59,11 @@ struct Workspace {
         private:
             NotNullPointer<std::list<Tile>> tile_list;
 
-            MappedAndNormal(NotNullPointer<std::list<Tile>> tile_list) : tile_list(tile_list) {}
+            MappedAndNormal(NotNullPointer<std::list<Tile>> tile_list)
+                : tile_list(tile_list)
+            {
+            }
+
         public:
             /// This quasi-iterator iterates over mapped and normal tiles.
             struct IteratorWrapper {
@@ -78,7 +82,7 @@ struct Workspace {
         };
 
         std::list<Tile> tiles;
-        MappedAndNormal mapped_and_normal_tiles{ &tiles };
+        MappedAndNormal mapped_and_normal_tiles { &tiles };
 
         std::unordered_set<NotNullPointer<View>> get_mapped_and_normal_set();
     };

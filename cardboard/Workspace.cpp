@@ -44,7 +44,7 @@ bool Workspace::Column::MappedAndNormal::IteratorWrapper::operator!=(const Works
 
 Workspace::Column::MappedAndNormal::IteratorWrapper Workspace::Column::MappedAndNormal::begin()
 {
-    auto it = Workspace::Column::MappedAndNormal::IteratorWrapper{ .tile_list = tile_list, .it = tile_list->begin() };
+    auto it = Workspace::Column::MappedAndNormal::IteratorWrapper { .tile_list = tile_list, .it = tile_list->begin() };
     if (!it.tile_list->front().view->is_mapped_and_normal()) {
         ++it;
     }
@@ -54,7 +54,7 @@ Workspace::Column::MappedAndNormal::IteratorWrapper Workspace::Column::MappedAnd
 
 Workspace::Column::MappedAndNormal::IteratorWrapper Workspace::Column::MappedAndNormal::end()
 {
-    return Workspace::Column::MappedAndNormal::IteratorWrapper{ .tile_list = tile_list, .it = tile_list->end() };
+    return Workspace::Column::MappedAndNormal::IteratorWrapper { .tile_list = tile_list, .it = tile_list->end() };
 }
 
 std::list<Workspace::Column>::iterator Workspace::find_column(View* view)
@@ -207,11 +207,9 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
             view.target_y = current_y - view.geometry.y;
 
             if (animate) {
-                server->view_animation->enqueue_task({
-                                                             tile.view,
-                                                             tile.view->target_x,
-                                                             tile.view->target_y
-                                                     });
+                server->view_animation->enqueue_task({ tile.view,
+                                                       tile.view->target_x,
+                                                       tile.view->target_y });
             } else {
                 view.x = view.target_x;
                 view.y = view.target_y;
