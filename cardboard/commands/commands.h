@@ -23,9 +23,64 @@ inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
     return { "" };
 }
 
-inline CommandResult focus(Server* server, int focus_direction)
+inline CommandResult focus(Server* server, command_arguments::focus::Direction direction)
 {
-    server->seat.focus_by_offset(*server, focus_direction);
+    using namespace std::string_literals;
+
+    auto focused_view_ = server->seat.get_focused_view();
+    if (!focused_view_) {
+        return { "No focused view to use as reference"s };
+    }
+    auto& focused_view = focused_view_.unwrap();
+    auto& workspace = server->output_manager.get_view_workspace(focused_view);
+
+    auto column_it = workspace.find_column(&focused_view);
+    if (column_it == workspace.columns.end()) {
+        return { "Focused view is floating"s };
+    }
+
+    if (direction == command_arguments::focus::Direction::Left || direction == command_arguments::focus::Direction::Right) {
+        int offset = direction == command_arguments::focus::Direction::Left ? -1 : +1;
+        if (int index = std::distance(workspace.columns.begin(), column_it) + offset;
+            index < 0 || index >= static_cast<int>(workspace.columns.size())) {
+            // out of bounds
+            return { "" };
+        }
+
+        std::advance(column_it, offset);
+        server->seat.focus_column(*server, *column_it);
+    } else {
+        if (direction == command_arguments::focus::Direction::Up) {
+            auto tile_it = std::find_if(column_it->tiles.rbegin(), column_it->tiles.rend(), [&focused_view](const auto& tile) {
+                return tile.view == &focused_view;
+            });
+            if (tile_it == column_it->tiles.rend()) {
+                return { "" };
+            }
+
+            for (tile_it++; tile_it != column_it->tiles.rend(); tile_it++) {
+                if (tile_it->view->is_mapped_and_normal()) {
+                    server->seat.focus_view(*server, OptionalRef(tile_it->view));
+                    break;
+                }
+            }
+        } else {
+            auto tile_it = std::find_if(column_it->tiles.begin(), column_it->tiles.end(), [&focused_view](const auto& tile) {
+                return tile.view == &focused_view;
+            });
+            if (tile_it == column_it->tiles.end()) {
+                return { "" };
+            }
+
+            for (tile_it++; tile_it != column_it->tiles.end(); tile_it++) {
+                if (tile_it->view->is_mapped_and_normal()) {
+                    server->seat.focus_view(*server, OptionalRef(tile_it->view));
+                    break;
+                }
+            }
+        }
+    }
+
     return { "" };
 }
 
@@ -151,7 +206,7 @@ inline CommandResult toggle_floating(Server* server)
     }
 
     ws.remove_view(server->output_manager, view, true);
-    ws.add_view(server->output_manager, view, ws.tiles.empty() ? nullptr : ws.tiles.back().view.get(), !currently_floating, true);
+    ws.add_view(server->output_manager, view, ws.columns.empty() ? nullptr : ws.columns.back().tiles.back().view.get(), !currently_floating, true);
 
     return { "" };
 }
@@ -165,12 +220,12 @@ inline CommandResult move(Server* server, int dx, int dy)
     auto& view = view_.unwrap();
     Workspace& workspace = server->output_manager.workspaces[view.workspace_id];
 
-    if (auto it = workspace.find_tile(&view); it != workspace.tiles.end()) {
+    if (auto it = workspace.find_column(&view); it != workspace.columns.end()) {
         auto other = it;
 
         std::advance(other, dx / abs(dx));
 
-        if ((it == workspace.tiles.begin() && dx < 0) || other == workspace.tiles.end()) {
+        if ((it == workspace.columns.begin() && dx < 0) || other == workspace.columns.end()) {
             return { "" };
         }
 
@@ -189,6 +244,49 @@ inline CommandResult resize(Server* server, int width, int height)
         reconfigure_view_size(*server, view, width, height);
     });
 
+    return { "" };
+}
+
+inline CommandResult insert_into_column(Server* server)
+{
+    using namespace std::string_literals;
+
+    auto view = server->seat.get_focused_view();
+    if (!view) {
+        return { "No view to move in current workspace"s };
+    }
+
+    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto column_it = workspace.find_column(&view.unwrap());
+    if (&*column_it == &workspace.columns.back()) {
+        // nothing to do
+        return { "Nothing to do"s };
+    }
+    auto next_column_it = std::next(column_it);
+
+    for (auto& tile : next_column_it->tiles) {
+        if (tile.view->is_mapped_and_normal()) {
+            workspace.insert_into_column(server->output_manager, *tile.view, *column_it);
+            return { "" };
+        }
+    }
+
+    return { "Nothing to do"s };
+}
+
+inline CommandResult pop_from_column(Server* server)
+{
+    using namespace std::string_literals;
+
+    auto view = server->seat.get_focused_view();
+    if (!view) {
+        return { "No view to move in current workspace"s };
+    }
+
+    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto column_it = workspace.find_column(&view.unwrap());
+
+    workspace.pop_from_column(server->output_manager, *column_it);
     return { "" };
 }
 

@@ -9,7 +9,7 @@ struct overloaded : Ts... {
     using Ts::operator()...;
 };
 template <class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+overloaded(Ts...)->overloaded<Ts...>;
 
 uint32_t modifier_array_to_mask(const std::vector<std::string>& modifiers)
 {
@@ -66,9 +66,7 @@ Command dispatch_command(const CommandData& command_data)
                           [](const command_arguments::focus focus_data) -> Command {
                               if (!focus_data.cycle) {
                                   return [focus_data](Server* server) {
-                                      return commands::focus(
-                                          server,
-                                          focus_data.direction == command_arguments::focus::Direction::Left ? -1 : +1);
+                                      return commands::focus(server, focus_data.direction);
                                   };
                               } else {
                                   return commands::focus_cycle;
@@ -113,6 +111,12 @@ Command dispatch_command(const CommandData& command_data)
                               return [resize](Server* server) {
                                   return commands::resize(server, resize.width, resize.height);
                               };
+                          },
+                          [](const command_arguments::insert_into_column&) -> Command {
+                              return commands::insert_into_column;
+                          },
+                          [](const command_arguments::pop_from_column&) -> Command {
+                              return commands::pop_from_column;
                           },
                           [](const command_arguments::config& config) -> Command {
                               return dispatch_config(config);

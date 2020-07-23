@@ -72,6 +72,10 @@ tl::expected<CommandData, std::string> parse_focus(const std::vector<std::string
         return command_arguments::focus { command_arguments::focus::Direction::Left, false };
     } else if (args[0] == "right") {
         return command_arguments::focus { command_arguments::focus::Direction::Right, false };
+    } else if (args[0] == "up") {
+        return command_arguments::focus { command_arguments::focus::Direction::Up, false };
+    } else if (args[0] == "down") {
+        return command_arguments::focus { command_arguments::focus::Direction::Down, false };
     } else if (args[0] == "cycle") {
         return command_arguments::focus { {}, true };
     }
@@ -185,6 +189,16 @@ tl::expected<CommandData, std::string> parse_resize(const std::vector<std::strin
     return command_arguments::resize { std::stoi(args[0]), std::stoi(args[1]) };
 }
 
+tl::expected<CommandData, std::string> parse_insert_into_column(const std::vector<std::string>&)
+{
+    return command_arguments::insert_into_column {};
+}
+
+tl::expected<CommandData, std::string> parse_pop_from_column(const std::vector<std::string>&)
+{
+    return command_arguments::pop_from_column {};
+}
+
 tl::expected<CommandData, std::string> parse_config(const std::vector<std::string>& args)
 {
     if (args.empty()) {
@@ -216,6 +230,8 @@ static std::unordered_map<std::string, parse_f> parse_table = {
     { "toggle_floating", parse_toggle_floating },
     { "move", parse_move },
     { "resize", parse_resize },
+    { "insert_into_column", parse_insert_into_column },
+    { "pop_from_column", parse_pop_from_column },
     { "config", parse_config },
     { "cycle_width", parse_cycle_width },
 };

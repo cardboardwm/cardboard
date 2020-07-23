@@ -80,6 +80,16 @@ void serialize(Archive& ar, command_arguments::resize& resize)
 }
 
 template <typename Archive>
+void serialize(Archive&, command_arguments::insert_into_column&)
+{
+}
+
+template <typename Archive>
+void serialize(Archive&, command_arguments::pop_from_column&)
+{
+}
+
+template <typename Archive>
 void serialize(Archive& ar, command_arguments::config::mouse_mod& mouse_mod)
 {
     ar(mouse_mod.modifiers);

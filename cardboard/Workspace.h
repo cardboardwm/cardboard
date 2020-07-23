@@ -9,6 +9,7 @@ extern "C" {
 #include <algorithm>
 #include <list>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include "NotNull.h"
@@ -18,6 +19,7 @@ class View;
 struct Server;
 struct Output;
 struct OutputManager;
+struct Seat;
 
 /**
  * \brief A Workspace is a group of tiled windows.
@@ -34,11 +36,20 @@ struct OutputManager;
  */
 struct Workspace {
     using IndexType = ssize_t;
-    struct Tile {
-        NotNullPointer<View> view;
+    struct Column {
+        struct Tile {
+            NotNullPointer<View> view;
+            NotNullPointer<Column> column;
+            /// This is initially 1. It represents the number of "parts" (as in "two parts water, one part sugar") when calculating the height of the tile relative to the column.
+            float vertical_scale = 1.0f;
+        };
+
+        std::list<Tile> tiles;
+
+        std::unordered_set<NotNullPointer<View>> get_mapped_and_normal_set();
     };
 
-    std::list<Tile> tiles;
+    std::list<Column> columns;
     std::list<NotNullPointer<View>> floating_views;
 
     /**
@@ -60,11 +71,11 @@ struct Workspace {
     int scroll_x = 0;
 
     /**
-     * \brief Returns an iterator to the tile containing \a view.
+     * \brief Returns an iterator to the column containing \a view.
      *
      * \param view - can be null!
      */
-    std::list<Tile>::iterator find_tile(View* view);
+    std::list<Column>::iterator find_column(View* view);
 
     /**
      * \brief Returns an iterator to the a floating view.
@@ -76,6 +87,9 @@ struct Workspace {
     /**
     * \brief Adds the \a view to the right of the \a next_to view and tiles it accordingly.
     *
+    * Even if \a next_to is not the only tile in a column, \a view is still going to be
+    * added to its very own column on the right.
+    *
     * \param transfering - set to true if we toggle the floating state
     * \param next_to - can be null!
     */
@@ -83,8 +97,25 @@ struct Workspace {
 
     /**
     * \brief Removes \a view from the workspace and tiles the others accordingly.
+    *
+    * If the \a view is the sole view of a column, the column is destroyed too.
     */
     void remove_view(OutputManager& output_manager, View& view, bool transferring = false);
+
+    /**
+     * \brief Takes \a view from its column and attaches it at the end of \a column.
+     *
+     * \param view - must be tiled in this workspace
+     * \param column - must be from this workspace
+     */
+    void insert_into_column(OutputManager& output_manager, View& view, Column& column);
+
+    /**
+     * \brief Takes the least (bottom-most) view from the \a column and puts it in its own column on the right.
+     *
+     * \param column - must be from this workspace
+     */
+    void pop_from_column(OutputManager& output_manager, Column& column);
 
     /**
     * \brief Puts windows in tiled position and takes care of fullscreen views.
@@ -104,7 +135,7 @@ struct Workspace {
      * most coverage as a ratio of its width. There may be more views having the most coverage.
      * If \a focused_view is one of them, return it directly. Can return nullptr.
      */
-    OptionalRef<View> find_dominant_view(OutputManager& output_manager, OptionalRef<View> focused_view);
+    OptionalRef<View> find_dominant_view(OutputManager& output_manager, Seat& seat, OptionalRef<View> focused_view);
 
     /**
     * \brief Returns the x coordinate of \a view in workspace coordinates.

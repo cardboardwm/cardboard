@@ -8,6 +8,7 @@ extern "C" {
 #include <functional>
 #include <memory>
 #include <optional>
+#include <unordered_set>
 
 #include "Cursor.h"
 #include "Helpers.h"
@@ -221,30 +222,16 @@ void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
     }
 }
 
-void Seat::focus_by_offset(Server& server, int offset)
+void Seat::focus_column(Server& server, Workspace::Column& column)
 {
-    if (offset == 0 || get_focused_view() == NullRef<View>) {
-        return;
+    // focus the most recently focused view of the column
+    auto column_views = column.get_mapped_and_normal_set();
+    for (auto view_ptr : focus_stack) {
+        if (column_views.contains(view_ptr)) {
+            focus_view(server, OptionalRef(view_ptr));
+            break;
+        }
     }
-
-    auto focused_view_ = get_focused_view();
-    if (!focused_view_) {
-        return;
-    }
-    auto& focused_view = focused_view_.unwrap();
-    auto ws = server.output_manager.get_view_workspace(focused_view);
-    if (ws.is_view_floating(focused_view)) {
-        return;
-    }
-
-    auto it = ws.find_tile(&focused_view);
-    if (int index = std::distance(ws.tiles.begin(), it) + offset; index < 0 || index >= static_cast<int>(ws.tiles.size())) {
-        // out of bounds
-        return;
-    }
-
-    std::advance(it, offset);
-    focus_view(server, OptionalRef(it->view));
 }
 
 void Seat::remove_from_focus_stack(View& view)
@@ -266,8 +253,10 @@ void Seat::begin_move(Server& server, View& view)
     bool is_tiled = floating_it == workspace.floating_views.end();
 
     if (is_tiled) {
-        for (auto& tile : workspace.tiles) {
-            server.view_animation->cancel_tasks(*tile.view);
+        for (auto& column : workspace.columns) {
+            for(auto& tile: column.tiles) {
+                server.view_animation->cancel_tasks(*tile.view);
+            }
         }
     }
 
@@ -384,7 +373,17 @@ void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
     }
 
     reconfigure_view_position(server, *resize_data.view, x, y);
-    reconfigure_view_size(server, *resize_data.view, width, height);
+    auto column_it = resize_data.workspace.unwrap().find_column(resize_data.view);
+    if (column_it == resize_data.workspace.unwrap().columns.end()) {
+        reconfigure_view_size(server, *resize_data.view, width, height);
+    } else {
+        // resize all views in the column
+        for (auto& tile : column_it->tiles) {
+            if (tile.view->is_mapped_and_normal()) {
+                reconfigure_view_size(server, *tile.view, width, tile.view->geometry.height);
+            }
+        }
+    }
 }
 
 void Seat::process_swipe_begin(Server& server, uint32_t fingers)
@@ -459,7 +458,7 @@ void Seat::update_swipe(Server& server)
 
     data->scroll_x -= data->speed;
     scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
-    data->workspace->find_dominant_view(server.output_manager, get_focused_view()).and_then([data](auto& dominant) {
+    data->workspace->find_dominant_view(server.output_manager, *this, get_focused_view()).and_then([data](auto& dominant) {
         data->dominant_view = OptionalRef(dominant);
     });
     if (data->dominant_view) {

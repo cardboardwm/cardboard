@@ -89,14 +89,16 @@ OptionalRef<View> SurfaceManager::get_surface_under_cursor(OutputManager& output
     }
 
     // fourth, regular, tiled views
-    for (auto& tile : ws_it->tiles) {
-        NotNullPointer<View> view = tile.view;
-        if (!view->mapped) {
-            continue;
-        }
+    for (auto& column : ws_it->columns) {
+        for (auto& tile : column.tiles) {
+            NotNullPointer<View> view = tile.view;
+            if (!view->mapped) {
+                continue;
+            }
 
-        if (view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
-            return OptionalRef(view);
+            if (view->get_surface_under_coords(lx, ly, surface, sx, sy)) {
+                return OptionalRef(view);
+            }
         }
     }
 

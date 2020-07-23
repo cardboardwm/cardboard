@@ -18,7 +18,9 @@ struct quit {
 struct focus {
     enum class Direction {
         Left,
-        Right
+        Right,
+        Up,
+        Down,
     } direction;
 
     bool cycle;
@@ -56,6 +58,12 @@ struct resize {
     int width, height;
 };
 
+struct insert_into_column {
+};
+
+struct pop_from_column {
+};
+
 struct config {
     struct mouse_mod {
         std::vector<std::string> modifiers;
@@ -81,6 +89,8 @@ using CommandData = std::variant<
     command_arguments::toggle_floating,
     command_arguments::move,
     command_arguments::resize,
+    command_arguments::insert_into_column,
+    command_arguments::pop_from_column,
     command_arguments::config,
     command_arguments::cycle_width>;
 
