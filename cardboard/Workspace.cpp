@@ -382,27 +382,3 @@ void Workspace::deactivate()
     }
     output = NullRef<Output>;
 }
-
-wlr_box Workspace::get_column_dimensions(Workspace::Column& column)
-{
-    int width = 0;
-    int height = server->config.gap;
-
-    for(auto& tile: column.tiles) {
-        width = std::max(width, tile.view->geometry.width);
-        height += tile.view->geometry.height + server->config.gap;
-    }
-
-    width += server->config.gap;
-
-    return {
-        .x = column.tiles.begin()->view->x +
-             column.tiles.begin()->view->geometry.x -
-             server->config.gap / 2,
-        .y = column.tiles.begin()->view->y +
-             column.tiles.begin()->view->geometry.y -
-             server->config.gap,
-        .width = width,
-        .height = height
-    };
-}

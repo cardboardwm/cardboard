@@ -83,6 +83,12 @@ bool View::is_mapped_and_normal()
     return mapped && expansion_state == View::ExpansionState::NORMAL;
 }
 
+void View::resize(int width, int height)
+{
+    target_width = width;
+    target_height = height;
+}
+
 void create_view(Server& server, NotNullPointer<View> view_)
 {
     server.surface_manager.views.emplace_back(view_);

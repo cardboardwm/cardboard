@@ -159,11 +159,6 @@ struct Workspace {
      * \brief Marks the workspace as inactive: it is not assigned to any output.
      */
     void deactivate();
-
-    /**
-     * \brief
-     */
-    wlr_box get_column_dimensions(Column&);
 };
 
 #endif //  CARDBOARD_TILING_H_INCLUDED
