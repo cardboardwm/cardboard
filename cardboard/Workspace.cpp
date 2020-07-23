@@ -247,7 +247,7 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
 
     const auto usable_area = output.usable_area;
     int wx = get_view_wx(view);
-    int vx = view.x + view.geometry.x;
+    int vx = view.target_x + view.geometry.x;
 
     bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
     if (condense && column_it == columns.begin()) {
