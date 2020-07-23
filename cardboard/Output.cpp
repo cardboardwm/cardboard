@@ -303,9 +303,14 @@ void Output::frame_handler(struct wl_listener* listener, void*)
                 wlr_matrix_project_box(matrix.data(), &column_dimensions, transform, 0, wlr_output->transform_matrix);
 
 
+                auto focus_color = server->config.focus_color;
+                // premultiply components
+                focus_color.r *= focus_color.a;
+                focus_color.g *= focus_color.a;
+                focus_color.b *= focus_color.a;
                 wlr_render_quad_with_matrix(
                         renderer,
-                        reinterpret_cast<float*>(&server->config.focus_color),
+                        reinterpret_cast<float*>(&focus_color),
                         matrix.data()
                 );
             }
