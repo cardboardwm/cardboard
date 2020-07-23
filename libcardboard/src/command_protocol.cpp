@@ -96,6 +96,18 @@ void serialize(Archive& ar, command_arguments::config::mouse_mod& mouse_mod)
 }
 
 template <typename Archive>
+void serialize(Archive& ar, command_arguments::config::gap& gap)
+{
+    ar(gap.gap);
+}
+
+template <typename Archive>
+void serialize(Archive& ar, command_arguments::config::focus_color& focus_color)
+{
+    ar(focus_color.r, focus_color.g, focus_color.b, focus_color.a);
+}
+
+template <typename Archive>
 void serialize(Archive& ar, command_arguments::config& config)
 {
     ar(config.config);
