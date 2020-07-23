@@ -280,6 +280,26 @@ void Output::frame_handler(struct wl_listener* listener, void*)
         render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
+
+        if(auto focused_view = server->seat.get_focused_view(); focused_view) {
+            if(auto column_it = ws.find_column(focused_view.raw_pointer()); column_it != ws.columns.end()) {
+                wlr_box column_dimensions = ws.get_column_dimensions(*column_it);
+                column_dimensions.height = wlr_output->height;
+
+                std::array<float, 9> matrix;
+                wl_output_transform transform = wlr_output_transform_invert(
+                        focused_view.raw_pointer()->get_surface()->current.transform);
+                wlr_matrix_project_box(matrix.data(), &column_dimensions, transform, 0, wlr_output->transform_matrix);
+
+
+                wlr_render_quad_with_matrix(
+                    renderer,
+                    reinterpret_cast<float*>(&server->config.focus_color),
+                    matrix.data()
+                );
+            }
+        }
+
         render_workspace(*server, ws, wlr_output, renderer, &now);
         wlr_renderer_scissor(renderer, nullptr);
 
