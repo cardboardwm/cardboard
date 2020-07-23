@@ -44,7 +44,41 @@ struct Workspace {
             float vertical_scale = 1.0f;
         };
 
+        /**
+         * \brief This abomination is meant to be a singleton in Column to let us write
+         * loops that iterate over tiles whose views are mapped (on screen) and in normal state
+         * (i.e. not fullscreened or recovering from fullscreen). Example:
+         *
+         * \code{.cpp}
+         * for (auto& tile : columns.mapped_and_normal_tiles) {
+         *     // do stuff
+         * }
+         * \endcode
+         */
+        class MappedAndNormal {
+        private:
+            NotNullPointer<std::list<Tile>> tile_list;
+
+            MappedAndNormal(NotNullPointer<std::list<Tile>> tile_list) : tile_list(tile_list) {}
+        public:
+            /// This quasi-iterator iterates over mapped and normal tiles.
+            struct IteratorWrapper {
+                NotNullPointer<std::list<Tile>> tile_list;
+                std::list<Tile>::iterator it;
+
+                IteratorWrapper& operator++();
+                Tile& operator*();
+                bool operator!=(const IteratorWrapper& other);
+            };
+
+            IteratorWrapper begin();
+            IteratorWrapper end();
+
+            friend struct Column;
+        };
+
         std::list<Tile> tiles;
+        MappedAndNormal mapped_and_normal_tiles{ &tiles };
 
         std::unordered_set<NotNullPointer<View>> get_mapped_and_normal_set();
     };

@@ -15,13 +15,46 @@ extern "C" {
 std::unordered_set<NotNullPointer<View>> Workspace::Column::get_mapped_and_normal_set()
 {
     std::unordered_set<NotNullPointer<View>> set;
-    for (auto& tile : tiles) {
-        if (tile.view->is_mapped_and_normal()) {
-            set.insert(tile.view);
-        }
+    for (auto& tile : mapped_and_normal_tiles) {
+        set.insert(tile.view);
     }
 
     return set;
+}
+
+Workspace::Column::MappedAndNormal::IteratorWrapper& Workspace::Column::MappedAndNormal::IteratorWrapper::operator++()
+{
+    it++;
+    while (it != tile_list->end() && !it->view->is_mapped_and_normal()) {
+        it++;
+    }
+
+    return *this;
+}
+
+Workspace::Column::Tile& Workspace::Column::MappedAndNormal::IteratorWrapper::operator*()
+{
+    return *it;
+}
+
+bool Workspace::Column::MappedAndNormal::IteratorWrapper::operator!=(const Workspace::Column::MappedAndNormal::IteratorWrapper& other)
+{
+    return it != other.it;
+}
+
+Workspace::Column::MappedAndNormal::IteratorWrapper Workspace::Column::MappedAndNormal::begin()
+{
+    auto it = Workspace::Column::MappedAndNormal::IteratorWrapper{ .tile_list = tile_list, .it = tile_list->begin() };
+    if (!it.tile_list->front().view->is_mapped_and_normal()) {
+        ++it;
+    }
+
+    return it;
+}
+
+Workspace::Column::MappedAndNormal::IteratorWrapper Workspace::Column::MappedAndNormal::end()
+{
+    return Workspace::Column::MappedAndNormal::IteratorWrapper{ .tile_list = tile_list, .it = tile_list->end() };
 }
 
 std::list<Workspace::Column>::iterator Workspace::find_column(View* view)
@@ -62,7 +95,8 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
         if (it != columns.end()) {
             std::advance(it, 1);
         }
-        auto new_it = columns.insert(it, Column {});
+        //auto new_it = columns.insert(it, Column {});
+        auto new_it = columns.emplace(it);
         new_it->tiles.push_back({ &view, &*new_it });
     }
 
@@ -103,10 +137,8 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
 void Workspace::insert_into_column(OutputManager& output_manager, View& view, Column& column)
 {
     int max_width = 0;
-    for (auto& tile : column.tiles) {
-        if (tile.view->is_mapped_and_normal()) {
-            max_width = std::max(max_width, tile.view->geometry.width);
-        }
+    for (auto& tile : column.mapped_and_normal_tiles) {
+        max_width = std::max(max_width, tile.view->geometry.width);
     }
     remove_view(output_manager, view, true);
     column.tiles.push_back({ &view, &column });
@@ -319,7 +351,9 @@ int Workspace::get_view_wx(View& view)
                 reference_view = tile.view;
             }
         }
-        acc_wx += reference_view->geometry.width;
+        if (reference_view) {
+            acc_wx += reference_view->geometry.width;
+        }
     }
 
     return acc_wx;

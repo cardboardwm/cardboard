@@ -378,10 +378,8 @@ void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
         reconfigure_view_size(server, *resize_data.view, width, height);
     } else {
         // resize all views in the column
-        for (auto& tile : column_it->tiles) {
-            if (tile.view->is_mapped_and_normal()) {
-                reconfigure_view_size(server, *tile.view, width, tile.view->geometry.height);
-            }
+        for (auto& tile : column_it->mapped_and_normal_tiles) {
+            reconfigure_view_size(server, *tile.view, width, tile.view->geometry.height);
         }
     }
 }

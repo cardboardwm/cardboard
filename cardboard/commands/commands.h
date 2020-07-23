@@ -264,11 +264,9 @@ inline CommandResult insert_into_column(Server* server)
     }
     auto next_column_it = std::next(column_it);
 
-    for (auto& tile : next_column_it->tiles) {
-        if (tile.view->is_mapped_and_normal()) {
-            workspace.insert_into_column(server->output_manager, *tile.view, *column_it);
-            return { "" };
-        }
+    for (auto& tile : next_column_it->mapped_and_normal_tiles) {
+        workspace.insert_into_column(server->output_manager, *tile.view, *column_it);
+        return { "" };
     }
 
     return { "Nothing to do"s };
