@@ -281,10 +281,18 @@ inline CommandResult pop_from_column(Server* server)
         return { "No view to move in current workspace"s };
     }
 
+    if (view.unwrap().expansion_state != View::ExpansionState::NORMAL) {
+        return { "View must not be fullscreened"s };
+    }
+
     auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
     auto column_it = workspace.find_column(&view.unwrap());
+    if (column_it == workspace.columns.end()) {
+        return { "View is floating"s };
+    }
 
     workspace.pop_from_column(server->output_manager, *column_it);
+    workspace.fit_view_on_screen(server->output_manager, view.unwrap());
     return { "" };
 }
 

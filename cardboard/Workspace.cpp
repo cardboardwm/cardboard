@@ -159,7 +159,7 @@ void Workspace::pop_from_column(OutputManager& output_manager, Column& column)
 
     auto& to_pop = *column.tiles.back().view;
     auto& next_to = *column.tiles.front().view;
-    remove_view(output_manager, to_pop);
+    remove_view(output_manager, to_pop, true);
     add_view(output_manager, to_pop, &next_to, false, true);
 
     arrange_workspace(output_manager);
