@@ -164,7 +164,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
             continue;
         }
 
-        int current_y = output_box->y + usable_area.y;
+        int current_y = output_box->y + usable_area.y + server->config.gap;
         int max_width = 0;
         for (auto& tile : column.tiles) {
             auto& view = *tile.view;
@@ -185,13 +185,16 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
                 view.y = view.target_y;
             }
 
-            int height = static_cast<int>(static_cast<float>(usable_area.height) * (tile.vertical_scale / scale_sum));
+            int height = static_cast<int>(
+                    static_cast<float>(
+                        usable_area.height - (column.tiles.size() + 1) * server->config.gap
+                    ) * (tile.vertical_scale / scale_sum));
             view.resize(view.geometry.width, height);
 
-            current_y += height;
+            current_y += height + server->config.gap;
         }
 
-        acc_width += max_width;
+        acc_width += max_width + server->config.gap;
     }
 }
 

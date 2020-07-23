@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-/// Various config keys for the compositor.
+/// Various configurations for the compositor.
 struct Config {
     /**
      * \brief One or more keys that when pressed allow the user to move and/or resize
@@ -13,6 +13,11 @@ struct Config {
      * if you want.
      * */
     uint32_t mouse_mods;
+
+    /**
+     * \brief The gap between the tiled windows (measured in pixels); default is 10 pixels
+     */
+     int gap = 10;
 };
 
 #endif // CARDBOARD_CONFIG_H_INCLUDED
