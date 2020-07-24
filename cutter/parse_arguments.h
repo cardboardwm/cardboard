@@ -49,6 +49,29 @@ tl::expected<CommandData, std::string> parse_config_mouse_mod(const std::vector<
     return command_arguments::config { command_arguments::config::mouse_mod { std::move(modifiers) } };
 }
 
+tl::expected<CommandData, std::string> parse_config_gap(const std::vector<std::string>& args)
+{
+    if(args.size() != 1) {
+        return tl::unexpected("malformed config value"s);
+    }
+
+    return command_arguments::config { command_arguments::config::gap {std::stoi(args[0]) } };
+}
+
+tl::expected<CommandData, std::string> parse_config_focus_color(const std::vector<std::string>& args)
+{
+    if(args.size() != 4) {
+        return tl::unexpected("malformed config values"s);
+    }
+
+    return command_arguments::config { command_arguments::config::focus_color {
+        static_cast<float>(std::stoi(args[0])) / 255.f,
+        static_cast<float>(std::stoi(args[1])) / 255.f,
+        static_cast<float>(std::stoi(args[2])) / 255.f,
+        static_cast<float>(std::stoi(args[3])) / 255.f
+    } };
+}
+
 tl::expected<CommandData, std::string> parse_arguments(std::vector<std::string> arguments);
 
 tl::expected<CommandData, std::string> parse_quit(const std::vector<std::string>& args)
@@ -209,6 +232,10 @@ tl::expected<CommandData, std::string> parse_config(const std::vector<std::strin
     auto new_args = std::vector<std::string>(std::next(args.begin()), args.end());
     if (key == "mouse_mod") {
         return parse_config_mouse_mod(new_args);
+    } else if (key == "focus_color") {
+        return parse_config_focus_color(new_args);
+    } else if (key == "gap") {
+        return parse_config_gap(new_args);
     }
 
     return tl::unexpected("invalid config key '"s + key + "''");

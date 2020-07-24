@@ -58,6 +58,8 @@ void XwaylandView::resize(int width, int height)
 {
     assert(mapped);
 
+    View::resize(width, height);
+
     wlr_xwayland_surface_configure(
         xwayland_surface, x, y, width, height);
 }

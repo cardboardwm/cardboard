@@ -196,7 +196,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
             continue;
         }
 
-        int current_y = output_box->y + usable_area.y;
+        int current_y = output_box->y + usable_area.y + server->config.gap;
         int max_width = 0;
         for (auto& tile : column.tiles) {
             auto& view = *tile.view;
@@ -215,13 +215,16 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
                 view.y = view.target_y;
             }
 
-            int height = static_cast<int>(static_cast<float>(usable_area.height) * (tile.vertical_scale / scale_sum));
+            int height = static_cast<int>(
+                    static_cast<float>(
+                        usable_area.height - (column.tiles.size() + 1) * server->config.gap
+                    ) * (tile.vertical_scale / scale_sum));
             view.resize(view.geometry.width, height);
 
-            current_y += height;
+            current_y += height + server->config.gap;
         }
 
-        acc_width += max_width;
+        acc_width += max_width + server->config.gap;
     }
 }
 
@@ -250,16 +253,16 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     int vx = view.target_x + view.geometry.x;
 
     bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
-    if (condense && column_it == columns.begin()) {
+    if (condense && &*column_it == &*columns.begin()) {
         // align first window to the display's left edge
-        scroll_x = -usable_area.x;
+        scroll_x = -usable_area.x + server->config.gap / 2;
     } else if (condense && &*column_it == &*columns.rbegin()) { // epic identity checking
         // align last window to the display's right edge
-        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) - server->config.gap / 2;
     } else if (overflowing && vx < output_box->x + usable_area.x) {
-        scroll_x = wx - usable_area.x;
+        scroll_x = wx - usable_area.x - server->config.gap / 2;
     } else if (overflowing && vx + view.geometry.width >= output_box->x + usable_area.x + usable_area.width) {
-        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) + server->config.gap / 2;
     }
 
     arrange_workspace(output_manager);
@@ -350,7 +353,7 @@ int Workspace::get_view_wx(View& view)
             }
         }
         if (reference_view) {
-            acc_wx += reference_view->geometry.width;
+            acc_wx += reference_view->geometry.width + server->config.gap;
         }
     }
 

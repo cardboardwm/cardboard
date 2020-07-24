@@ -280,6 +280,42 @@ void Output::frame_handler(struct wl_listener* listener, void*)
         render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
 
         wlr_renderer_scissor(renderer, &output->usable_area);
+
+        if(auto focused_view_ptr = server->seat.get_focused_view(); focused_view_ptr) {
+            auto focused_view = focused_view_ptr.raw_pointer();
+
+            if(auto column_it = ws.find_column(focused_view); column_it != ws.columns.end()) {
+                wlr_box column_dimensions = {
+                        .x = focused_view->x +
+                             focused_view->geometry.x -
+                             server->config.gap / 2,
+                        .y = focused_view->y +
+                             focused_view->geometry.y -
+                             server->config.gap / (column_it->tiles.size() == 1 ? 1 : 2),
+                        .width = focused_view->target_width + server->config.gap,
+                        .height = focused_view->target_height +
+                                  (column_it->tiles.size() == 1 ? 2 : 1) * server->config.gap
+                };
+
+                std::array<float, 9> matrix;
+                wl_output_transform transform = wlr_output_transform_invert(
+                        focused_view->get_surface()->current.transform);
+                wlr_matrix_project_box(matrix.data(), &column_dimensions, transform, 0, wlr_output->transform_matrix);
+
+
+                auto focus_color = server->config.focus_color;
+                // premultiply components
+                focus_color.r *= focus_color.a;
+                focus_color.g *= focus_color.a;
+                focus_color.b *= focus_color.a;
+                wlr_render_quad_with_matrix(
+                        renderer,
+                        reinterpret_cast<float*>(&focus_color),
+                        matrix.data()
+                );
+            }
+        }
+
         render_workspace(*server, ws, wlr_output, renderer, &now);
         wlr_renderer_scissor(renderer, nullptr);
 

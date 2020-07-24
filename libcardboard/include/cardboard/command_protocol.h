@@ -69,7 +69,15 @@ struct config {
         std::vector<std::string> modifiers;
     };
 
-    std::variant<mouse_mod> config;
+    struct gap {
+        int gap;
+    };
+
+    struct focus_color {
+        float r, g, b, a;
+    };
+
+    std::variant<mouse_mod, gap, focus_color> config;
 };
 
 struct cycle_width {

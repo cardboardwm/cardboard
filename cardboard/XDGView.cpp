@@ -41,6 +41,7 @@ bool XDGView::get_surface_under_coords(double lx, double ly, struct wlr_surface*
 
 void XDGView::resize(int width, int height)
 {
+    View::resize(width, height);
     wlr_xdg_toplevel_set_size(xdg_surface, width, height);
 }
 

@@ -93,6 +93,12 @@ public:
      * animation system.
      * */
     int target_x, target_y;
+
+    /**
+     * \brief The width and height the compositor expects the view to have
+     */
+     int target_width, target_height;
+
     bool mapped;
     bool new_view; ///< True if the view didn't have its first map.
 
@@ -113,7 +119,7 @@ public:
     virtual bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) = 0;
 
     /// Requests the resize to the client. Do not assume that the client is resized afterwards.
-    virtual void resize(int width, int height) = 0;
+    virtual void resize(int width, int height);
 
     /// Requests the move to the client. Do not assume that the client is resized afterwards.
     virtual void move(int x, int y);

@@ -23,6 +23,21 @@ inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
     return { "" };
 }
 
+inline CommandResult config_gap(Server* server, int gap)
+{
+    server->config.gap = gap;
+    for(auto& workspace: server->output_manager.workspaces) {
+        workspace.arrange_workspace(server->output_manager, true);
+    }
+    return { "" };
+}
+
+inline CommandResult config_focus_color(Server* server, float r, float g, float b, float a)
+{
+    server->config.focus_color = {r, g, b, a};
+    return { "" };
+}
+
 inline CommandResult focus(Server* server, command_arguments::focus::Direction direction)
 {
     using namespace std::string_literals;
