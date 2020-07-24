@@ -223,16 +223,16 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     int vx = view.x + view.geometry.x;
 
     bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
-    if (condense && column_it == columns.begin()) {
+    if (condense && &*column_it == &*columns.begin()) {
         // align first window to the display's left edge
-        scroll_x = -usable_area.x;
+        scroll_x = -usable_area.x + server->config.gap / 2;
     } else if (condense && &*column_it == &*columns.rbegin()) { // epic identity checking
         // align last window to the display's right edge
-        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) - server->config.gap / 2;
     } else if (overflowing && vx < output_box->x + usable_area.x) {
-        scroll_x = wx - usable_area.x;
+        scroll_x = wx - usable_area.x - server->config.gap / 2;
     } else if (overflowing && vx + view.geometry.width >= output_box->x + usable_area.x + usable_area.width) {
-        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width);
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) + server->config.gap / 2;
     }
 
     arrange_workspace(output_manager);
@@ -322,7 +322,7 @@ int Workspace::get_view_wx(View& view)
                 reference_view = tile.view;
             }
         }
-        acc_wx += reference_view->geometry.width;
+        acc_wx += reference_view->geometry.width + server->config.gap;
     }
 
     return acc_wx;
