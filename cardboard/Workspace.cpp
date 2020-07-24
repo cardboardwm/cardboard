@@ -216,9 +216,9 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
             }
 
             int height = static_cast<int>(
-                    static_cast<float>(
-                        usable_area.height - (column.tiles.size() + 1) * server->config.gap
-                    ) * (tile.vertical_scale / scale_sum));
+                static_cast<float>(
+                    usable_area.height - (column.tiles.size() + 1) * server->config.gap)
+                * (tile.vertical_scale / scale_sum));
             view.resize(view.geometry.width, height);
 
             current_y += height + server->config.gap;

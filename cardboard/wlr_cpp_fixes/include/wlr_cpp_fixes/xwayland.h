@@ -8,7 +8,6 @@ extern "C" {
 #include <wlr/xwayland.h>
 #undef class
 #undef static
-
 }
 
 #endif // CARDBOARD_WLR_CPP_FIXES_XWAYLAND_H_INCLUDED

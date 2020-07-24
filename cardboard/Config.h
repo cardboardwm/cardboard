@@ -17,14 +17,14 @@ struct Config {
     /**
      * \brief The gap between the tiled windows (measured in pixels); default is 10 pixels
      */
-     int gap = 10;
+    int gap = 10;
 
-     /**
+    /**
       * \brief The color behind the focused column
       */
-     struct {
-         float r, g, b, a;
-     } focus_color {0.f, 0.f, 0.7f, 0.5f};
+    struct {
+        float r, g, b, a;
+    } focus_color { 0.f, 0.f, 0.7f, 0.5f };
 };
 
 #endif // CARDBOARD_CONFIG_H_INCLUDED

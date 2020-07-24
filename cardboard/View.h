@@ -97,7 +97,7 @@ public:
     /**
      * \brief The width and height the compositor expects the view to have
      */
-     int target_width, target_height;
+    int target_width, target_height;
 
     bool mapped;
     bool new_view; ///< True if the view didn't have its first map.

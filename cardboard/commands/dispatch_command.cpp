@@ -59,21 +59,19 @@ static Command dispatch_config(const command_arguments::config& config)
                           },
                           [](command_arguments::config::focus_color focus_color) -> Command {
                               return [focus_color](Server* server) {
-                                    return commands::config_focus_color(
-                                            server,
-                                            focus_color.r,
-                                            focus_color.g,
-                                            focus_color.b,
-                                            focus_color.a
-                                    );
+                                  return commands::config_focus_color(
+                                      server,
+                                      focus_color.r,
+                                      focus_color.g,
+                                      focus_color.b,
+                                      focus_color.a);
                               };
                           },
                           [](command_arguments::config::gap gap) -> Command {
                               return [gap](Server* server) {
                                   return commands::config_gap(server, gap.gap);
                               };
-                          }
-                      },
+                          } },
                       config.config);
 }
 
