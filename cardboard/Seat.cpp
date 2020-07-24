@@ -281,6 +281,17 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
     }
 
     auto& workspace = server.output_manager.get_view_workspace(view);
+    auto floating_it = std::find(workspace.floating_views.begin(), workspace.floating_views.end(), &view);
+    bool is_tiled = floating_it == workspace.floating_views.end();
+
+    if (is_tiled) {
+        for (auto& column : workspace.columns) {
+            for (auto& tile : column.tiles) {
+                server.view_animation->cancel_tasks(*tile.view);
+            }
+        }
+    }
+
     grab_state = {
         .grab_data = GrabState::Resize {
             .view = &view,
@@ -288,12 +299,15 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
             .ly = cursor.wlr_cursor->y,
             .geometry = view.geometry,
             .resize_edges = edges,
-            .workspace = workspace,
+            .workspace = &workspace,
             .scroll_x = workspace.scroll_x,
             .view_x = view.x,
             .view_y = view.y,
+            .old_suspend_animations = workspace.suspend_animations,
         },
     };
+
+    workspace.suspend_animations = true;
 }
 
 void Seat::begin_workspace_scroll(Server& server, Workspace& workspace)
@@ -373,8 +387,8 @@ void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
     }
 
     reconfigure_view_position(server, *resize_data.view, x, y);
-    auto column_it = resize_data.workspace.unwrap().find_column(resize_data.view);
-    if (column_it == resize_data.workspace.unwrap().columns.end()) {
+    auto column_it = resize_data.workspace->find_column(resize_data.view);
+    if (column_it == resize_data.workspace->columns.end()) {
         reconfigure_view_size(server, *resize_data.view, width, height);
     } else {
         // resize all views in the column
@@ -422,6 +436,11 @@ void Seat::process_swipe_end(Server&)
 
 void Seat::end_interactive(Server& server)
 {
+    // re-enable animations if ending resize grab
+    if (std::holds_alternative<Seat::GrabState::Resize>(grab_state->grab_data)) {
+        auto& grab_data = std::get<Seat::GrabState::Resize>(grab_state->grab_data);
+        grab_data.workspace->suspend_animations = grab_data.old_suspend_animations;
+    }
     grab_state = std::nullopt;
     cursor_rebase(server, *this, cursor);
 }

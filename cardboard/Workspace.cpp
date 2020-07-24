@@ -206,7 +206,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
             view.target_x = output_box->x + acc_width - view.geometry.x - scroll_x;
             view.target_y = current_y - view.geometry.y;
 
-            if (animate) {
+            if (animate && !suspend_animations) {
                 server->view_animation->enqueue_task({ tile.view,
                                                        tile.view->target_x,
                                                        tile.view->target_y });

@@ -108,6 +108,9 @@ struct Workspace {
      */
     int scroll_x = 0;
 
+    /// If set to true, arrange_workspace will not use animations.
+    bool suspend_animations = false;
+
     /**
      * \brief Returns an iterator to the column containing \a view.
      *

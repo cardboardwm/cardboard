@@ -41,9 +41,10 @@ struct Seat {
             double lx, ly;
             struct wlr_box geometry;
             uint32_t resize_edges;
-            OptionalRef<Workspace> workspace;
+            NotNullPointer<Workspace> workspace;
             int scroll_x;
             int view_x, view_y;
+            bool old_suspend_animations;
         };
         struct WorkspaceScroll {
             NotNullPointer<Workspace> workspace;
