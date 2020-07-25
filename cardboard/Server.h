@@ -78,7 +78,7 @@ struct Server {
     struct wlr_layer_shell_v1* layer_shell;
     struct wlr_xwayland* xwayland;
 
-    OutputManager output_manager;
+    OutputManagerInstance output_manager;
     SurfaceManager surface_manager;
     ViewAnimationInstance view_animation;
 

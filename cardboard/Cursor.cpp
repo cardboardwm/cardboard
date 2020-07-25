@@ -80,7 +80,7 @@ void cursor_rebase(Server& server, Seat& seat, SeatCursor& cursor, uint32_t time
 
     double sx, sy;
     struct wlr_surface* surface = nullptr;
-    server.surface_manager.get_surface_under_cursor(server.output_manager, cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
+    server.surface_manager.get_surface_under_cursor(*(server.output_manager), cursor.wlr_cursor->x, cursor.wlr_cursor->y, surface, sx, sy);
     if (!surface) {
         // set the cursor to default
         cursor_set_image(server, seat, cursor, "left_ptr");

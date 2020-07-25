@@ -26,8 +26,8 @@ inline CommandResult config_mouse_mod(Server* server, uint32_t modifiers)
 inline CommandResult config_gap(Server* server, int gap)
 {
     server->config.gap = gap;
-    for (auto& workspace : server->output_manager.workspaces) {
-        workspace.arrange_workspace(server->output_manager, true);
+    for (auto& workspace : server->output_manager->workspaces) {
+        workspace.arrange_workspace(*(server->output_manager), true);
     }
     return { "" };
 }
@@ -47,7 +47,7 @@ inline CommandResult focus(Server* server, command_arguments::focus::Direction d
         return { "No focused view to use as reference"s };
     }
     auto& focused_view = focused_view_.unwrap();
-    auto& workspace = server->output_manager.get_view_workspace(focused_view);
+    auto& workspace = server->output_manager->get_view_workspace(focused_view);
 
     auto column_it = workspace.find_column(&focused_view);
     if (column_it == workspace.columns.end()) {
@@ -146,11 +146,11 @@ inline CommandResult workspace_switch(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->output_manager.workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->output_manager->workspaces.size())
         return { "Invalid Workspace number" };
 
-    server->seat.focus(*server, server->output_manager.workspaces[n]);
-    server->output_manager.workspaces[n].arrange_workspace(server->output_manager);
+    server->seat.focus(*server, server->output_manager->workspaces[n]);
+    server->output_manager->workspaces[n].arrange_workspace(*(server->output_manager));
     return { "Changed to workspace: "s + std::to_string(n) };
 }
 
@@ -158,15 +158,15 @@ inline CommandResult workspace_move(Server* server, int n)
 {
     using namespace std::string_literals;
 
-    if (n < 0 or static_cast<size_t>(n) >= server->output_manager.workspaces.size())
+    if (n < 0 or static_cast<size_t>(n) >= server->output_manager->workspaces.size())
         return { "Invalid Workspace number" };
 
     auto view = server->seat.get_focused_view();
     if (!view) {
         return { "No view to move in current workspace"s };
     }
-    change_view_workspace(*server, view.unwrap(), server->output_manager.workspaces[n]);
-    server->output_manager.workspaces[n].arrange_workspace(server->output_manager);
+    change_view_workspace(*server, view.unwrap(), server->output_manager->workspaces[n]);
+    server->output_manager->workspaces[n].arrange_workspace(*(server->output_manager));
 
     return { "Moved focused window to workspace "s + std::to_string(n) };
 }
@@ -206,9 +206,9 @@ inline CommandResult toggle_floating(Server* server)
         return { "" };
     }
     auto& view = view_.unwrap();
-    auto& ws = server->output_manager.get_view_workspace(view);
+    auto& ws = server->output_manager->get_view_workspace(view);
 
-    bool currently_floating = server->output_manager.workspaces[view.workspace_id].find_floating(&view) != server->output_manager.workspaces[view.workspace_id].floating_views.end();
+    bool currently_floating = server->output_manager->workspaces[view.workspace_id].find_floating(&view) != server->output_manager->workspaces[view.workspace_id].floating_views.end();
 
     auto prev_size = view.previous_size;
     view.previous_size = { view.geometry.width, view.geometry.height };
@@ -220,8 +220,8 @@ inline CommandResult toggle_floating(Server* server)
         view.resize(prev_size.first, prev_size.second);
     }
 
-    ws.remove_view(server->output_manager, view, true);
-    ws.add_view(server->output_manager, view, ws.columns.empty() ? nullptr : ws.columns.back().tiles.back().view.get(), !currently_floating, true);
+    ws.remove_view(*(server->output_manager), view, true);
+    ws.add_view(*(server->output_manager), view, ws.columns.empty() ? nullptr : ws.columns.back().tiles.back().view.get(), !currently_floating, true);
 
     return { "" };
 }
@@ -233,7 +233,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         return { "" };
     }
     auto& view = view_.unwrap();
-    Workspace& workspace = server->output_manager.workspaces[view.workspace_id];
+    Workspace& workspace = server->output_manager->workspaces[view.workspace_id];
 
     if (auto it = workspace.find_column(&view); it != workspace.columns.end()) {
         auto other = it;
@@ -245,8 +245,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         }
 
         std::swap(*other, *it);
-        workspace.arrange_workspace(server->output_manager, true);
-        workspace.fit_view_on_screen(server->output_manager, *other->tiles.begin()->view);
+        workspace.arrange_workspace(*(server->output_manager));
     } else {
         reconfigure_view_position(*server, view, view.x + dx, view.y + dy);
     }
@@ -272,7 +271,7 @@ inline CommandResult insert_into_column(Server* server)
         return { "No view to move in current workspace"s };
     }
 
-    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto& workspace = server->output_manager->get_view_workspace(view.unwrap());
     auto column_it = workspace.find_column(&view.unwrap());
     if (&*column_it == &workspace.columns.back()) {
         // nothing to do
@@ -281,7 +280,7 @@ inline CommandResult insert_into_column(Server* server)
     auto next_column_it = std::next(column_it);
 
     for (auto& tile : next_column_it->mapped_and_normal_tiles) {
-        workspace.insert_into_column(server->output_manager, *tile.view, *column_it);
+        workspace.insert_into_column(*(server->output_manager), *tile.view, *column_it);
         return { "" };
     }
 
@@ -301,14 +300,14 @@ inline CommandResult pop_from_column(Server* server)
         return { "View must not be fullscreened"s };
     }
 
-    auto& workspace = server->output_manager.get_view_workspace(view.unwrap());
+    auto& workspace = server->output_manager->get_view_workspace(view.unwrap());
     auto column_it = workspace.find_column(&view.unwrap());
     if (column_it == workspace.columns.end()) {
         return { "View is floating"s };
     }
 
-    workspace.pop_from_column(server->output_manager, *column_it);
-    workspace.fit_view_on_screen(server->output_manager, view.unwrap());
+    workspace.pop_from_column(*(server->output_manager), *column_it);
+    workspace.fit_view_on_screen(*(server->output_manager), view.unwrap());
     return { "" };
 }
 
@@ -320,8 +319,8 @@ inline CommandResult cycle_width(Server* server)
     }
     auto& focused_view = focused_view_.unwrap();
 
-    server->output_manager.get_view_workspace(focused_view).output.and_then([server, &focused_view](const auto& output) {
-        const struct wlr_box* output_box = server->output_manager.get_output_box(output);
+    server->output_manager->get_view_workspace(focused_view).output.and_then([server, &focused_view](const auto& output) {
+        const struct wlr_box* output_box = server->output_manager->get_output_box(output);
         focused_view.cycle_width(output_box->width);
     });
     return { "" };

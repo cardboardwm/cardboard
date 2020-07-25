@@ -26,7 +26,7 @@ static void create_layer_popup(Server& server, NotNullPointer<struct wlr_xdg_pop
                           { &popup->wlr_popup->base->events.map, &LayerSurfacePopup::map_handler },
                       });
 
-    popup->unconstrain(server.output_manager);
+    popup->unconstrain(*(server.output_manager));
 }
 
 void create_layer(Server& server, LayerSurface&& layer_surface_)
@@ -243,13 +243,13 @@ void arrange_layers(Server& server, Output& output)
 
     if (memcmp(&usable_area, &output.usable_area, sizeof(struct wlr_box)) != 0) {
         output.usable_area = usable_area;
-        auto ws_it = std::find_if(server.output_manager.workspaces.begin(), server.output_manager.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
-        assert(ws_it != server.output_manager.workspaces.end());
+        auto ws_it = std::find_if(server.output_manager->workspaces.begin(), server.output_manager->workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
+        assert(ws_it != server.output_manager->workspaces.end());
         wlr_log(WLR_DEBUG, "usable area changed");
         if (auto focused_view = server.seat.get_focused_view(); focused_view.has_value() && focused_view.unwrap().workspace_id == ws_it->index) {
-            ws_it->fit_view_on_screen(server.output_manager, focused_view.unwrap());
+            ws_it->fit_view_on_screen(*(server.output_manager), focused_view.unwrap());
         } else {
-            ws_it->arrange_workspace(server.output_manager);
+            ws_it->arrange_workspace(*(server.output_manager));
         }
     }
 

@@ -32,8 +32,8 @@ struct RenderData {
 
 void register_output(Server& server, Output&& output_)
 {
-    server.output_manager.outputs.emplace_back(output_);
-    auto& output = server.output_manager.outputs.back();
+    server.output_manager->outputs.emplace_back(output_);
+    auto& output = server.output_manager->outputs.back();
     output.wlr_output->data = &output;
 
     register_handlers(server,
@@ -51,11 +51,11 @@ void register_output(Server& server, Output&& output_)
 /// Arrange the workspace associated with \a output.
 static void arrange_output(Server& server, Output& output)
 {
-    auto ws_it = std::find_if(server.output_manager.workspaces.begin(), server.output_manager.workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
-    if (ws_it == server.output_manager.workspaces.end()) {
+    auto ws_it = std::find_if(server.output_manager->workspaces.begin(), server.output_manager->workspaces.end(), [&output](const auto& other) { return other.output && other.output.raw_pointer() == &output; });
+    if (ws_it == server.output_manager->workspaces.end()) {
         return;
     }
-    ws_it->arrange_workspace(server.output_manager);
+    ws_it->arrange_workspace(*(server.output_manager));
 }
 
 static void render_surface(struct wlr_surface* surface, int sx, int sy, void* data)
@@ -71,7 +71,7 @@ static void render_surface(struct wlr_surface* surface, int sx, int sy, void* da
 
     // translate surface coordinates from layout-relative to output-relative coordinates
     double ox = rdata->lx + sx, oy = rdata->ly + sy;
-    wlr_output_layout_output_coords(server->output_manager.output_layout, output, &ox, &oy);
+    wlr_output_layout_output_coords(server->output_manager->output_layout, output, &ox, &oy);
 
     // apply scale factor for HiDPI outputs
     struct wlr_box box = {
@@ -178,7 +178,7 @@ static void render_floating(Server& server, Workspace& ws, OptionalRef<View> anc
 
 static void render_layer(Server& server, LayerArray::value_type& surfaces, Output& output, struct wlr_renderer* renderer, struct timespec* now)
 {
-    const struct wlr_box* output_box = server.output_manager.get_output_box(output);
+    const struct wlr_box* output_box = server.output_manager->get_output_box(output);
     for (const auto& surface : surfaces) {
         if (!surface.surface->mapped || !surface.is_on_output(output)) {
             continue;
@@ -268,7 +268,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    auto& ws = *std::find_if(server->output_manager.workspaces.begin(), server->output_manager.workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
+    auto& ws = *std::find_if(server->output_manager->workspaces.begin(), server->output_manager->workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
     if (ws.fullscreen_view) {
         render_workspace(*server, ws, wlr_output, renderer, &now);
 #if HAVE_XWAYLAND
@@ -342,7 +342,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     Server* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
 
-    for (auto& ws : server->output_manager.workspaces) {
+    for (auto& ws : server->output_manager->workspaces) {
         if (ws.output && &ws.output.unwrap() == output) {
             ws.deactivate();
             break;
@@ -350,7 +350,7 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     }
 
     server->listeners.clear_listeners(output);
-    server->output_manager.remove_output_from_list(*output);
+    server->output_manager->remove_output_from_list(*output);
 }
 
 void Output::mode_handler(struct wl_listener* listener, void*)

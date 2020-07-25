@@ -3,9 +3,12 @@
 
 extern "C" {
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_output_management_v1.h>
 }
 
 #include <list>
+#include <memory>
+#include <vector>
 
 #include "NotNull.h"
 #include "OptionalRef.h"
@@ -15,7 +18,8 @@ struct Output;
 struct Server;
 
 struct OutputManager {
-    struct wlr_output_layout* output_layout;
+    wlr_output_manager_v1* output_manager_v1;
+    wlr_output_layout* output_layout;
     std::list<Output> outputs;
     std::vector<Workspace> workspaces;
 
@@ -40,6 +44,8 @@ struct OutputManager {
     Workspace& create_workspace(Server* server);
     Workspace& get_view_workspace(View&);
 
+    static void output_manager_apply_handler(wl_listener* listener, void* data);
+
 private:
     /**
     * \brief Executed when a new output (monitor) is attached.
@@ -60,5 +66,9 @@ private:
     */
     static void output_layout_add_handler(struct wl_listener* listener, void* data);
 };
+
+using OutputManagerInstance = std::unique_ptr<OutputManager>;
+
+OutputManagerInstance create_output_manager(Server* server);
 
 #endif // CARDBOARD_OUTPUT_MANAGER_H_INCLUDED

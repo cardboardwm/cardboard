@@ -9,7 +9,7 @@ void SurfaceManager::map_view(Server& server, View& view)
     auto* prev_focused = server.seat.get_focused_view().raw_pointer();
 
     server.seat.get_focused_workspace(server).and_then([&server, &view, prev_focused](auto& ws) {
-        ws.add_view(server.output_manager, view, prev_focused);
+        ws.add_view(*(server.output_manager), view, prev_focused);
     });
     server.seat.focus_view(server, view);
 }
@@ -18,7 +18,7 @@ void SurfaceManager::unmap_view(Server& server, View& view)
 {
     if (view.mapped) {
         view.mapped = false;
-        server.output_manager.get_view_workspace(view).remove_view(server.output_manager, view);
+        server.output_manager->get_view_workspace(view).remove_view(*(server.output_manager), view);
     }
 
     server.seat.hide_view(server, view);

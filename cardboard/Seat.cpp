@@ -70,7 +70,7 @@ void init_seat(Server& server, Seat& seat, const char* name)
     seat.wlr_seat->data = &seat;
 
     seat.cursor = SeatCursor {};
-    init_cursor(server.output_manager, seat.cursor);
+    init_cursor(*(server.output_manager), seat.cursor);
 
     seat.inhibit_manager = wlr_input_inhibit_manager_create(server.wl_display);
 
@@ -152,7 +152,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
     }
 
     if (view) {
-        auto& ws = server.output_manager.get_view_workspace(view.unwrap());
+        auto& ws = server.output_manager->get_view_workspace(view.unwrap());
         // deny setting focus to a view which is hidden by a fullscreen view
         if (ws.fullscreen_view && ws.fullscreen_view != view) {
             // unless it's transient for the fullscreened view
@@ -248,7 +248,7 @@ void Seat::begin_move(Server& server, View& view)
         return;
     }
 
-    auto& workspace = server.output_manager.get_view_workspace(view);
+    auto& workspace = server.output_manager->get_view_workspace(view);
     auto floating_it = std::find(workspace.floating_views.begin(), workspace.floating_views.end(), &view);
     bool is_tiled = floating_it == workspace.floating_views.end();
 
@@ -280,7 +280,7 @@ void Seat::begin_resize(Server& server, View& view, uint32_t edges)
         return;
     }
 
-    auto& workspace = server.output_manager.get_view_workspace(view);
+    auto& workspace = server.output_manager->get_view_workspace(view);
     auto floating_it = std::find(workspace.floating_views.begin(), workspace.floating_views.end(), &view);
     bool is_tiled = floating_it == workspace.floating_views.end();
 
@@ -475,7 +475,7 @@ void Seat::update_swipe(Server& server)
 
     data->scroll_x -= data->speed;
     scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) }, false);
-    data->workspace->find_dominant_view(server.output_manager, *this, get_focused_view()).and_then([data](auto& dominant) {
+    data->workspace->find_dominant_view(*(server.output_manager), *this, get_focused_view()).and_then([data](auto& dominant) {
         data->dominant_view = OptionalRef(dominant);
     });
     if (data->dominant_view) {
@@ -516,8 +516,8 @@ bool Seat::is_grabbing(View& view)
 
 OptionalRef<Workspace> Seat::get_focused_workspace(Server& server)
 {
-    for (auto& ws : server.output_manager.workspaces) {
-        if (ws.output && server.output_manager.output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
+    for (auto& ws : server.output_manager->workspaces) {
+        if (ws.output && server.output_manager->output_contains_point(ws.output.unwrap(), cursor.wlr_cursor->x, cursor.wlr_cursor->y)) {
             return ws;
         }
     }
@@ -542,7 +542,7 @@ void Seat::set_exclusive_client(Server& server, struct wl_client* client)
     if (!client) {
         exclusive_client = std::nullopt;
 
-        server.output_manager.get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([&server](auto& output_under_cursor) {
+        server.output_manager->get_output_at(cursor.wlr_cursor->x, cursor.wlr_cursor->y).and_then([&server](auto& output_under_cursor) {
             arrange_layers(server, output_under_cursor);
         });
         return;
@@ -595,7 +595,7 @@ void Seat::focus(Server& server, Workspace& workspace)
     }
 
     const Output& output = workspace.output.unwrap();
-    const struct wlr_box* output_box = server.output_manager.get_output_box(output);
+    const struct wlr_box* output_box = server.output_manager->get_output_box(output);
 
     cursor_warp(
         server,
@@ -710,7 +710,7 @@ void Seat::cursor_button_handler(struct wl_listener* listener, void* data)
 
     double sx, sy;
     struct wlr_surface* surface;
-    auto view = server->surface_manager.get_surface_under_cursor(server->output_manager, seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
+    auto view = server->surface_manager.get_surface_under_cursor(*(server->output_manager), seat->cursor.wlr_cursor->x, seat->cursor.wlr_cursor->y, surface, sx, sy);
     if (!view) {
         wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
         return;

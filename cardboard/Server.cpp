@@ -46,8 +46,7 @@ bool Server::init()
     compositor = wlr_compositor_create(wl_display, renderer);
     wlr_data_device_manager_create(wl_display); // for clipboard managers
 
-    // FIXME: separate output manager init
-    output_manager.output_layout = wlr_output_layout_create();
+    output_manager = create_output_manager(this);
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
     // TODO: implement Xwayland
@@ -55,7 +54,7 @@ bool Server::init()
     layer_shell = wlr_layer_shell_v1_create(wl_display);
 
     // low effort protocol implementations
-    wlr_xdg_output_manager_v1_create(wl_display, output_manager.output_layout);
+    wlr_xdg_output_manager_v1_create(wl_display, output_manager->output_layout);
     wlr_gamma_control_manager_v1_create(wl_display);
     wlr_export_dmabuf_manager_v1_create(wl_display);
     wlr_screencopy_manager_v1_create(wl_display);
@@ -70,7 +69,7 @@ bool Server::init()
     };
 
     for (int i = 0; i < WORKSPACE_NR; i++) {
-        output_manager.create_workspace(this);
+        output_manager->create_workspace(this);
     }
 
     register_handlers(*this, NoneT {}, {
@@ -79,7 +78,6 @@ bool Server::init()
                                        });
 
     seat.register_handlers(*this, &backend->events.new_input);
-    output_manager.register_handlers(*this, &backend->events.new_output);
 
     return true;
 }
@@ -243,10 +241,10 @@ void Server::new_layer_surface_handler(struct wl_listener* listener, void* data)
         output_to_assign = server->seat.get_focused_workspace(*server)
                                .and_then<Output>([](auto& ws) { return ws.output; })
                                .or_else([server]() {
-                                   if (server->output_manager.outputs.empty()) {
+                                   if (server->output_manager->outputs.empty()) {
                                        return NullRef<Output>;
                                    }
-                                   return OptionalRef(server->output_manager.outputs.front());
+                                   return OptionalRef(server->output_manager->outputs.front());
                                })
                                .or_else([layer_surface]() { wlr_layer_surface_v1_close(layer_surface); return NullRef<Output>; });
     }
