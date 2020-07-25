@@ -474,7 +474,7 @@ void Seat::update_swipe(Server& server)
     }
 
     data->scroll_x -= data->speed;
-    scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) });
+    scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) }, false);
     data->workspace->find_dominant_view(server.output_manager, *this, get_focused_view()).and_then([data](auto& dominant) {
         data->dominant_view = OptionalRef(dominant);
     });
