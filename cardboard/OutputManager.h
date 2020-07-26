@@ -46,6 +46,8 @@ struct OutputManager {
 
     static void output_manager_apply_handler(wl_listener* listener, void* data);
 
+    static void output_manager_test_handler(wl_listener* listener, void* data);
+
 private:
     /**
     * \brief Executed when a new output (monitor) is attached.

@@ -119,6 +119,11 @@ void OutputManager::output_manager_apply_handler([[maybe_unused]]wl_listener* li
 
 }
 
+advoid OutputManager::output_manager_test_handler([[maybe_unused]]wl_listener* listener, [[maybe_unused]]void* data)
+{
+
+}
+
 OutputManagerInstance create_output_manager(Server* server)
 {
     auto output_manager = std::make_unique<OutputManager>();
@@ -131,7 +136,8 @@ OutputManagerInstance create_output_manager(Server* server)
     register_handlers(
         *server,
         output_manager.get(),
-        {{&output_manager->output_manager_v1->events.apply, OutputManager::output_manager_apply_handler}}
+        {{&output_manager->output_manager_v1->events.apply, OutputManager::output_manager_apply_handler},
+        {&output_manager->output_manager_v1->events.test, OutputManager::output_manager_test_handler}}
     );
 
 
