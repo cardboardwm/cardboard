@@ -119,7 +119,7 @@ void OutputManager::output_manager_apply_handler([[maybe_unused]]wl_listener* li
 
 }
 
-advoid OutputManager::output_manager_test_handler([[maybe_unused]]wl_listener* listener, [[maybe_unused]]void* data)
+void OutputManager::output_manager_test_handler([[maybe_unused]]wl_listener* listener, [[maybe_unused]]void* data)
 {
 
 }
