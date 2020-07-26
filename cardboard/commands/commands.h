@@ -238,15 +238,47 @@ inline CommandResult move(Server* server, int dx, int dy)
     if (auto it = workspace.find_column(&view); it != workspace.columns.end()) {
         auto other = it;
 
-        std::advance(other, dx / abs(dx));
+        if(dx != 0) {
+            std::advance(other, dx / abs(dx));
+        }
 
         if ((it == workspace.columns.begin() && dx < 0) || other == workspace.columns.end()) {
             return { "" };
         }
 
         std::swap(*other, *it);
+
+        auto current_column = other;
+
+        if(dy != 0 && other->tiles.size() > 1)
+        {
+            printf("hello from move\n");
+            auto focused_tile = std::find_if(
+                current_column->tiles.begin(),
+                current_column->tiles.end(),
+                [&view](const auto& x) {
+                    return &view == x.view.get();
+                }
+            );
+
+            auto index = std::distance(current_column->tiles.begin(), focused_tile);
+
+            index -= dy / std::abs(dy);
+            if(index < 0) {
+                index += other->tiles.size();
+            }
+
+            index %= other->tiles.size();
+            auto other_tile = current_column->tiles.begin();
+            std::advance(other_tile, index);
+            std::swap(
+                *focused_tile,
+                *other_tile
+            );
+        }
+
         workspace.arrange_workspace(*(server->output_manager), true);
-        workspace.fit_view_on_screen(*(server->output_manager), *other->tiles.begin()->view);
+        workspace.fit_view_on_screen(*(server->output_manager), *current_column->tiles.begin()->view);
     } else {
         reconfigure_view_position(*server, view, view.x + dx, view.y + dy);
     }
