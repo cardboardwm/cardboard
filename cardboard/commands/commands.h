@@ -245,7 +245,8 @@ inline CommandResult move(Server* server, int dx, int dy)
         }
 
         std::swap(*other, *it);
-        workspace.arrange_workspace(server->output_manager);
+        workspace.arrange_workspace(server->output_manager, true);
+        workspace.fit_view_on_screen(server->output_manager, *other->tiles.begin()->view);
     } else {
         reconfigure_view_position(*server, view, view.x + dx, view.y + dy);
     }
