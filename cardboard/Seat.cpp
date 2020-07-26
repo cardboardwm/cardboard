@@ -198,7 +198,7 @@ void Seat::focus_view(Server& server, OptionalRef<View> view, bool condense_work
 
 fit_on_screen:
     // noop if the view is floating
-    server.output_manager.get_view_workspace(view.unwrap()).fit_view_on_screen(server.output_manager, view.unwrap(), condense_workspace);
+    server.output_manager->get_view_workspace(view.unwrap()).fit_view_on_screen(*(server.output_manager), view.unwrap(), condense_workspace);
 }
 
 void Seat::focus_layer(Server& server, struct wlr_layer_surface_v1* layer)
@@ -474,7 +474,7 @@ void Seat::update_swipe(Server& server)
     }
 
     data->scroll_x -= data->speed;
-    scroll_workspace(server.output_manager, *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) }, false);
+    scroll_workspace(*(server.output_manager), *data->workspace, AbsoluteScroll { static_cast<int>(data->scroll_x) }, false);
     data->workspace->find_dominant_view(*(server.output_manager), *this, get_focused_view()).and_then([data](auto& dominant) {
         data->dominant_view = OptionalRef(dominant);
     });
