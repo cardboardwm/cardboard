@@ -9,6 +9,7 @@ extern "C" {
 #include <memory>
 #include <optional>
 #include <unordered_set>
+#include <vector>
 
 #include "Cursor.h"
 #include "Helpers.h"
@@ -589,9 +590,112 @@ void Seat::focus(Server& server, Workspace& workspace)
     }
 
     if (!workspace.output.has_value()) {
+        bool do_return = true;
         Workspace& previous_workspace = get_focused_workspace(server).unwrap();
+
+        auto previous_workspace_id = previous_workspace.index;
+        auto workspace_id = workspace.index;
+        auto height_offset = [&] {
+            if (previous_workspace_id < workspace_id) {
+                return previous_workspace.output.unwrap().usable_area.height;
+            } else {
+                return -previous_workspace.output.unwrap().usable_area.height;
+            }
+        }();
+        Output* output = previous_workspace.output.raw_pointer();
+
         workspace.activate(previous_workspace.output.unwrap());
-        previous_workspace.deactivate();
+
+        std::vector<AnimationTask> animation_tasks;
+
+        workspace.arrange_workspace(*server.output_manager, false);
+
+        for (auto& column : workspace.columns) {
+            for (auto& tile : column.tiles) {
+                tile.view->move(tile.view->x, tile.view->y + height_offset);
+
+                animation_tasks.push_back({ tile.view,
+                                            tile.view->x,
+                                            tile.view->y - height_offset });
+            }
+        }
+
+        for (auto& floating_view : previous_workspace.floating_views) {
+            floating_view.get()->y += height_offset;
+            animation_tasks.push_back({ floating_view.get(),
+                                        floating_view.get()->x,
+                                        floating_view.get()->y - height_offset });
+        }
+
+        if (animation_tasks.size() > 0) {
+            animation_tasks.back().animation_finished_callback = [this, output, &server, workspace_id]() {
+                auto& workspace = server.output_manager->workspaces[workspace_id];
+                const struct wlr_box* output_box = server.output_manager->get_output_box(*output);
+
+                cursor_warp(
+                    server,
+                    *this,
+                    cursor,
+                    output_box->x + output->usable_area.x + output->usable_area.width / 2,
+                    output_box->y + output->usable_area.y + output->usable_area.height / 2);
+
+                if (auto last_focused_view = std::find_if(focus_stack.begin(), focus_stack.end(), [&workspace](View* view) {
+                        return view->workspace_id == workspace.index;
+                    });
+                    last_focused_view != focus_stack.end()) {
+                    focus_view(server, OptionalRef<View>(*last_focused_view));
+                } else {
+                    focus_view(server, NullRef<View>);
+                }
+                cursor_rebase(server, *this, cursor);
+            };
+
+            for (const auto& task : animation_tasks) {
+                server.view_animation->enqueue_task(task);
+            }
+        } else {
+            do_return = false;
+        }
+
+        animation_tasks.clear();
+
+        for (auto& column : previous_workspace.columns) {
+            for (auto& tile : column.tiles) {
+                animation_tasks.push_back({
+                    tile.view,
+                    tile.view->x,
+                    tile.view->y - height_offset,
+                });
+            }
+        }
+
+        for (auto& floating_view : previous_workspace.floating_views) {
+            animation_tasks.push_back({ floating_view.get(),
+                                        floating_view.get()->x,
+                                        floating_view.get()->y - height_offset });
+        }
+
+        if (animation_tasks.size() > 0) {
+            animation_tasks.back().animation_finished_callback = [previous_workspace_id, &server, height_offset]() {
+                /* last finished window would deactivate the workspace and
+                   position back all the floating windows*/
+                auto& previous_workspace = server.output_manager->workspaces[previous_workspace_id];
+                previous_workspace.deactivate();
+                for (auto& floating_view : previous_workspace.floating_views) {
+                    floating_view.get()->y += height_offset;
+                }
+            };
+
+            for (const auto& task : animation_tasks) {
+                server.view_animation->enqueue_task(task);
+            }
+        } else {
+            previous_workspace.deactivate();
+        }
+
+        if (do_return) {
+            return;
+        }
     }
 
     const Output& output = workspace.output.unwrap();

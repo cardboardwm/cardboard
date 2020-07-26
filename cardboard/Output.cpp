@@ -268,57 +268,75 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     std::array<float, 4> color = { .3, .3, .3, 1. };
     wlr_renderer_clear(renderer, color.data());
 
-    auto& ws = *std::find_if(server->output_manager->workspaces.begin(), server->output_manager->workspaces.end(), [output](const auto& other) { return other.output && other.output.raw_pointer() == output; });
-    if (ws.fullscreen_view) {
-        render_workspace(*server, ws, wlr_output, renderer, &now);
-#if HAVE_XWAYLAND
-        render_xwayland_or_surface(*server, wlr_output, renderer, &now);
-#endif
-        render_floating(*server, ws, ws.fullscreen_view, wlr_output, renderer, &now);
-    } else {
+    int workspaces_number = 0;
+    int fullscreen_workspaces_number = 0;
+
+    for (auto& ws : server->output_manager->workspaces) {
+        if (ws.output.raw_pointer() != output) {
+            workspaces_number++;
+            fullscreen_workspaces_number += static_cast<bool>(ws.fullscreen_view);
+        }
+    }
+
+    if (fullscreen_workspaces_number != workspaces_number - fullscreen_workspaces_number) {
         render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
         render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
+    }
 
-        wlr_renderer_scissor(renderer, &output->usable_area);
+    for (auto& ws : server->output_manager->workspaces) {
 
-        if (auto focused_view_ptr = server->seat.get_focused_view(); focused_view_ptr) {
-            auto focused_view = focused_view_ptr.raw_pointer();
-
-            if (auto column_it = ws.find_column(focused_view); column_it != ws.columns.end()) {
-                wlr_box column_dimensions = {
-                    .x = focused_view->x + focused_view->geometry.x - server->config.gap / 2,
-                    .y = focused_view->y + focused_view->geometry.y - server->config.gap / (column_it->tiles.size() == 1 ? 1 : 2),
-                    .width = focused_view->target_width + server->config.gap,
-                    .height = focused_view->target_height + (column_it->tiles.size() == 1 ? 2 : 1) * server->config.gap
-                };
-
-                std::array<float, 9> matrix;
-                wl_output_transform transform = wlr_output_transform_invert(
-                    focused_view->get_surface()->current.transform);
-                wlr_matrix_project_box(matrix.data(), &column_dimensions, transform, 0, wlr_output->transform_matrix);
-
-                auto focus_color = server->config.focus_color;
-                // premultiply components
-                focus_color.r *= focus_color.a;
-                focus_color.g *= focus_color.a;
-                focus_color.b *= focus_color.a;
-                wlr_render_quad_with_matrix(
-                    renderer,
-                    reinterpret_cast<float*>(&focus_color),
-                    matrix.data());
-            }
+        if (ws.output.raw_pointer() != output) {
+            continue;
         }
 
-        render_workspace(*server, ws, wlr_output, renderer, &now);
-        wlr_renderer_scissor(renderer, nullptr);
+        if (ws.fullscreen_view) {
+            render_workspace(*server, ws, wlr_output, renderer, &now);
+#if HAVE_XWAYLAND
+            render_xwayland_or_surface(*server, wlr_output, renderer, &now);
+#endif
+            render_floating(*server, ws, ws.fullscreen_view, wlr_output, renderer, &now);
+        } else {
+
+            if (auto focused_view_ptr = server->seat.get_focused_view(); focused_view_ptr) {
+                auto focused_view = focused_view_ptr.raw_pointer();
+
+                if (auto column_it = ws.find_column(focused_view); column_it != ws.columns.end()) {
+                    wlr_box column_dimensions = {
+                        .x = focused_view->x + focused_view->geometry.x - server->config.gap / 2,
+                        .y = focused_view->y + focused_view->geometry.y - server->config.gap / (column_it->tiles.size() == 1 ? 1 : 2),
+                        .width = focused_view->target_width + server->config.gap,
+                        .height = focused_view->target_height + (column_it->tiles.size() == 1 ? 2 : 1) * server->config.gap
+                    };
+
+                    std::array<float, 9> matrix;
+                    wl_output_transform transform = wlr_output_transform_invert(
+                        focused_view->get_surface()->current.transform);
+                    wlr_matrix_project_box(matrix.data(), &column_dimensions, transform, 0, wlr_output->transform_matrix);
+
+                    auto focus_color = server->config.focus_color;
+                    // premultiply components
+                    focus_color.r *= focus_color.a;
+                    focus_color.g *= focus_color.a;
+                    focus_color.b *= focus_color.a;
+                    wlr_render_quad_with_matrix(
+                        renderer,
+                        reinterpret_cast<float*>(&focus_color),
+                        matrix.data());
+                }
+            }
+
+            render_workspace(*server, ws, wlr_output, renderer, &now);
+            wlr_renderer_scissor(renderer, nullptr);
 
 #if HAVE_XWAYLAND
-        render_xwayland_or_surface(*server, wlr_output, renderer, &now);
+            render_xwayland_or_surface(*server, wlr_output, renderer, &now);
 #endif
 
-        render_floating(*server, ws, NullRef<View>, wlr_output, renderer, &now);
-        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
+            render_floating(*server, ws, NullRef<View>, wlr_output, renderer, &now);
+            render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_TOP], *output, renderer, &now);
+        }
     }
+
     render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY], *output, renderer, &now);
 
     // in case of software rendered cursor, render it
