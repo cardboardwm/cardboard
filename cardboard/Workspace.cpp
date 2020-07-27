@@ -84,6 +84,7 @@ std::list<NotNullPointer<View>>::iterator Workspace::find_floating(View* view)
 void Workspace::add_view(OutputManager& output_manager, View& view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
+    bool fit_view = false;
     if (floating) {
         auto it = find_floating(next_to);
 
@@ -95,9 +96,10 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
         if (it != columns.end()) {
             std::advance(it, 1);
         }
-        //auto new_it = columns.insert(it, Column {});
+
         auto new_it = columns.emplace(it);
         new_it->tiles.push_back({ &view, &*new_it });
+        fit_view = true;
     }
 
     if (!transferring) {
@@ -110,6 +112,9 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
     }
 
     arrange_workspace(output_manager);
+    if(fit_view) {
+        fit_view_on_screen(output_manager, view, true);
+    }
 }
 
 void Workspace::remove_view(OutputManager& output_manager, View& view, bool transferring)
@@ -121,8 +126,17 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
         view.set_activated(false);
         view.change_output(output, NullRef<Output>);
     }
+
+    int fit_last = false;
+    int fit_first = false;
+
     auto column_it = find_column(&view);
     if (column_it != columns.end()) {
+        if(column_it == columns.begin()) {
+            fit_first = true;
+        } else if (column_it == std::prev(columns.end())) {
+            fit_last = true;
+        }
         column_it->tiles.remove_if([&view](auto& other) { return other.view == &view; });
         // destroy column if no tiles left
         if (column_it->tiles.empty()) {
@@ -132,6 +146,11 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
     floating_views.remove(&view);
 
     arrange_workspace(output_manager);
+    if(fit_first) {
+        fit_view_on_screen(output_manager, *columns.begin()->tiles.begin()->view, true);
+    } else if(fit_last) {
+        fit_view_on_screen(output_manager, *columns.rbegin()->tiles.begin()->view, true);
+    }
 }
 
 void Workspace::insert_into_column(OutputManager& output_manager, View& view, Column& column)
@@ -255,10 +274,10 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
     if (condense && &*column_it == &*columns.begin()) {
         // align first window to the display's left edge
-        scroll_x = -usable_area.x + server->config.gap / 2;
+        scroll_x = -usable_area.x - server->config.gap / 2;
     } else if (condense && &*column_it == &*columns.rbegin()) { // epic identity checking
         // align last window to the display's right edge
-        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) - server->config.gap / 2;
+        scroll_x = wx + view.geometry.width - (usable_area.x + usable_area.width) + server->config.gap / 2;
     } else if (overflowing && vx < output_box->x + usable_area.x) {
         scroll_x = wx - usable_area.x - server->config.gap / 2;
     } else if (overflowing && vx + view.geometry.width >= output_box->x + usable_area.x + usable_area.width) {
