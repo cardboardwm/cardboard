@@ -407,7 +407,7 @@ void Seat::process_swipe_begin(Server& server, uint32_t fingers)
             begin_workspace_scroll(server, ws);
         });
     } else if (fingers == WORKSPACE_SWITCH_FINGERS) {
-        get_focused_workspace(server).and_then([this, &server](auto& ws) {
+        get_focused_workspace(server).and_then([this](auto& ws) {
             grab_state = {
                 .grab_data = GrabState::WorkspaceSwitch {
                     .workspace = &ws,
@@ -715,7 +715,7 @@ void Seat::focus(Server& server, Workspace& workspace)
         }
 
         if (animation_tasks.size() > 0) {
-            animation_tasks.back().animation_finished_callback = [previous_workspace_id, &server, height_offset]() {
+            animation_tasks.back().animation_finished_callback = [previous_workspace_id, &server]() {
                 /* last finished window would deactivate the workspace */
                 auto& previous_workspace = server.output_manager->workspaces[previous_workspace_id];
                 previous_workspace.deactivate();
