@@ -406,33 +406,74 @@ void Seat::process_swipe_begin(Server& server, uint32_t fingers)
         get_focused_workspace(server).and_then([this, &server](auto& ws) {
             begin_workspace_scroll(server, ws);
         });
+    } else if (fingers == WORKSPACE_SWITCH_FINGERS) {
+        get_focused_workspace(server).and_then([this, &server](auto& ws) {
+            grab_state = {
+                    .grab_data = GrabState::WorkspaceSwitch{
+                        .workspace = ws,
+                        .direction = 0.
+                    }
+            };
+        });
     }
 }
 
-void Seat::process_swipe_update(Server& server, uint32_t fingers, double dx)
+void Seat::process_swipe_update(Server& server, uint32_t fingers, double dx, double dy)
 {
-    GrabState::WorkspaceScroll* data;
-    if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
-        return;
-    }
-    if (fingers < WORKSPACE_SCROLL_FINGERS) {
-        end_touchpad_swipe(server);
+    if(!grab_state.has_value()) {
         return;
     }
 
-    data->delta_since_update += dx * WORKSPACE_SCROLL_SENSITIVITY;
-    data->ready = true;
+    if(GrabState::WorkspaceSwitch* data = std::get_if<GrabState::WorkspaceSwitch>(&grab_state->grab_data)) {
+        if(fingers < WORKSPACE_SWITCH_FINGERS) {
+            grab_state = std::nullopt;
+        }
+
+        data->direction += dy;
+    } else if(
+            GrabState::WorkspaceScroll* data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data);
+            data) {
+        if (fingers < WORKSPACE_SCROLL_FINGERS) {
+            end_touchpad_swipe(server);
+            return;
+        }
+
+        data->delta_since_update += dx * WORKSPACE_SCROLL_SENSITIVITY;
+        data->ready = true;
+    }
 }
 
-void Seat::process_swipe_end(Server&)
+void Seat::process_swipe_end(Server& server)
 {
-    GrabState::WorkspaceScroll* data;
-    if (!grab_state.has_value() || !(data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data))) {
+    if(!grab_state.has_value()) {
         return;
     }
 
-    data->wants_to_stop = true;
-    wlr_log(WLR_DEBUG, "fingers were lifted - swipe stopping");
+    if(GrabState::WorkspaceSwitch* data = std::get_if<GrabState::WorkspaceSwitch>(&grab_state->grab_data)) {
+        int advance_direction = data->direction < 0 ? -1 : 1;
+
+        const auto wrap_advance = [](int index, int advance_direction, int size) {
+            index += advance_direction + size;
+            index %= size;
+
+            return index;
+        };
+
+        for(
+                int i = wrap_advance(data->workspace->index, advance_direction, server.output_manager->workspaces.size());
+                i != data->workspace->index;
+                i = wrap_advance(data->workspace->index, advance_direction, server.output_manager->workspaces.size())
+                ) {
+            if(!server.output_manager->workspaces[i].output) {
+                focus(server, server.output_manager->workspaces[i]);
+            }
+        }
+    } else if(
+        GrabState::WorkspaceScroll* data = std::get_if<GrabState::WorkspaceScroll>(&grab_state->grab_data);
+            data) {
+        data->wants_to_stop = true;
+        wlr_log(WLR_DEBUG, "fingers were lifted - swipe stopping");
+    }
 }
 
 void Seat::end_interactive(Server& server)
@@ -886,7 +927,7 @@ void Seat::cursor_swipe_update_handler(struct wl_listener* listener, void* data)
     auto* seat = get_listener_data<Seat*>(listener);
     auto* event = static_cast<struct wlr_event_pointer_swipe_update*>(data);
 
-    seat->process_swipe_update(*server, event->fingers, event->dx);
+    seat->process_swipe_update(*server, event->fingers, event->dx, event->dy);
 }
 
 void Seat::cursor_swipe_end_handler(struct wl_listener* listener, void*)

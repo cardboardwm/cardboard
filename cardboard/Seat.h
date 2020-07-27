@@ -28,6 +28,7 @@ constexpr const char* DEFAULT_SEAT = "seat0";
 const int WORKSPACE_SCROLL_FINGERS = 3;
 const double WORKSPACE_SCROLL_SENSITIVITY = 2.0; ///< sensitivity multiplier
 const double WORKSPACE_SCROLL_FRICTION = 0.9; ///< friction multiplier
+const int WORKSPACE_SWITCH_FINGERS = 4;
 
 struct Seat {
     struct GrabState {
@@ -55,7 +56,11 @@ struct Seat {
             bool ready; ///< set to true after the fingers move for the first time
             bool wants_to_stop; ///< set to true after lifting the fingers off the touchpad
         };
-        std::variant<Move, Resize, WorkspaceScroll> grab_data;
+        struct WorkspaceSwitch {
+            NotNullPointer<Workspace> workspace;
+            double direction; ///negative for "upper" workspaces, positive for below workspaces
+        };
+        std::variant<Move, Resize, WorkspaceScroll, WorkspaceSwitch> grab_data;
     };
 
     SeatCursor cursor;
@@ -102,7 +107,7 @@ struct Seat {
     void process_cursor_move(Server&, GrabState::Move move_data);
     void process_cursor_resize(Server&, GrabState::Resize resize_data);
     void process_swipe_begin(Server& server, uint32_t fingers);
-    void process_swipe_update(Server& server, uint32_t fingers, double dx);
+    void process_swipe_update(Server& server, uint32_t fingers, double dx, double dy);
     void process_swipe_end(Server& server);
     void end_interactive(Server& server);
     void end_touchpad_swipe(Server& server);
@@ -200,12 +205,12 @@ public:
     /**
      * \brief Called when the user starts a swipe on the touchpad (more than one finger).
      */
-    static void cursor_swipe_update_handler(struct wl_listener* listener, void* data);
+    static void cursor_swipe_begin_handler(struct wl_listener* listener, void* data);
 
     /**
      * \brief Called when the user moved their fingers during a swipe on the touchpad.
      */
-    static void cursor_swipe_begin_handler(struct wl_listener* listener, void* data);
+    static void cursor_swipe_update_handler(struct wl_listener* listener, void* data);
 
     /**
      * \brief Called after the user lifted all their fingers, eding the swipe.
