@@ -461,7 +461,7 @@ void Seat::process_swipe_end(Server& server)
         for (
             int i = wrap_advance(data->workspace->index, advance_direction, server.output_manager->workspaces.size());
             i != data->workspace->index;
-            i = wrap_advance(data->workspace->index, advance_direction, server.output_manager->workspaces.size())) {
+            i = wrap_advance(i, advance_direction, server.output_manager->workspaces.size())) {
             if (!server.output_manager->workspaces[i].output) {
                 focus(server, server.output_manager->workspaces[i]);
             }
