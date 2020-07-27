@@ -716,13 +716,9 @@ void Seat::focus(Server& server, Workspace& workspace)
 
         if (animation_tasks.size() > 0) {
             animation_tasks.back().animation_finished_callback = [previous_workspace_id, &server, height_offset]() {
-                /* last finished window would deactivate the workspace and
-                   position back all the floating windows*/
+                /* last finished window would deactivate the workspace */
                 auto& previous_workspace = server.output_manager->workspaces[previous_workspace_id];
                 previous_workspace.deactivate();
-                for (auto& floating_view : previous_workspace.floating_views) {
-                    floating_view.get()->y += height_offset;
-                }
             };
 
             for (const auto& task : animation_tasks) {
