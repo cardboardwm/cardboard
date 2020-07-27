@@ -398,6 +398,11 @@ void Workspace::activate(Output& new_output)
         }
     }
 
+    for(auto& floating_view: floating_views) {
+        floating_view->change_output(output, new_output);
+        floating_view->set_activated(true);
+    }
+
     output = OptionalRef<Output>(new_output);
 }
 
@@ -406,11 +411,18 @@ void Workspace::deactivate()
     if (!output) {
         return;
     }
+
     for (const auto& column : columns) {
         for (const auto& tile : column.tiles) {
             tile.view->change_output(output.unwrap(), NullRef<Output>);
             tile.view->set_activated(false);
         }
     }
+
+    for(auto& floating_view: floating_views) {
+        floating_view->change_output(output.unwrap(), NullRef<Output>);
+        floating_view->set_activated(false);
+    }
+
     output = NullRef<Output>;
 }
