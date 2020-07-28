@@ -211,12 +211,12 @@ inline CommandResult toggle_floating(Server* server)
     bool currently_floating = server->output_manager->workspaces[view.workspace_id].find_floating(&view) != server->output_manager->workspaces[view.workspace_id].floating_views.end();
 
     auto prev_size = view.previous_size;
-    view.previous_size = { view.geometry.width, view.geometry.height };
 
     if (ws.fullscreen_view.raw_pointer() == &view) {
-        view.saved_state->width = prev_size.first;
-        view.saved_state->height = prev_size.second;
+        std::swap(view.saved_state->width, view.previous_size.first);
+        std::swap(view.saved_state->height, view.previous_size.second);
     } else {
+        view.previous_size = { view.geometry.width, view.geometry.height };
         view.resize(prev_size.first, prev_size.second);
     }
 
