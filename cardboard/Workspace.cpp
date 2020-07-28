@@ -132,16 +132,8 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
         view.change_output(output, NullRef<Output>);
     }
 
-    int fit_last = false;
-    int fit_first = false;
-
     auto column_it = find_column(&view);
     if (column_it != columns.end()) {
-        if(column_it == columns.begin()) {
-            fit_first = true;
-        } else if (column_it == std::prev(columns.end())) {
-            fit_last = true;
-        }
         column_it->tiles.remove_if([&view](auto& other) { return other.view == &view; });
         // destroy column if no tiles left
         if (column_it->tiles.empty()) {
@@ -151,11 +143,6 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
     floating_views.remove(&view);
 
     arrange_workspace(output_manager);
-    if(fit_first) {
-        fit_view_on_screen(output_manager, *columns.begin()->tiles.begin()->view, true);
-    } else if(fit_last) {
-        fit_view_on_screen(output_manager, *columns.rbegin()->tiles.begin()->view, true);
-    }
 }
 
 void Workspace::insert_into_column(OutputManager& output_manager, View& view, Column& column)

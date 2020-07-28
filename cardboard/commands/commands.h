@@ -223,6 +223,20 @@ inline CommandResult toggle_floating(Server* server)
     ws.remove_view(*(server->output_manager), view, true);
     ws.add_view(*(server->output_manager), view, ws.columns.empty() ? nullptr : ws.columns.back().tiles.back().view.get(), !currently_floating, true);
 
+    // automatically scroll workspace to the previously focused view from this workspace so the newly floating view does not leave a hole
+    if (!currently_floating) {
+        for (auto prev_focused_view_ptr : server->seat.focus_stack) {
+            if (prev_focused_view_ptr == &view) {
+                continue;
+            }
+            auto& this_ws = server->output_manager->get_view_workspace(*prev_focused_view_ptr);
+            if (&this_ws == &ws) {
+                this_ws.fit_view_on_screen(*server->output_manager, *prev_focused_view_ptr, true);
+                break;
+            }
+        }
+    }
+
     return { "" };
 }
 
