@@ -12,10 +12,15 @@ extern "C" {
 #include "ViewOperations.h"
 #include "Workspace.h"
 
+Workspace::Column::MappedAndNormal Workspace::Column::mapped_and_normal_tiles()
+{
+    return Workspace::Column::MappedAndNormal { &tiles };
+}
+
 std::unordered_set<NotNullPointer<View>> Workspace::Column::get_mapped_and_normal_set()
 {
     std::unordered_set<NotNullPointer<View>> set;
-    for (auto& tile : mapped_and_normal_tiles) {
+    for (auto& tile : mapped_and_normal_tiles()) {
         set.insert(tile.view);
     }
 
@@ -156,7 +161,7 @@ void Workspace::remove_view(OutputManager& output_manager, View& view, bool tran
 void Workspace::insert_into_column(OutputManager& output_manager, View& view, Column& column)
 {
     int max_width = 0;
-    for (auto& tile : column.mapped_and_normal_tiles) {
+    for (auto& tile : column.mapped_and_normal_tiles()) {
         max_width = std::max(max_width, tile.view->geometry.width);
     }
     remove_view(output_manager, view, true);
@@ -204,7 +209,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
         // ignore columns that are not ready for tiling
         bool should_skip = false;
         float scale_sum = 0; // sum of all weights for height calculation
-        for (auto& tile : column.tiles) {
+        for (auto& tile : column.mapped_and_normal_tiles()) {
             if (!tile.view->is_mapped_and_normal()) {
                 should_skip = true;
             } else {
@@ -217,7 +222,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
 
         int current_y = output_box->y + usable_area.y + server->config.gap;
         int max_width = 0;
-        for (auto& tile : column.tiles) {
+        for (auto& tile : column.mapped_and_normal_tiles()) {
             auto& view = *tile.view;
 
             max_width = std::max(max_width, tile.view->geometry.width);
@@ -304,7 +309,7 @@ OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, S
         // Find first mapped view of the column.
         // We need it only for its width.
         View* view = nullptr;
-        for (auto& tile : column.tiles) {
+        for (auto& tile : column.mapped_and_normal_tiles()) {
             view = tile.view;
             if (view->mapped) {
                 break;
@@ -334,7 +339,7 @@ OptionalRef<View> Workspace::find_dominant_view(OutputManager& output_manager, S
         }
 
         bool focused_view_in_this_column = false;
-        for (auto& tile : column.tiles) {
+        for (auto& tile : column.mapped_and_normal_tiles()) {
             if (tile.view == focused_view.raw_pointer()) {
                 focused_view_in_this_column = true;
             }
@@ -362,7 +367,7 @@ int Workspace::get_view_wx(View& view)
 
     for (auto& column : columns) {
         View* reference_view = nullptr;
-        for (auto& tile : column.tiles) {
+        for (auto& tile : column.mapped_and_normal_tiles()) {
             if (tile.view == &view) {
                 return acc_wx;
             }

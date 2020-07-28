@@ -50,7 +50,7 @@ struct Workspace {
          * (i.e. not fullscreened or recovering from fullscreen). Example:
          *
          * \code{.cpp}
-         * for (auto& tile : columns.mapped_and_normal_tiles) {
+         * for (auto& tile : columns.mapped_and_normal_tiles()) {
          *     // do stuff
          * }
          * \endcode
@@ -82,8 +82,8 @@ struct Workspace {
         };
 
         std::list<Tile> tiles;
-        MappedAndNormal mapped_and_normal_tiles { &tiles };
 
+        MappedAndNormal mapped_and_normal_tiles();
         std::unordered_set<NotNullPointer<View>> get_mapped_and_normal_set();
     };
 
