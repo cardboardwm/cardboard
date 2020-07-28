@@ -239,7 +239,7 @@ inline CommandResult move(Server* server, int dx, int dy)
         auto other = it;
         auto current_column = it;
 
-        if(dx != 0) {
+        if (dx != 0) {
             std::advance(other, dx / abs(dx));
 
             if (other != workspace.columns.end() && other != std::prev(workspace.columns.begin())) {
@@ -248,15 +248,13 @@ inline CommandResult move(Server* server, int dx, int dy)
             }
         }
 
-        if(dy != 0 && current_column->tiles.size() > 1)
-        {
+        if (dy != 0 && current_column->tiles.size() > 1) {
             auto focused_tile = std::find_if(
                 current_column->tiles.begin(),
                 current_column->tiles.end(),
                 [&view](const auto& x) {
                     return &view == x.view.get();
-                }
-            );
+                });
 
             auto index = std::distance(current_column->tiles.begin(), focused_tile);
             index = (index - dy / std::abs(dy) + current_column->tiles.size()) % current_column->tiles.size();
@@ -265,8 +263,7 @@ inline CommandResult move(Server* server, int dx, int dy)
             std::advance(other_tile, index);
             std::swap(
                 *focused_tile,
-                *other_tile
-            );
+                *other_tile);
         }
 
         workspace.arrange_workspace(*(server->output_manager), true);
