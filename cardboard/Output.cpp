@@ -140,7 +140,7 @@ static void render_floating(Server& server, Workspace& ws, OptionalRef<View> anc
 
     bool focused_floating = false;
     for (const auto& view : ws.floating_views) {
-        if ((!view->mapped) || (ancestor && !view->is_transient_for(ancestor.unwrap()))) {
+        if ((!view->mapped) || (ancestor && !view->is_transient_for(ancestor.unwrap()) && view != ancestor.raw_pointer())) {
             continue;
         }
 
