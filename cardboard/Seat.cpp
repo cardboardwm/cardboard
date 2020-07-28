@@ -393,7 +393,7 @@ void Seat::process_cursor_resize(Server& server, GrabState::Resize resize_data)
         reconfigure_view_size(server, *resize_data.view, width, height);
     } else {
         // resize all views in the column
-        for (auto& tile : column_it->mapped_and_normal_tiles) {
+        for (auto& tile : column_it->mapped_and_normal_tiles()) {
             reconfigure_view_size(server, *tile.view, width, tile.view->geometry.height);
         }
     }
@@ -650,7 +650,7 @@ void Seat::focus(Server& server, Workspace& workspace)
         workspace.arrange_workspace(*server.output_manager, false);
 
         for (auto& column : workspace.columns) {
-            for (auto& tile : column.tiles) {
+            for (auto& tile : column.mapped_and_normal_tiles()) {
                 tile.view->move(tile.view->x, tile.view->y + height_offset);
 
                 animation_tasks.push_back({ tile.view,
@@ -699,7 +699,7 @@ void Seat::focus(Server& server, Workspace& workspace)
         animation_tasks.clear();
 
         for (auto& column : previous_workspace.columns) {
-            for (auto& tile : column.tiles) {
+            for (auto& tile : column.mapped_and_normal_tiles()) {
                 animation_tasks.push_back({
                     tile.view,
                     tile.view->x,

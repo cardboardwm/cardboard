@@ -78,7 +78,7 @@ void reconfigure_view_size(Server& server, View& view, int width, int height)
 
     if (auto column_it = workspace.find_column(&view); column_it != workspace.columns.end()) {
         height = view.geometry.height;
-        for (auto& tile : column_it->mapped_and_normal_tiles) {
+        for (auto& tile : column_it->mapped_and_normal_tiles()) {
             tile.view->resize(width, height);
         }
     } else {
