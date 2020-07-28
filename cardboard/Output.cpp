@@ -272,7 +272,7 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     int fullscreen_workspaces_number = 0;
 
     for (auto& ws : server->output_manager->workspaces) {
-        if (ws.output.raw_pointer() != output) {
+        if (ws.output.raw_pointer() == output) {
             workspaces_number++;
             fullscreen_workspaces_number += static_cast<bool>(ws.fullscreen_view);
         }
