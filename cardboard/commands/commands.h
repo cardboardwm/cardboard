@@ -235,6 +235,8 @@ inline CommandResult toggle_floating(Server* server)
                 break;
             }
         }
+    } else {
+        ws.fit_view_on_screen(*server->output_manager, view);
     }
 
     return { "" };

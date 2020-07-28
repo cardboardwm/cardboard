@@ -89,7 +89,6 @@ std::list<NotNullPointer<View>>::iterator Workspace::find_floating(View* view)
 void Workspace::add_view(OutputManager& output_manager, View& view, View* next_to, bool floating, bool transferring)
 {
     // if next_to is null, view will be added at the end of the list
-    bool fit_view = false;
     if (floating) {
         auto it = find_floating(next_to);
 
@@ -104,7 +103,6 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
 
         auto new_it = columns.emplace(it);
         new_it->tiles.push_back({ &view, &*new_it });
-        fit_view = true;
     }
 
     if (!transferring) {
@@ -117,9 +115,6 @@ void Workspace::add_view(OutputManager& output_manager, View& view, View* next_t
     }
 
     arrange_workspace(output_manager);
-    if(fit_view) {
-        fit_view_on_screen(output_manager, view, true);
-    }
 }
 
 void Workspace::remove_view(OutputManager& output_manager, View& view, bool transferring)
@@ -241,9 +236,7 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
 
 void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bool condense)
 {
-    // don't do anything if we have a fullscreened view or the previously
-    // fullscreened view hasn't been restored
-    if (fullscreen_view || view.expansion_state != View::ExpansionState::NORMAL) {
+    if (!view.is_mapped_and_normal()) {
         return;
     }
 
@@ -260,7 +253,7 @@ void Workspace::fit_view_on_screen(OutputManager& output_manager, View& view, bo
     const struct wlr_box* output_box = output_manager.get_output_box(output);
 
     const auto usable_area = output.usable_area;
-    int wx = get_view_wx(view);
+    int wx = get_view_wx(view); // don't worry, it only considers mapped and normal views
     int vx = view.target_x + view.geometry.x;
 
     bool overflowing = vx < 0 || view.target_x + view.geometry.x + view.geometry.width > usable_area.x + usable_area.width;
@@ -359,9 +352,7 @@ int Workspace::get_view_wx(View& view)
                 return acc_wx;
             }
 
-            if (tile.view->is_mapped_and_normal()) {
-                reference_view = tile.view;
-            }
+            reference_view = tile.view;
         }
         if (reference_view) {
             acc_wx += reference_view->geometry.width + server->config.gap;
