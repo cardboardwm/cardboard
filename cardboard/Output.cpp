@@ -201,7 +201,7 @@ static void render_layer(Server& server, LayerArray::value_type& surfaces, Outpu
 static void render_xwayland_or_surface(Server& server, struct wlr_output* wlr_output, struct wlr_renderer* renderer, struct timespec* now)
 {
     for (const auto& xwayland_or_surface : server.surface_manager.xwayland_or_surfaces) {
-        if (!xwayland_or_surface->mapped) {
+        if (!xwayland_or_surface->mapped || !xwayland_or_surface->xwayland_surface->surface) {
             continue;
         }
         RenderData rdata = {

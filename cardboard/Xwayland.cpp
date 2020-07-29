@@ -228,6 +228,9 @@ void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listen
 
 bool XwaylandORSurface::get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
+    if (!xwayland_surface->surface) {
+        return false;
+    }
     double view_x = lx - xwayland_surface->x;
     double view_y = ly - xwayland_surface->y;
 
