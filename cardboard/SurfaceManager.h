@@ -10,9 +10,9 @@
 #include "OptionalRef.h"
 #include "OutputManager.h"
 #include "View.h"
+#include "ViewAnimation.h"
 #include "Workspace.h"
 #include "Xwayland.h"
-#include "ViewAnimation.h"
 
 struct SurfaceManager {
     std::list<std::unique_ptr<View>> views;

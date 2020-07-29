@@ -114,14 +114,12 @@ Workspace& OutputManager::get_view_workspace(View& view)
     return workspaces[view.workspace_id];
 }
 
-void OutputManager::output_manager_apply_handler([[maybe_unused]]wl_listener* listener, [[maybe_unused]]void* data)
+void OutputManager::output_manager_apply_handler([[maybe_unused]] wl_listener* listener, [[maybe_unused]] void* data)
 {
-
 }
 
-void OutputManager::output_manager_test_handler([[maybe_unused]]wl_listener* listener, [[maybe_unused]]void* data)
+void OutputManager::output_manager_test_handler([[maybe_unused]] wl_listener* listener, [[maybe_unused]] void* data)
 {
-
 }
 
 OutputManagerInstance create_output_manager(Server* server)
@@ -136,10 +134,8 @@ OutputManagerInstance create_output_manager(Server* server)
     register_handlers(
         *server,
         output_manager.get(),
-        {{&output_manager->output_manager_v1->events.apply, OutputManager::output_manager_apply_handler},
-        {&output_manager->output_manager_v1->events.test, OutputManager::output_manager_test_handler}}
-    );
-
+        { { &output_manager->output_manager_v1->events.apply, OutputManager::output_manager_apply_handler },
+          { &output_manager->output_manager_v1->events.test, OutputManager::output_manager_test_handler } });
 
     return output_manager;
 }

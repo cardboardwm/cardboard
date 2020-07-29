@@ -399,7 +399,7 @@ void Workspace::activate(Output& new_output)
         }
     }
 
-    for(auto& floating_view: floating_views) {
+    for (auto& floating_view : floating_views) {
         floating_view->change_output(output, new_output);
     }
 
@@ -418,7 +418,7 @@ void Workspace::deactivate()
         }
     }
 
-    for(auto& floating_view: floating_views) {
+    for (auto& floating_view : floating_views) {
         floating_view->change_output(output.unwrap(), NullRef<Output>);
     }
 
