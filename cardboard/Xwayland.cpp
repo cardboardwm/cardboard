@@ -22,7 +22,7 @@ void XwaylandView::destroy()
     if (server->seat.is_grabbing(*this)) {
         server->seat.end_interactive(*server);
     }
-    server->surface_manager.views.remove_if([this](const auto& x) { return this == x.get(); });
+    server->surface_manager.remove_view(*server->view_animation, *this);
 }
 
 void XwaylandView::unmap()

@@ -12,6 +12,7 @@
 #include "View.h"
 #include "Workspace.h"
 #include "Xwayland.h"
+#include "ViewAnimation.h"
 
 struct SurfaceManager {
     std::list<std::unique_ptr<View>> views;
@@ -26,6 +27,7 @@ struct SurfaceManager {
     void unmap_view(Server&, View&);
     /// Puts the \a view on top.
     void move_view_to_front(View&);
+    void remove_view(ViewAnimation&, View&);
 
     /**
      * \brief Returns the xdg / xwayland / layer_shell surface leaf of the first

@@ -30,6 +30,12 @@ void SurfaceManager::move_view_to_front(View& view)
     views.splice(views.begin(), views, std::find_if(views.begin(), views.end(), [&view](const std::unique_ptr<View>& x) { return &view == x.get(); }));
 }
 
+void SurfaceManager::remove_view(ViewAnimation &view_animation, View &view)
+{
+    view_animation.cancel_tasks(view);
+    views.remove_if([&view](const auto& other) { return &view == other.get(); });
+}
+
 OptionalRef<View> SurfaceManager::get_surface_under_cursor(OutputManager& output_manager, double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy)
 {
     OptionalRef<Output> output = output_manager.get_output_at(lx, ly);

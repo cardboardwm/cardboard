@@ -215,7 +215,7 @@ void XDGView::surface_destroy_handler(struct wl_listener* listener, void*)
     if (server->seat.is_grabbing(*view)) {
         server->seat.end_interactive(*server);
     }
-    server->surface_manager.views.remove_if([view](const auto& x) { return view == x.get(); });
+    server->surface_manager.remove_view(*server->view_animation, *view);
 }
 
 void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
