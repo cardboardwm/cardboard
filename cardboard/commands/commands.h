@@ -357,9 +357,15 @@ inline CommandResult cycle_width(Server* server)
     }
     auto& focused_view = focused_view_.unwrap();
 
-    server->output_manager->get_view_workspace(focused_view).output.and_then([server, &focused_view](const auto& output) {
+    auto& ws = server->output_manager->get_view_workspace(focused_view);
+    ws.output.and_then([server, &focused_view, &ws](const auto& output) {
         const struct wlr_box* output_box = server->output_manager->get_output_box(output);
         focused_view.cycle_width(output_box->width);
+        // trick to make arrange_workspace work correctly
+        focused_view.geometry.width = focused_view.target_width;
+        focused_view.geometry.height = focused_view.target_height;
+
+        ws.fit_view_on_screen(*server->output_manager, focused_view, true);
     });
     return { "" };
 }
