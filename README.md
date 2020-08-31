@@ -3,8 +3,7 @@
 Cardboard is a unique, scrollable tiling Wayland compositor designed with
 laptops in mind. Based on [wlroots](https://github.com/swaywm/wlroots).
 
-It is currently a Work In Progress, not suitable for day to day use. We will
-reach this target in a short time. [To do list](https://gitlab.com/cardboardwm/cardboard/-/wikis/todo).
+Cardboard should be suitable for day to day use.
 
 ## Scrollable tiling?
 
