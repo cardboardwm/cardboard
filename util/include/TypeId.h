@@ -18,15 +18,18 @@ struct TypeId
     explicit TypeId(std::int32_t id_) : id {id_} {}
     explicit TypeId(InvalidId): id{ InvalidIdNumeric } {}
 
-    auto& operator=(const TypeId<Tag>&) = default;
-    auto& operator=(TypeId<Tag>&&)  noexcept = default;
+    TypeId(const TypeId&) = default;
+    TypeId(TypeId&&) noexcept = default;
 
-    explicit operator std::int32_t ()
+    TypeId<Tag>& operator=(const TypeId<Tag>&) = default;
+    TypeId<Tag>& operator=(TypeId<Tag>&&)  noexcept = default;
+
+    explicit operator std::int32_t () const
     {
         return id;
     }
 
-    bool operator==(TypeId other)
+    bool operator==(TypeId other) const
     {
         return other.id == id;
     }
@@ -49,9 +52,9 @@ namespace std
     template<typename Tag>
     struct hash<TypeId<Tag>>
     {
-        std::size_t operator()(TypeId<Tag> id)
+        std::size_t operator()(const TypeId<Tag>& id) const
         {
-            return std::hash<std::int32_t>{}(id);
+            return std::hash<std::int32_t>{}(id.id);
         }
     };
 }
