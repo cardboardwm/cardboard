@@ -22,20 +22,24 @@ struct Table
         return std::get<C>(components.at(id));
     }
 
-    template<typename... Cs>
-    std::tuple<std::reference_wrapper<Cs>...> query(Id id)
+    template<typename C1, typename C2, typename... Cs>
+    std::tuple<std::reference_wrapper<C1>, std::reference_wrapper<C2>, std::reference_wrapper<Cs>...> query(Id id)
     {
-        return {
+        return std::make_tuple(
+            std::ref(std::get<C1>(components.at(id))),
+            std::ref(std::get<C2>(components.at(id))),
             std::ref(std::get<Cs>(components.at(id)))...
-        };
+        );
     }
 
-    template<typename... Cs>
-    std::tuple<std::reference_wrapper<Cs>...> query(Id id) const
+    template<typename C1, typename C2, typename... Cs>
+    std::tuple<std::reference_wrapper<C1>, std::reference_wrapper<C2>, std::reference_wrapper<Cs>...> query(Id id) const
     {
-        return {
+        return std::make_tuple(
+            std::cref(std::get<C1>(components.at(id))),
+            std::cref(std::get<C2>(components.at(id))),
             std::cref(std::get<Cs>(components.at(id)))...
-        };
+        );
     }
 
 };
