@@ -24,47 +24,26 @@ extern "C" {
 #include "Table.h"
 #include "TypeId.h"
 #include "Listener.h"
-
-struct View
-{
-    int x, y;
-    int mapped;
-};
-
-struct ViewInternal
-{
-    wlr_xdg_surface* xdg_surface;
-    ListenerId map, unmap, destroy, request_move, request_resize;
-};
-
-using ViewId = TypeId<View>;
-using ViewTable = Table<ViewId, View, ViewInternal>;
-
-struct OutputInternal
-{
-    wlr_output* output;
-    ListenerId frame;
-};
-
-using OutputId = TypeId<struct Output>;
-using OutputTable = Table<OutputId, OutputInternal>;
-
-struct Workspace
-{
-    OutputId output;
-    std::vector<ViewId> views;
-};
-
-using WorkspaceId = TypeId<Workspace>;
-using WorkspaceTable = Table<WorkspaceId, Workspace>;
+#include "Seat.h"
+#include "View.h"
 
 struct Server
 {
     ViewTable views;
     OutputTable outputs;
     WorkspaceTable workspaces;
+    ListenerList listener_list;
+
+    ListenerId new_xdg_surface;
+    ListenerId cursor_motion;
 
     wlr_renderer* renderer;
+    wl_display* display;
+    wlr_backend* backend;
+    wlr_xdg_shell* xdg_shell;
+
+    wlr_output_layout* output_layout;
+    ListenerId new_output;
 };
 
 struct render_data {
