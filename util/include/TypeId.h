@@ -15,6 +15,7 @@ struct TypeId
 {
     std::int32_t id;
 
+    TypeId() : id { InvalidIdNumeric } {}
     explicit TypeId(std::int32_t id_) : id {id_} {}
     explicit TypeId(InvalidId): id{ InvalidIdNumeric } {}
 

@@ -11,7 +11,7 @@ struct Keyboard
     ListenerId key;
 };
 
-Keyboard create_keyboard(Server* server); // since these are long living "objects", doing resource deallocation in dtor could be good;
+Keyboard create_keyboard(Server* server, wlr_input_device *device); // since these are long living "objects", doing resource deallocation in dtor could be good;
 void destroy(Server* server, Keyboard keyboard);
 
 #endif //UTIL_KEYBOARD_H

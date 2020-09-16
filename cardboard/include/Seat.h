@@ -17,6 +17,8 @@ struct Seat
 {
     wlr_seat* seat;
 
+    wlr_cursor* cursor;
+    wlr_xcursor_manager* cursor_manager;
     ListenerId cursor_motion;
     ListenerId cursor_motion_absolute;
     ListenerId cursor_button;

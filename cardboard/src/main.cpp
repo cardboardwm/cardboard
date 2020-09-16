@@ -34,6 +34,8 @@ struct Server
     WorkspaceTable workspaces;
     ListenerList listener_list;
 
+    Seat seat;
+
     ListenerId new_xdg_surface;
     ListenerId cursor_motion;
 
@@ -45,6 +47,67 @@ struct Server
     wlr_output_layout* output_layout;
     ListenerId new_output;
 };
+
+Seat create_seat(Server* server)
+{
+    Seat seat;
+
+    seat.cursor = wlr_cursor_create();
+    wlr_cursor_attach_output_layout(seat.cursor, server->output_layout);
+
+    seat.cursor_manager = wlr_xcursor_manager_create(nullptr, 24);
+    wlr_xcursor_manager_load(seat.cursor_manager, 1);
+
+    //seat.cursor_motion = server->listener_list.add_listener(&seat.cursor->events.motion, );
+    //seat.cursor_motion_absolute = server->listener_list.add_listener(&seat.cursor->events.motion_absolute, );
+    //seat.cursor_button = server->listener_list.add_listener(&seat.cursor->events.button, );
+    //seat.cursor_axis = server->listener_list.add_listener(&seat.cursor->events.axis, );
+    //seat.cursor_frame = server->listener_list.add_listener(&seat.cursor->events.frame, );
+
+    //seat.new_input = server->listener_list.add_listener(&server->backend->events.new_input, )
+
+    seat.seat = wlr_seat_create(server->display, "seat0");
+
+    //seat.request_set_cursor = server->add_listener(&seat.seat->events.request_set_cursor, )
+    //seat.request_set_selection = server->add_listener(&seat.seat->events.request_set_selection, )
+
+    return seat;
+}
+
+void destroy(Server* server, const Seat& seat)
+{
+
+}
+
+Keyboard create_keyboard(Server* server, wlr_input_device *device)
+{
+    Keyboard keyboard;
+
+    keyboard.input_device = device;
+
+    struct xkb_rule_names rules = { 0 };
+    struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    struct xkb_keymap *keymap = xkb_map_new_from_names(context, &rules,
+                                                       XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+    wlr_keyboard_set_keymap(device->keyboard, keymap);
+    xkb_keymap_unref(keymap);
+    xkb_context_unref(context);
+    wlr_keyboard_set_repeat_info(device->keyboard, 25, 600);
+
+    //keyboard.key = server->listener_list.add_listener(&device->keyboard->events.key, );
+    //keyboard.modifiers = server->listener_list.add_listener(&device->keyboard->events.modifiers, );
+
+    wlr_seat_set_keyboard(server->seat.seat, device);
+
+    return keyboard;
+}
+
+void destroy(Server* server, Keyboard keyboard)
+{
+
+}
+
 
 struct render_data {
     wlr_output *output;
