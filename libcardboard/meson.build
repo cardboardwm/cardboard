@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 libcardboard_inc = include_directories('include')
 
 expected_proj = subproject('expected', required: true)

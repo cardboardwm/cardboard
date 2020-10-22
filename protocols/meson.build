@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 wayland_protos = dependency('wayland-protocols')
 wayland_server = dependency('wayland-server')
 

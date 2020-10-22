@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-only
 wayland_server = dependency('wayland-server')
 xkbcommon = dependency('xkbcommon')
 xcb = dependency('xcb', required: get_option('xwayland'))
