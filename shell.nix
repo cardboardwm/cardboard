@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-only
 let
-  pkgs = import <nixpkgs> {};
+  sources = import ./nix/sources.nix;
+  pkgs = import sources.nixpkgs {};
 in
-pkgs.mkShell {
+  pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     meson
     ninja
