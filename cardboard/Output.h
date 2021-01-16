@@ -41,12 +41,10 @@ struct Output {
     static void present_handler(struct wl_listener* listener, void* data);
     /// Executed when the output is detached.
     static void destroy_handler(struct wl_listener* listener, void* data);
-    /// Executed when the output changes its mode (resolution, color depth and/or refresh rate).
+    /// Executed when the output changes fields (transform, scale etc).
+    static void commit_handler(struct wl_listener* listener, void* data);
+    /// Executed when the mode changes (resolution, framerate etc)
     static void mode_handler(struct wl_listener* listener, void* data);
-    /// Executed when the output is transformed.
-    static void transform_handler(struct wl_listener* listener, void* data);
-    /// Executed when the output is scaled.
-    static void scale_handler(struct wl_listener* listener, void* data);
 };
 
 /// Registers event listeners and does bookkeeping for a newly added output.

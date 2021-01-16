@@ -59,7 +59,6 @@ bool Server::init()
     output_manager = create_output_manager(this);
 
     // https://drewdevault.com/2018/07/29/Wayland-shells.html
-    // TODO: implement Xwayland
     xdg_shell = wlr_xdg_shell_create(wl_display);
     layer_shell = wlr_layer_shell_v1_create(wl_display);
 

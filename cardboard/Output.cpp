@@ -18,6 +18,7 @@ extern "C" {
 #include <wlr/types/wlr_matrix.h>
 #undef static
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/util/log.h>
 }
 
 #include <array>
@@ -51,9 +52,8 @@ void register_output(Server& server, Output&& output_)
                       {
                           { &output.wlr_output->events.frame, Output::frame_handler },
                           { &output.wlr_output->events.present, Output::present_handler },
+                          { &output.wlr_output->events.commit, Output::commit_handler },
                           { &output.wlr_output->events.mode, Output::mode_handler },
-                          { &output.wlr_output->events.transform, Output::transform_handler },
-                          { &output.wlr_output->events.scale, Output::scale_handler },
                           { &output.wlr_output->events.destroy, Output::destroy_handler },
                       });
 }
@@ -381,25 +381,19 @@ void Output::destroy_handler(struct wl_listener* listener, void*)
     server->output_manager->remove_output_from_list(*output);
 }
 
+void Output::commit_handler(struct wl_listener* listener, void* data)
+{
+    auto* server = get_server(listener);
+    auto* output = get_listener_data<Output*>(listener);
+    auto* event = static_cast<struct wlr_output_event_commit*>(data);
+
+    if (event->committed & (WLR_OUTPUT_STATE_SCALE | WLR_OUTPUT_STATE_TRANSFORM)) {
+        arrange_layers(*server, *output);
+        arrange_output(*server, *output);
+    }
+}
+
 void Output::mode_handler(struct wl_listener* listener, void*)
-{
-    auto* server = get_server(listener);
-    auto* output = get_listener_data<Output*>(listener);
-
-    arrange_layers(*server, *output);
-    arrange_output(*server, *output);
-}
-
-void Output::transform_handler(struct wl_listener* listener, void*)
-{
-    auto* server = get_server(listener);
-    auto* output = get_listener_data<Output*>(listener);
-
-    arrange_layers(*server, *output);
-    arrange_output(*server, *output);
-}
-
-void Output::scale_handler(struct wl_listener* listener, void*)
 {
     auto* server = get_server(listener);
     auto* output = get_listener_data<Output*>(listener);
