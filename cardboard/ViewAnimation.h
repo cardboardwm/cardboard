@@ -39,7 +39,7 @@ struct AnimationSettings {
 };
 
 class ViewAnimation {
-    ViewAnimation(AnimationSettings);
+    ViewAnimation(AnimationSettings, OutputManager&);
 
 public:
     void enqueue_task(const AnimationTask&);
@@ -73,6 +73,7 @@ private:
 
     wl_event_source* event_source;
     AnimationSettings settings;
+    NotNullPointer<OutputManager> output_manager;
     static int timer_callback(void* data);
     friend ViewAnimationInstance create_view_animation(Server* server, AnimationSettings);
 };

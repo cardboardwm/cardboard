@@ -132,7 +132,7 @@ public:
     virtual void resize(int width, int height);
 
     /// Requests the move to the client. Do not assume that the client is resized afterwards.
-    virtual void move(int x, int y);
+    virtual void move(OutputManager& server, int x, int y);
 
     /// Prepares the view before registering to the server by attaching some handlers and doing shell-specific stuff.
     virtual void prepare(Server& server) = 0;

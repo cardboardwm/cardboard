@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License along with thi
 extern "C" {
 #include <wayland-server.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_output_damage.h>
 }
 
 #include <array>
@@ -30,6 +31,7 @@ extern "C" {
 
 struct Output {
     struct wlr_output* wlr_output;
+    struct wlr_output_damage* wlr_output_damage;
     struct wlr_box usable_area;
 
     /// Time of last presentation. Use it to calculate the delta time.

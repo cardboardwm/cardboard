@@ -316,6 +316,7 @@ void LayerSurface::commit_handler(struct wl_listener* listener, void*)
         }
         layer_surface->layer = layer_surface->surface->current.layer;
     }
+    server->output_manager->set_dirty();
 }
 
 void LayerSurface::destroy_handler(struct wl_listener* listener, void*)

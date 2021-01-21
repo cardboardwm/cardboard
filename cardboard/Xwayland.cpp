@@ -74,9 +74,9 @@ void XwaylandView::resize(int width, int height)
         xwayland_surface, x, y, width, height);
 }
 
-void XwaylandView::move(int x_, int y_)
+void XwaylandView::move(OutputManager& output_manager, int x_, int y_)
 {
-    View::move(x_, y_);
+    View::move(output_manager, x_, y_);
 
     wlr_xwayland_surface_configure(
         xwayland_surface, x, y, geometry.width, geometry.height);
@@ -225,6 +225,7 @@ void XwaylandView::surface_commit_handler(struct wl_listener* listener, void*)
 
         ws.arrange_workspace(*(server->output_manager));
     }
+    server->output_manager->set_dirty();
 }
 
 void XwaylandView::surface_request_fullscreen_handler(struct wl_listener* listener, void*)
@@ -328,8 +329,11 @@ void XwaylandORSurface::surface_request_configure_handler(struct wl_listener* li
 
 void XwaylandORSurface::surface_commit_handler(struct wl_listener* listener, void*)
 {
+    auto* server = get_server(listener);
     auto* xwayland_or_surface = get_listener_data<XwaylandORSurface*>(listener);
 
     xwayland_or_surface->lx = xwayland_or_surface->xwayland_surface->x;
     xwayland_or_surface->ly = xwayland_or_surface->xwayland_surface->y;
+
+    server->output_manager->set_dirty();
 }

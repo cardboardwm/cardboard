@@ -10,6 +10,7 @@ You should have received a copy of the GNU General Public License along with thi
 */
 extern "C" {
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_output_damage.h>
 #include <wlr/util/log.h>
 }
 
@@ -122,6 +123,13 @@ Workspace& OutputManager::create_workspace(Server* server)
 Workspace& OutputManager::get_view_workspace(View& view)
 {
     return workspaces[view.workspace_id];
+}
+
+void OutputManager::set_dirty()
+{
+    for (auto& output : outputs) {
+        wlr_output_damage_add_whole(output.wlr_output_damage);
+    }
 }
 
 void OutputManager::output_manager_apply_handler([[maybe_unused]] wl_listener* listener, [[maybe_unused]] void* data)

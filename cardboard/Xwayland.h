@@ -35,7 +35,7 @@ public:
     struct wlr_surface* get_surface() final;
     bool get_surface_under_coords(double lx, double ly, struct wlr_surface*& surface, double& sx, double& sy) final;
     void resize(int width, int height) final;
-    void move(int x, int y) final;
+    void move(OutputManager&, int x, int y) final;
     void prepare(Server& server) final;
     void set_activated(bool activated) final;
     void set_fullscreen(bool fullscreen) final;

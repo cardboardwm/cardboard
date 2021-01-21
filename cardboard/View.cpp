@@ -82,10 +82,11 @@ void View::cycle_width(int screen_width)
     resize(static_cast<int>(screen_width * ratios[i]), geometry.height);
 }
 
-void View::move(int x_, int y_)
+void View::move(OutputManager& output_manager, int x_, int y_)
 {
     x = x_;
     y = y_;
+    output_manager.set_dirty();
 }
 
 bool View::is_mapped_and_normal()

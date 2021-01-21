@@ -46,11 +46,12 @@ void register_output(Server& server, Output&& output_)
     server.output_manager->outputs.emplace_back(output_);
     auto& output = server.output_manager->outputs.back();
     output.wlr_output->data = &output;
+    output.wlr_output_damage = wlr_output_damage_create(output.wlr_output);
 
     register_handlers(server,
                       &output,
                       {
-                          { &output.wlr_output->events.frame, Output::frame_handler },
+                          { &output.wlr_output_damage->events.frame, Output::frame_handler },
                           { &output.wlr_output->events.present, Output::present_handler },
                           { &output.wlr_output->events.commit, Output::commit_handler },
                           { &output.wlr_output->events.mode, Output::mode_handler },
@@ -260,14 +261,23 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     auto* wlr_output = output->wlr_output;
     struct wlr_renderer* renderer = server->renderer;
 
+    server->seat.update_swipe(*server);
+
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    server->seat.update_swipe(*server);
-
     // make the OpenGL context current
-    if (!wlr_output_attach_render(wlr_output, nullptr)) {
+    bool needs_frame;
+    pixman_region32_t damage;
+    pixman_region32_init(&damage);
+    if (!wlr_output_damage_attach_render(output->wlr_output_damage, &needs_frame, &damage)) {
+        wlr_log(WLR_ERROR, "cannot make damage output current");
         return;
+    }
+
+    if (!needs_frame) {
+        wlr_output_rollback(output->wlr_output);
+        goto damage_finish;
     }
 
     int width, height;
@@ -275,22 +285,26 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     wlr_output_effective_resolution(wlr_output, &width, &height);
     wlr_renderer_begin(renderer, width, height);
 
-    std::array<float, 4> color = { .3, .3, .3, 1. };
-    wlr_renderer_clear(renderer, color.data());
-
-    int workspaces_number = 0;
-    int fullscreen_workspaces_number = 0;
-
-    for (auto& ws : server->output_manager->workspaces) {
-        if (ws.output.raw_pointer() == output) {
-            workspaces_number++;
-            fullscreen_workspaces_number += static_cast<bool>(ws.fullscreen_view);
-        }
+    {
+        std::array<float, 4> color = { .3, .3, .3, 1. };
+        wlr_renderer_clear(renderer, color.data());
     }
 
-    if (fullscreen_workspaces_number != workspaces_number - fullscreen_workspaces_number) {
-        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
-        render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
+    {
+        int workspaces_number = 0;
+        int fullscreen_workspaces_number = 0;
+
+        for (auto& ws : server->output_manager->workspaces) {
+            if (ws.output.raw_pointer() == output) {
+                workspaces_number++;
+                fullscreen_workspaces_number += static_cast<bool>(ws.fullscreen_view);
+            }
+        }
+
+        if (fullscreen_workspaces_number != workspaces_number - fullscreen_workspaces_number) {
+            render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND], *output, renderer, &now);
+            render_layer(*server, server->surface_manager.layers[ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM], *output, renderer, &now);
+        }
     }
 
     for (auto& ws : server->output_manager->workspaces) {
@@ -355,6 +369,9 @@ void Output::frame_handler(struct wl_listener* listener, void*)
     // swap buffers and show frame
     wlr_renderer_end(renderer);
     wlr_output_commit(wlr_output);
+
+damage_finish:
+    pixman_region32_fini(&damage);
 }
 
 void Output::present_handler(struct wl_listener* listener, void* data)

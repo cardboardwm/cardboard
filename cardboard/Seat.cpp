@@ -661,7 +661,7 @@ void Seat::focus(Server& server, Workspace& workspace)
 
         for (auto& column : workspace.columns) {
             for (auto& tile : column.mapped_and_normal_tiles()) {
-                tile.view->move(tile.view->x, tile.view->y + height_offset);
+                tile.view->move(*server.output_manager, tile.view->x, tile.view->y + height_offset);
 
                 animation_tasks.push_back({ tile.view,
                                             tile.view->x,

@@ -33,6 +33,7 @@ void change_view_workspace(Server& server, View& view, Workspace& new_workspace)
 
         if (view.x < output_area.x || view.x >= output_area.x + output_area.width || view.y < output_area.y || view.y >= output_area.y + output_area.height) {
             view.move(
+                *server.output_manager,
                 output_area.x + output_area.width / 2,
                 output_area.y + output_area.height / 2);
         }
@@ -76,7 +77,7 @@ void reconfigure_view_position(Server& server, View& view, int x, int y, bool an
 
         scroll_workspace(*(server.output_manager), workspace, RelativeScroll { dx }, animate);
     } else {
-        view.move(x, y);
+        view.move(*server.output_manager, x, y);
         update_view_workspace(server, view);
     }
 }

@@ -244,6 +244,7 @@ void XDGView::surface_commit_handler(struct wl_listener* listener, void*)
 
         ws.arrange_workspace(*(server->output_manager));
     }
+    server->output_manager->set_dirty();
 }
 
 void XDGView::surface_new_popup_handler(struct wl_listener* listener, void* data)

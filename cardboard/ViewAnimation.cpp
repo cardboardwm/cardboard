@@ -12,8 +12,9 @@ You should have received a copy of the GNU General Public License along with thi
 
 #include "Server.h"
 
-ViewAnimation::ViewAnimation(AnimationSettings settings)
+ViewAnimation::ViewAnimation(AnimationSettings settings, OutputManager& output_manager)
     : settings { settings }
+    , output_manager { &output_manager }
 {
 }
 
@@ -66,6 +67,7 @@ int ViewAnimation::timer_callback(void* data)
 
         float multiplier = beziere_blend(completeness);
         task.view->move(
+            *view_animation->output_manager,
             task.startx - multiplier * (task.startx - task.targetx),
             task.starty - multiplier * (task.starty - task.targety));
 
@@ -84,7 +86,7 @@ int ViewAnimation::timer_callback(void* data)
 
 ViewAnimationInstance create_view_animation(Server* server, AnimationSettings settings)
 {
-    auto view_animation = std::make_unique<ViewAnimation>(ViewAnimation { settings });
+    auto view_animation = std::make_unique<ViewAnimation>(ViewAnimation { settings, *server->output_manager });
     view_animation->event_source = wl_event_loop_add_timer(server->event_loop, ViewAnimation::timer_callback, view_animation.get());
 
     wl_event_source_timer_update(view_animation->event_source, settings.ms_per_frame);

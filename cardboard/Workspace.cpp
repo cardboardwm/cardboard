@@ -191,8 +191,8 @@ void Workspace::arrange_workspace(OutputManager& output_manager, bool animate)
     const struct wlr_box* output_box = output_manager.get_output_box(output.unwrap());
     const struct wlr_box& usable_area = output.unwrap().usable_area;
 
-    fullscreen_view.and_then([output_box](auto& view) {
-        view.move(output_box->x - view.geometry.x, output_box->y - view.geometry.y);
+    fullscreen_view.and_then([output_box, &output_manager](auto& view) {
+        view.move(output_manager, output_box->x - view.geometry.x, output_box->y - view.geometry.y);
         view.resize(output_box->width, output_box->height);
     });
 
@@ -374,10 +374,10 @@ int Workspace::get_view_wx(View& view)
 
 void Workspace::set_fullscreen_view(OutputManager& output_manager, OptionalRef<View> view)
 {
-    fullscreen_view.and_then([](auto& fview) {
+    fullscreen_view.and_then([&output_manager](auto& fview) {
         fview.set_fullscreen(false);
         fview.expansion_state = View::ExpansionState::RECOVERING;
-        fview.move(fview.saved_state->x, fview.saved_state->y);
+        fview.move(output_manager, fview.saved_state->x, fview.saved_state->y);
         fview.resize(fview.saved_state->width, fview.saved_state->height);
         fview.saved_state = std::nullopt;
     });
