@@ -1,4 +1,4 @@
-# Cardboard
+# Cardboard [![Gitter](https://badges.gitter.im/cardboard-wm/community.svg)](https://gitter.im/cardboard-wm/community)
 
 Cardboard is a unique, scrollable tiling Wayland compositor designed with
 laptops in mind. Based on [wlroots](https://github.com/swaywm/wlroots).
