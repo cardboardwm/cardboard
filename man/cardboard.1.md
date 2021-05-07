@@ -6,7 +6,8 @@ footer: Version 0.0.1
 ---
 
 # NAME
-cardboard - A Wayland tiling compositor inspired by PaperWM Gnome Extension
+cardboard - A scrollable tiling Wayland compositors designed with 
+laptops in mind.
 
 # SYNOPSIS
 *cardboard*
