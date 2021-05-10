@@ -486,6 +486,11 @@ void Seat::process_swipe_end(Server& server)
 
 void Seat::end_interactive(Server& server)
 {
+    if (!grab_state) {
+        // prevent bug when there are no windows grabbed, but the mouse button is released
+        return;
+    }
+
     // re-enable animations if ending resize grab
     if (std::holds_alternative<Seat::GrabState::Resize>(grab_state->grab_data)) {
         auto& grab_data = std::get<Seat::GrabState::Resize>(grab_state->grab_data);
