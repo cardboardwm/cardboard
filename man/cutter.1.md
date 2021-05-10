@@ -36,7 +36,9 @@ cutter *quit*
 :   Terminates Cardboard Compositor execution
 
 cutter *focus* (left|right|up|down|cycle)
-:   Changes the currently focused window
+:   Changes the currently focused window in the direction indicated by the
+    argument. In the case of cycle mode, the focus is changed in regard to
+    the focus stack
 
 cutter *close*
 :   Terminates the window of the currently active application
