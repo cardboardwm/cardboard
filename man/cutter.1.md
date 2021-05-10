@@ -11,6 +11,15 @@ cutter - the Cardboard client that sends commands to the compositor
 # SYNOPSIS
 *cutter* COMMAND [ARGUMENTS]
 
+# DESCRIPTION
+**cutter** is the companion program of the Cardboard compositor, which allows
+the user to send actions to , get information from and configure the compositor.
+**cutter** in nature is similar to **i3msg** on i3, **swaymsg** on Sway and 
+**bspc** on bspwm.
+
+The program itself is based on *libcardboard* which offers an interface to communicate 
+with the compositor, an interface that can be used in any other program.
+
 # COMMANDS
 cutter *bind* KEYBIND COMMAND 
 :   Registers KEYBIND to execute COMMAND when the key binding is activated

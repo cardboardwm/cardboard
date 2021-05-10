@@ -12,6 +12,17 @@ laptops in mind.
 # SYNOPSIS
 *cardboard*
 
+# DESCRIPTION
+Cardboard is a unique, scrollable tiling Wayland compositor designed with laptops
+in mind, based on *wlroots*.
+
+Scrollable tiling is an idea that comes from the Gnome extension PaperWM. 
+In this tiling mode, the windows occupy the height of the screen and are displaced
+in a list, such as that the user can scroll through them, as opposed to tiling
+by filling the screen with windows disposed in a tree like structure. The main idea
+is based on the fact that the user will most likely not look at more than three windows
+at the same time.
+
 # ENVIRONMENT
 *CARDBOARD_SOCKET*
     The IPC unix domain socket address accepting commands
