@@ -13,7 +13,7 @@ cutter - the Cardboard client that sends commands to the compositor
 
 # DESCRIPTION
 **cutter** is the companion program of the Cardboard compositor, which allows
-the user to send actions to , get information from and configure the compositor.
+the user to send actions to, get information from and configure the compositor.
 **cutter** in nature is similar to **i3msg** on i3, **swaymsg** on Sway and 
 **bspc** on bspwm.
 
