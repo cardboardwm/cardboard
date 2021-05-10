@@ -60,6 +60,16 @@ $ ninja -C build
 $ ./build/cardboard/cardboard # to run the thing
 ```
 
+### Building man pages
+In order to build the man pages, along the binary, the meson `man` variable
+needs to be set to `true`:
+
+```sh 
+$ meson build -Dman=true
+```
+
+## Configuration
+
 Cardboard tries to run `~/.config/cardboard/cardboardrc` on startup. You can use
 to run commands and set keybindings:
 

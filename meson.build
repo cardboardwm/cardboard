@@ -34,3 +34,26 @@ subdir('protocols')
 subdir('libcardboard')
 subdir('cardboard')
 subdir('cutter')
+
+if get_option('man')
+    pandoc = find_program('pandoc')
+    mandir1 = join_paths(get_option('mandir'), 'man1')
+
+    cardboard_man = custom_target(
+        'cardboard_man',
+        output: 'cardboard.1',
+        input: 'man/cardboard.1.md',
+        command: [pandoc, '@INPUT@', '-o', '@OUTPUT@', '-s', '-t', 'man', '-f', 'markdown-smart'],
+        install: true,
+        install_dir: mandir1
+    )
+
+    cutter_man = custom_target(
+            'cutter_man',
+            output: 'cutter.1',
+            input: 'man/cutter.1.md',
+            command: [pandoc, '@INPUT@', '-o', '@OUTPUT@', '-s', '-t', 'man', '-f', 'markdown-smart'],
+            install: true,
+            install_dir: mandir1
+    )
+endif
