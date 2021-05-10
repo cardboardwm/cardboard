@@ -486,7 +486,7 @@ void Seat::process_swipe_end(Server& server)
 
 void Seat::end_interactive(Server& server)
 {
-    if(!grab_state) {
+    if (!grab_state) {
         // prevent bug when there are no windows grabbed, but the mouse button is released
         return;
     }
