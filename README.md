@@ -1,9 +1,50 @@
-# Cardboard [![Gitter](https://badges.gitter.im/cardboard-wm/community.svg)](https://gitter.im/cardboard-wm/community)
+# UNMAINTAINED. Read the explanation bellow
+
+If you are curious to see what this project was about, you can check out [this cool blog post written by Daniel Aleksandersen][blog-post].
+
+If the scrollable tiling concept intrigues you, you can either:
+* Use [PaperWM on GNOME](https://github.com/paperwm/PaperWM), or
+* Check out [Karousel](https://github.com/peterfajdiga/karousel), a KWin tiling script.
+
+We (Alex and Tudor) had great fun while developing Cardboard, allowing us to learn more about Wayland and C++ development.
+Cardboard was made as a project for the [National Digital Innovation and Creativity Olympiad - InfoEducație][infoedu],
+a government-sponsored software development contest, camp, and hackathon* for Romanian high school students.
+We figured it would be great to make a project that is based on new Linux technologies while also helping the
+Wayland community with a compositor implementing a novel tiling algorithm. We have since started university and working
+on the side, which doesn't allow us to maintain the messy codebase we left behind.
+Wlroots has changed in the meantime too, requiring us to keep up with its changes to keep our compositor functional.
+None of us use this software day to day, so naturally this task didn't receive much priority, if at all.
+
+Still, we would like to keep this project public, for other to learn from it.
+For a more up to date version, you can try [Julien Langlois][fork]' fork. We are thankful for his effort to touch up our codebase.
+
+If you want to build your own compositor, we have [a couple pointers][pointers]:
+
+* Make use of the new [Wlroots Scene Graph API][wlr_scene] as much as possible. Such a luxury wasn't yet upstreamed
+	when we were working on Cardboard.
+* As always, a very minimal implementation of many Wlroots goodies (including the scene graph API) is
+	[cage][cage]. Read and study the code.
+* Read [this blog post written by Tudor][the-wayland-experience]. It was written after coding Cardboard. As such,
+	it doesn't take into consideration the now-released scene graph API.
+* Have fun!
+
+*: For our hackathon submission, see [The X Files ISA][x-files-isa].
+
+[infoedu]: https://infoeducatie.ro/home
+[x-files-isa]: https://gitlab.com/cardboardwm/x-files-isa
+[fork]: https://gitlab.com/langlois-jf/cardboard
+[pointers]: https://xkcd.com/138/
+[wlr_scene]: https://wayland.emersion.fr/wlroots/wlr/types/wlr_scene.h.html
+[cage]: https://github.com/cage-kiosk/cage
+[the-wayland-experience]: https://tudorr.ro/blog/technical/2021/01/26/the-wayland-experience/
+[blog-post]: https://www.ctrl.blog/entry/cardboardwm.html
+
+# Cardboard
 
 Cardboard is a unique, scrollable tiling Wayland compositor designed with
 laptops in mind. Based on [wlroots](https://github.com/swaywm/wlroots).
 
-Cardboard should be suitable for day to day use.
+Cardboard is experimental software, and no warranty should be derived from it.
 
 ## Scrollable tiling?
 
